@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(sed -n '110,135p' /Users/apple/Desktop/shantnu/shantnu/saferide_driver/src/screens/mainscreens/InCityMapScreen.js)",
+      "Bash(sed -n '280,300p' /Users/apple/Desktop/shantnu/shantnu/saferide_driver/src/screens/mainscreens/InCityMapScreen.js)"
+    ]
+  }
+}
