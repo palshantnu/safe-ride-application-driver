@@ -1,9 +1,13 @@
-# TODO
-- [ ] BAHomeFlow me new booking (SEARCHING) pe Driver jaisa notification sound add karna.
-- [ ] Ensure sound stop ho jab pending bookings empty ho jaye.
-- [ ] Unmount cleanup me stop sound.
-- [x] Code changes implement kar diye.
-- [ ] Test: BA login -> new booking aate hi sound loop start, accept/reject ke baad sound stop.
+# TODO - SelfSharing OTP Verify
+
+- [x] Add `verifyOtp` API method to `src/services/SelfSharingService.js` calling `POST /selfsharing/trip/verify-otp`.
+- [x] Update `src/screens/mainscreens/SelfSharingTripDetailsScreen.js`:
+  - [x] Add “Verify OTP” button on each booking card.
+  - [x] Add OTP entry modal (TextInput + Submit + Cancel).
+  - [x] On submit, call `SelfSharingService.verifyOtp({ trip_id, booking_id, otp })`.
+  - [x] On success, close modal and refresh trip via `fetchTrip()`.
+- [ ] Quick test: ensure modal opens/closes and submit triggers API.
+- [ ] Add Start/Complete/Cancel ride buttons UI and wire APIs.
 
 
 

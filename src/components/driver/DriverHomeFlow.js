@@ -245,10 +245,10 @@ const DriverHomeFlow = ({ navigation }) => {
 
   const toggleOnlineStatus = (value) => {
     // Special service drivers can't toggle online/offline?
-    if (hasSpecialService) {
-      Alert.alert('Info', 'You will receive bookings assigned by Business Associate automatically.');
-      return;
-    }
+    // if (hasSpecialService) {
+    //   Alert.alert('Info', 'You will receive bookings assigned by Business Associate automatically.');
+    //   return;
+    // }
     
     if (value) {
       Alert.alert('Go Online', 'You will start receiving ride requests.', [
@@ -446,6 +446,9 @@ const DriverHomeFlow = ({ navigation }) => {
   };
 
   const isDriverServiceRide = (booking) => String(booking?.service_name || '').includes('Driver');
+
+  const isSelfSharingService = () => userData?.service_id === 72 || userData?.service_id === 73;
+
 
   const handleStartRide = (booking) => {
     setAssigningBookingId(booking?.booking_id || booking?.id);
@@ -1032,18 +1035,49 @@ const DriverHomeFlow = ({ navigation }) => {
   return (
     <View style={styles.outer}>
       {/* Special Service Banner */}
-      {hasSpecialService && (
+      {/* {hasSpecialService && (
         <View style={styles.specialServiceBanner}>
           <Icon name="info" size={16} color="#FF1493" />
           <Text style={styles.specialServiceText}>
             You are a {getSpecialServiceName()} driver. Bookings assigned by BA will appear here.
           </Text>
         </View>
-      )}
+      )} */}
 
-      {/* Online Status Card - Only show for normal drivers */}
-     
+        {/* Online Status Card - Only show for normal drivers */}
+
+        <View style={styles.specialTripActions}>
+          {hasSpecialService && (
+            <>
+              {userData?.service_id === 72 || userData?.service_id === 73 ? (
+                <>
+                  <Text style={styles.specialTripTitle}>Self Sharing Trips</Text>
+
+                  <View style={styles.specialTripBtnRow}>
+                    <TouchableOpacity
+                      style={[styles.specialTripBtn, { backgroundColor: '#2196F3' }]}
+                      onPress={() => navigation.navigate('SelfSharingCreateTrip', { service_id: userData?.service_id })}
+                    >
+                      <Icon name="plus-circle" size={18} color="#fff" />
+                      <Text style={styles.specialTripBtnText}>Create Booking</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.specialTripBtn, { backgroundColor: '#4CAF50' }]}
+                      onPress={() => navigation.navigate('SelfSharingMyTrips')}
+                    >
+                      <Icon name="list" size={18} color="#fff" />
+                      <Text style={styles.specialTripBtnText}>My Trips</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : null}
+            </>
+          )}
+        </View>
+
         <View style={styles.statusCard}>
+
           <View style={styles.statusInfo}>
             <Icon name={isOnline ? "circle" : "circle"} size={12} color={isOnline ? "#4CAF50" : "#FF5252"} />
             <Text style={styles.statusText}>{isOnline ? 'Online' : 'Offline'}</Text>
@@ -1078,18 +1112,18 @@ const DriverHomeFlow = ({ navigation }) => {
                 size={60} 
                 color={hasSpecialService ? "#FF1493" : (isOnline ? "#FF1493" : "#ccc")} 
               />
-              <Text style={styles.waitingTitle}>
+              {/* <Text style={styles.waitingTitle}>
                 {hasSpecialService 
                   ? 'Waiting for Assigned Bookings' 
                   : (isOnline ? 'Waiting for Ride Requests' : 'You are Offline')}
-              </Text>
-              <Text style={styles.waitingText}>
+              </Text> */}
+              {/* <Text style={styles.waitingText}>
                 {hasSpecialService
                   ? 'Your profile is active. Bookings assigned by Business Associate will appear here.'
                   : (isOnline
                     ? 'Your location is active. You will receive ride requests shortly.'
                     : 'Please go online to start receiving ride requests and earn money.')}
-              </Text>
+              </Text> */}
             </Animated.View>
           </View>
         )}
@@ -1287,6 +1321,37 @@ const DriverHomeFlow = ({ navigation }) => {
 const styles = StyleSheet.create({
   outer: { flex: 1, backgroundColor: '#f5f5f5' },
   content: { flex: 1, padding: 15 },
+
+  specialTripActions: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 5,
+  },
+  specialTripTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#333',
+    marginBottom: 12,
+  },
+  specialTripBtnRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  specialTripBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  specialTripBtnText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+
   
   statusCard: {
     flexDirection: 'row',
