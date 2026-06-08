@@ -131,7 +131,9 @@ const BAHomeFlow = ({ navigation }) => {
     }, 5000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData?.ba_name]);
+
 
   // Play ring on new BA SEARCHING booking, stop when cleared
   useEffect(() => {
@@ -147,11 +149,33 @@ const BAHomeFlow = ({ navigation }) => {
     }
   }, [baPendingBookings]);
 
+  const [baServices, setBaServices] = useState([]);
+
+  const fetchBAServices = async () => {
+    try {
+      const res = await dispatch(require('../../redux/actions/action-creator').BA_GET_SERVICES());
+      const list = res?.data?.data ?? res?.data ?? res ?? [];
+      setBaServices(Array.isArray(list) ? list : []);
+    } catch (e) {
+      console.log('fetchBAServices error:', e);
+      setBaServices([]);
+    }
+  };
+
+  useEffect(() => {
+    if (!userData?.ba_name) return;
+    fetchBAServices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userData?.ba_name]);
+
+
   // Stop sound on unmount
   useEffect(() => {
     return () => SoundHelper?.stopNotificationSound();
   }, []);
 
+  const filteredBAServiceIds = new Set([72, 73]);
+  const filteredServices = baServices.filter((s) => filteredBAServiceIds.has(Number(s.service_id)));
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -426,7 +450,27 @@ const BAHomeFlow = ({ navigation }) => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#FF1493']} tintColor="#FF1493" />}
       >
         <StatsCard />
+ {filteredServices.length > 0 ? (
+          <>
+            <Text style={[styles.sectionTitle, { marginHorizontal: 16, marginTop: 16 }]}>Self Sharing Services</Text>
 
+            {filteredServices.map((svc) => (
+              <TouchableOpacity
+                key={svc.id?.toString() || String(svc.service_id)}
+                style={styles.serviceOption}
+                onPress={() =>
+                  navigation.navigate('SelfSharingCreateTrip', {
+                    service_id: Number(svc.service_id),
+                  })
+                }
+              >
+                <Text style={styles.serviceOptionText}>{svc.title || 'Service'}</Text>
+                <Icon name="chevron-right" size={18} color="#ccc" />
+              </TouchableOpacity>
+            ))}
+          </>
+        ) : null}
+        
         {baPendingBookings.length > 0 ? (
           <>
             <Text style={[styles.sectionTitle, { marginHorizontal: 16, marginTop: 8 }]}>New Requests</Text>
@@ -448,6 +492,11 @@ const BAHomeFlow = ({ navigation }) => {
             {bsActiveBookings.map((booking) => renderBAActiveBookingCard(booking))}
           </>
         ) : null}
+
+       
+
+        {/* Divider */}
+        <View style={{ height: 30 }} />
       </ScrollView>
 
       <Modal visible={showAssignModal} transparent animationType="slide" onRequestClose={() => setShowAssignModal(false)}>
@@ -549,6 +598,28 @@ const styles = StyleSheet.create({
   driverSelectName: { fontSize: 15, fontWeight: '600', color: '#222' },
   driverSelectPhone: { fontSize: 13, color: '#888', marginTop: 2 },
   emptyDriverText: { textAlign: 'center', color: '#999', padding: 20, fontSize: 14 },
+
+  serviceOption: {
+    marginHorizontal: 16,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  serviceOptionText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111',
+  },
 
   modalBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
   cancelBtn: { backgroundColor: '#f0f0f0' },

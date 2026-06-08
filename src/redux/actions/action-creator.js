@@ -529,6 +529,18 @@ export const BA_GET_CURRENT_BOOKING = () => async (_dispatch) => {
   }
 };
 
+// Fetch BA services for self-sharing
+export const BA_GET_SERVICES = () => async (_dispatch) => {
+  try {
+    const response = await axiosinstance.get(EndPoints.baServices);
+    return response.data;
+  } catch (error) {
+    console.log('BA_GET_SERVICES Error', error);
+    return { status: false, message: error?.response?.data?.message || error?.message || 'Network error', data: [] };
+  }
+};
+
+
 export const DRIVER_ARRIVED = (data) => async (_dispatch) => {
   try {
     const response = await axiosinstance.post('/driver/arrived', data);

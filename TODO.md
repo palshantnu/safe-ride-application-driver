@@ -1,13 +1,9 @@
-# TODO - SelfSharing OTP Verify
-
-- [x] Add `verifyOtp` API method to `src/services/SelfSharingService.js` calling `POST /selfsharing/trip/verify-otp`.
-- [x] Update `src/screens/mainscreens/SelfSharingTripDetailsScreen.js`:
-  - [x] Add “Verify OTP” button on each booking card.
-  - [x] Add OTP entry modal (TextInput + Submit + Cancel).
-  - [x] On submit, call `SelfSharingService.verifyOtp({ trip_id, booking_id, otp })`.
-  - [x] On success, close modal and refresh trip via `fetchTrip()`.
-- [ ] Quick test: ensure modal opens/closes and submit triggers API.
-- [ ] Add Start/Complete/Cancel ride buttons UI and wire APIs.
-
+- [ ] Inspect BA home flow and identify where to render self-sharing services options
+- [ ] Add BA services endpoint constant in `src/services/EndPoints.js`
+- [ ] Add redux thunk action `BA_GET_SERVICES` in `src/redux/actions/action-creator.js`
+- [ ] Fetch `api/ba/services` inside `src/components/ba/BAHomeFlow.js`
+- [ ] Filter services by `service_id` 72 or 73 and render option cards using `title`
+- [x] On option press navigate to `SelfSharingCreateTrip` with `{ service_id }`
+- [ ] Run app / lint checks to ensure no JS errors
 
 

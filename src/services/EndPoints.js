@@ -33,5 +33,7 @@ const EndPoints = {
   getInvoice: '/invoice',
   collectPaymentCompleteRide: '/collect-payment-complete-ride',
   updateLocation: '/driver/update-location',
+  // BA self-sharing services
+  baServices: '/ba/services',
 };
 export default EndPoints;
