@@ -14,41 +14,60 @@ import LinearGradient from 'react-native-linear-gradient';
 import SelfSharingService from '../../services/SelfSharingService';
 
 const SelfSharingMyTripsScreen = ({ navigation }) => {
+  const PAGE_LIMIT = 10;
   const [loading, setLoading] = useState(false);
   const [trips, setTrips] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [fetchingMore, setFetchingMore] = useState(false);
 
-  const fetchTrips = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await SelfSharingService.getMyTrips();
+  const fetchTrips = useCallback(
+    async (nextPage = 1, { append = false } = {}) => {
+      // Prevent duplicate calls
+      if (append && (fetchingMore || !hasMore)) return;
 
-      // API might return:
-      // 1) { data: { data: [...] } }
-      // 2) { data: [...] }
-      // 3) [...]
-      const list =
-        res?.data?.data ??
-        res?.data ??
-        res ??
-        [];
+      if (append) setFetchingMore(true);
+      else setLoading(true);
 
-      setTrips(Array.isArray(list) ? list : []);
-    } catch (e) {
-      Alert.alert('Error', 'Failed to load my trips');
-      // eslint-disable-next-line no-console
-      console.log('fetchTrips error:', e);
-      setTrips([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      try {
+        const res = await SelfSharingService.getMyTrips(nextPage, PAGE_LIMIT);
+
+        // API might return:
+        // 1) { data: { data: [...] } }
+        // 2) { data: [...] }
+        // 3) [...]
+        const list =
+          res?.data?.data ??
+          res?.data ??
+          res ??
+          [];
+
+        const normalized = Array.isArray(list) ? list : [];
+        setTrips((prev) => (append ? [...prev, ...normalized] : normalized));
+
+        // Basic pagination heuristic: if less than limit returned, no more.
+        setHasMore(normalized.length === PAGE_LIMIT);
+        setPage(nextPage);
+      } catch (e) {
+        Alert.alert('Error', 'Failed to load my trips');
+        // eslint-disable-next-line no-console
+        console.log('fetchTrips error:', e);
+        setTrips([]);
+        setHasMore(false);
+      } finally {
+        if (append) setFetchingMore(false);
+        else setLoading(false);
+      }
+    },
+    [fetchingMore, hasMore]
+  );
 
   useEffect(() => {
     let isMounted = true;
 
     const doFetch = async () => {
       if (!isMounted) return;
-      await fetchTrips();
+      await fetchTrips(1, { append: false });
     };
 
     // Initial load
@@ -135,7 +154,16 @@ const SelfSharingMyTripsScreen = ({ navigation }) => {
           renderItem={renderTrip}
           showsVerticalScrollIndicator={false}
           refreshing={loading}
-          onRefresh={fetchTrips}
+          onRefresh={() => fetchTrips(1, { append: false })}
+          onEndReachedThreshold={0.4}
+          onEndReached={() => fetchTrips(page + 1, { append: true })}
+          ListFooterComponent={
+            fetchingMore ? (
+              <View style={{ paddingVertical: 12 }}>
+                <ActivityIndicator size="small" color="#FF1493" />
+              </View>
+            ) : null
+          }
         />
       ) : (
         <View style={styles.empty}>

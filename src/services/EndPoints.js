@@ -25,6 +25,7 @@ const EndPoints = {
   baDriverList: '/ba/driverlist',
   baAcceptBooking: '/ba/acceptbooking',
   baAssignDriver: '/ba/assign-driver',
+  baAssignDriverSelfSharing: '/selfsharing/trip/assign-captain',
   baCurrentBooking: '/ba/current-booking',
   rechargeWallet: 'driver/recharge',
   rechargeHistory: 'driver/recharge-history',

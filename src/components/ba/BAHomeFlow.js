@@ -231,9 +231,14 @@ const BAHomeFlow = ({ navigation }) => {
   const renderBABookingCard = (booking) => (
     <View key={booking.booking_id} style={styles.activeRideCard}>
       <View style={styles.cardHeader}>
+        <View>
         <View style={styles.requestBadge}>
           <Icon name="bell" size={16} color="#fff" />
           <Text style={styles.requestBadgeText}>New Booking</Text>
+        </View>
+        <View style={{...styles.requestBadge,marginTop:6,backgroundColor:'#2196F3',justifyContent:'center'}}>
+          <Text style={styles.requestBadgeText}>{booking.service_name}</Text>
+        </View>
         </View>
         <Text style={styles.fareAmount}>₹{booking.plan_price}</Text>
       </View>
@@ -321,6 +326,7 @@ const BAHomeFlow = ({ navigation }) => {
   );
 
   const renderBAActiveBookingCard = (booking) => {
+    console.log('Rendering active booking:', booking);
     const status = booking?.status;
     const driverstatus = booking?.driver_status;
     const bookingId = booking?.booking_id || booking?.id;
@@ -328,6 +334,7 @@ const BAHomeFlow = ({ navigation }) => {
     const pickupLocation = booking?.pickup_address || booking?.pickup_city;
     const dropLocation = booking?.drop_address || booking?.drop_city;
     const to_city = booking?.to_city || booking?.to_city;
+    const service_name = booking?.service_name || booking?.service_name;
 
     return (
       <View key={bookingId} style={styles.activeRideCard}>
@@ -335,9 +342,12 @@ const BAHomeFlow = ({ navigation }) => {
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
             <Text style={styles.statusBadgeText}>{driverstatus === 'REASSIGN' ? getStatusText(driverstatus) : getStatusText(status)}</Text>
           </View>
+         
           <Text style={styles.fareAmount}>₹{booking?.plan_price}</Text>
         </View>
-
+{service_name && <View style={{backgroundColor: '#2196F3', alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 10,marginTop:-10}}>
+            <Text style={styles.statusBadgeText}>{service_name}</Text>
+          </View>}
         <View style={styles.locationContainer}>
           <View style={styles.locationEntryRow}>
             <View style={styles.dotCol}>
@@ -464,10 +474,18 @@ const BAHomeFlow = ({ navigation }) => {
                   })
                 }
               >
+                <Icon name="user" size={18} color="#ccc" />
                 <Text style={styles.serviceOptionText}>{svc.title || 'Service'}</Text>
                 <Icon name="chevron-right" size={18} color="#ccc" />
               </TouchableOpacity>
             ))}
+             <TouchableOpacity
+                                  style={[styles.specialTripBtn, { backgroundColor: '#4CAF50' }]}
+onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
+                                >
+                                  <Icon name="list" size={18} color="#fff" />
+                                  <Text style={styles.specialTripBtnText}>My Trips</Text>
+                                </TouchableOpacity>
           </>
         ) : null}
         
@@ -556,7 +574,7 @@ const styles = StyleSheet.create({
   activeRideCard: { backgroundColor: '#fff', borderRadius: 15, padding: 20, marginBottom: 15 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
   requestBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FF1493', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  requestBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600', marginLeft: 6 },
+  requestBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600', textAlign: 'center' },
   fareAmount: { fontSize: 24, fontWeight: 'bold', color: '#4CAF50' },
 
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
@@ -624,6 +642,25 @@ const styles = StyleSheet.create({
   modalBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
   cancelBtn: { backgroundColor: '#f0f0f0' },
   cancelBtnText: { color: '#666', fontSize: 16, fontWeight: '500' },
+    specialTripBtnRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  specialTripBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  specialTripBtnText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+
 });
 
 export default BAHomeFlow;

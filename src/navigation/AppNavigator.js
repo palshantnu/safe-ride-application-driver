@@ -22,6 +22,8 @@ import InCityInvoiceScreen from '../screens/mainscreens/InCityInvoiceScreen';
 import WalletScreen from '../screens/mainscreens/WalletScreen';
 import BookingHistoryDetailScreen from '../screens/mainscreens/BookingHistoryDetailScreen';
 import SelfSharingMyTripsScreen from '../screens/mainscreens/SelfSharingMyTripsScreen';
+import SelfSharingMyTripsBAAssignScreen from '../screens/mainscreens/SelfSharingMyTripsBAAssignScreen';
+
 import SelfSharingTripDetailsScreen from '../screens/mainscreens/SelfSharingTripDetailsScreen';
 import SelfSharingCreateTripScreen from '../screens/mainscreens/SelfSharingCreateTripScreen';
 
@@ -232,6 +234,11 @@ const AppNavigator = () => {
             <Stack.Screen
               name="SelfSharingMyTrips"
               component={SelfSharingMyTripsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="SelfSharingMyTripsBAAssign"
+              component={SelfSharingMyTripsBAAssignScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen

@@ -522,6 +522,7 @@ export const GET_CURRENT_BOOKING = () => (dispatch) => {
 export const BA_GET_CURRENT_BOOKING = () => async (_dispatch) => {
   try {
     const response = await axiosinstance.get(EndPoints.baCurrentBooking);
+    console.log('BA_GET_CURRENT_BOOKING Response:', response.data);
     return response.data;
   } catch (error) {
     console.log('BA_GET_CURRENT_BOOKING Error', error);
@@ -603,6 +604,7 @@ export const GET_DRIVER_BOOKING_HISTORY = () => async (dispatch) => {
 export const GET_BA_BOOKING_HISTORY = () => async (_dispatch) => {
   try {
     const response = await axiosinstance.get(EndPoints.baBookings);
+    console.log('GET_BA_BOOKING_HISTORY Response:', response.data);
     return response.data;
   } catch (error) {
     console.log('Error in GET_BA_BOOKING_HISTORY:', error);
@@ -631,6 +633,17 @@ export const BA_ASSIGN_DRIVER = (data) => async (_dispatch) => {
     return response.data;
   } catch (error) {
     console.log('Error in BA_ASSIGN_DRIVER:', error);
+    return { status: false, message: error.response?.data?.message || 'Network error' };
+  }
+};
+export const BA_ASSIGN_DRIVER_SELF_SHARING = (data) => async (_dispatch) => {
+  console.log('data======>',data);
+  
+  try {
+    const response = await axiosinstance.post(EndPoints.baAssignDriverSelfSharing, data);
+    return response.data;
+  } catch (error) {
+    console.log('Error in BA_ASSIGN_DRIVER_SELF_SHARING:', error);
     return { status: false, message: error.response?.data?.message || 'Network error' };
   }
 };

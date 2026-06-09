@@ -26,11 +26,16 @@ const SelfSharingService = {
     }
   },
 
-  getMyTrips: async () => {
+  getMyTrips: async (page = 1, limit = 10) => {
     try {
-      return await axiosinstance.get('selfsharing/trip/my-trips');
+      return await axiosinstance.get('selfsharing/trip/my-trips', {
+        params: {
+          page,
+          limit,
+        },
+      });
     } catch (error) {
-      logAxiosError(error, { action: 'getMyTrips' });
+      logAxiosError(error, { action: 'getMyTrips', page, limit });
       throw error;
     }
   },
