@@ -26,6 +26,8 @@ import SelfSharingMyTripsBAAssignScreen from '../screens/mainscreens/SelfSharing
 
 import SelfSharingTripDetailsScreen from '../screens/mainscreens/SelfSharingTripDetailsScreen';
 import SelfSharingCreateTripScreen from '../screens/mainscreens/SelfSharingCreateTripScreen';
+import ParcelDeliveryDetail from '../screens/mainscreens/ParcelDeliveryDetail';
+import BAParcelHistoryScreen from '../components/ba/BAParcelHistoryScreen';
 
 
 const Stack = createStackNavigator();
@@ -251,7 +253,16 @@ const AppNavigator = () => {
               component={SelfSharingCreateTripScreen}
               options={{ headerShown: false }}
             />
-
+<Stack.Screen 
+  name="ParcelDeliveryDetail" 
+  component={ParcelDeliveryDetail} 
+  options={{ headerShown: false }}
+/>
+<Stack.Screen 
+  name="BAParcelHistory" 
+  component={BAParcelHistoryScreen} 
+  options={{ headerShown: false }}
+/>
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthStackNavigator} />

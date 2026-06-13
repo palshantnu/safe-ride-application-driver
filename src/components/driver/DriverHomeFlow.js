@@ -67,6 +67,7 @@ const DriverHomeFlow = ({ navigation }) => {
   const { userData } = useSelector((state) => state.auth);
   const driveronlineStatus = useSelector((state) => state?.auth?.driveronlineStatus);
   const loginToken = useSelector((state) => state?.auth?.loginToken);
+console.log('userData===>',userData);
 
   // Check if driver has special service (72 or 73)
   const hasSpecialService = userData?.service_id === 72 || userData?.service_id === 73;

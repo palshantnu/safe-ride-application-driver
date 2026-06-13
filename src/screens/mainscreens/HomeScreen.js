@@ -9,6 +9,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import { useSelector } from 'react-redux';
 import DriverHomeFlow from '../../components/driver/DriverHomeFlow';
 import BAHomeFlow from '../../components/ba/BAHomeFlow';
+import ParcelDriverHomeFlow from '../../components/driver/ParcelDriverHomeFlow';
 
 
 
@@ -59,7 +60,12 @@ const HomeScreen = ({ navigation }) => {
       {userData?.ba_name ? (
         <BAHomeFlow navigation={navigation} />
       ) : (
-        <DriverHomeFlow navigation={navigation} />
+        userData?.service_id == 75  ? (
+          <ParcelDriverHomeFlow navigation={navigation} /> ) :
+          (
+          <DriverHomeFlow navigation={navigation} />
+        )
+
       )}
     </View>
   );

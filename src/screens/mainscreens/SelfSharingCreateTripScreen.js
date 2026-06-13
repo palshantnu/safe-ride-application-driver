@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,11 +17,16 @@ import Icon from 'react-native-vector-icons/Feather';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import LinearGradient from 'react-native-linear-gradient';
 import SelfSharingService from '../../services/SelfSharingService';
+import axios from 'axios';
+
+const API_BASE_URL = 'http://91.108.104.79:3000';
 
 const DEFAULT_PAYLOAD = {
   service_id: 72,
   from_city: '',
+  from_city_id: null,
   to_city: '',
+  to_city_id: null,
   pickup_address: '',
   departure_time: '2026-06-08 08:00:00',
   total_seats: 4,
@@ -44,26 +49,46 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
   const [cityType, setCityType] = useState(''); // 'from' or 'to'
   const [citySearch, setCitySearch] = useState('');
 
-  
-  const popularCities = [
-    'Jaipur',
-    'Delhi',
-    'Mumbai',
-    'Bangalore',
-    'Hyderabad',
-    'Pune',
-    'Chennai',
-    'Kolkata',
-    'Ahmedabad',
-    'Lucknow',
-    'Chandigarh',
-    'Indore',
-    'Gwalior',
-  ];
+  // Cities data from API
+  const [cities, setCities] = useState([]);
+  const [filteredCities, setFilteredCities] = useState([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
 
-  const filteredCities = popularCities.filter(city =>
-    city.toLowerCase().includes(citySearch.toLowerCase())
-  );
+  // Fetch cities on component mount
+  useEffect(() => {
+    fetchCities();
+  }, []);
+
+  // Filter cities based on search text
+  useEffect(() => {
+    if (citySearch.trim() === '') {
+      setFilteredCities(cities);
+    } else {
+      const filtered = cities.filter(city =>
+        city.name.toLowerCase().includes(citySearch.toLowerCase())
+      );
+      setFilteredCities(filtered);
+    }
+  }, [citySearch, cities]);
+
+  // Fetch cities from API
+  const fetchCities = async () => {
+    setCitiesLoading(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/cities`);
+      if (response.data?.status && response.data?.data) {
+        setCities(response.data.data);
+        setFilteredCities(response.data.data);
+      } else {
+        console.error('Failed to fetch cities:', response.data?.message);
+      }
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      Alert.alert('Error', 'Failed to load cities. Please check your internet connection.');
+    } finally {
+      setCitiesLoading(false);
+    }
+  };
 
   const update = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -71,18 +96,23 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
 
   const handleCitySelect = (city) => {
     if (cityType === 'from') {
-      update('from_city', city);
+      update('from_city', city.name);
+      update('from_city_id', city.id);
     } else {
-      update('to_city', city);
+      update('to_city', city.name);
+      update('to_city_id', city.id);
     }
     setShowCityModal(false);
     setCitySearch('');
   };
 
   const handleSwapCities = () => {
-    const temp = form.from_city;
+    const tempCity = form.from_city;
+    const tempId = form.from_city_id;
     update('from_city', form.to_city);
-    update('to_city', temp);
+    update('from_city_id', form.to_city_id);
+    update('to_city', tempCity);
+    update('to_city_id', tempId);
   };
 
   const handleCreate = async () => {
@@ -219,6 +249,23 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
     }
   };
 
+  const renderCityItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.cityItem}
+      onPress={() => handleCitySelect(item)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.cityItemContent}>
+        <Icon name="map-pin" size={18} color="#FF1493" />
+        <View style={styles.cityTextContainer}>
+          <Text style={styles.cityName}>{item.name}</Text>
+          <Text style={styles.stateName}>{item.state_name}</Text>
+        </View>
+      </View>
+      <Icon name="chevron-right" size={18} color="#ccc" />
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#ff7f50" />
@@ -253,10 +300,15 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
                 {form.from_city || 'Select from city'}
               </Text>
               {form.from_city ? (
-                <TouchableOpacity onPress={() => update('from_city', '')}>
+                <TouchableOpacity onPress={() => {
+                  update('from_city', '');
+                  update('from_city_id', null);
+                }}>
                   <Icon name="x" size={18} color="#666" />
                 </TouchableOpacity>
-              ) : null}
+              ) : (
+                <Icon name="chevron-down" size={18} color="#999" />
+              )}
             </TouchableOpacity>
           </View>
 
@@ -280,10 +332,15 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
                 {form.to_city || 'Select to city'}
               </Text>
               {form.to_city ? (
-                <TouchableOpacity onPress={() => update('to_city', '')}>
+                <TouchableOpacity onPress={() => {
+                  update('to_city', '');
+                  update('to_city_id', null);
+                }}>
                   <Icon name="x" size={18} color="#666" />
                 </TouchableOpacity>
-              ) : null}
+              ) : (
+                <Icon name="chevron-down" size={18} color="#999" />
+              )}
             </TouchableOpacity>
           </View>
 
@@ -422,26 +479,54 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
             <View style={{ width: 28 }} />
           </View>
 
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search cities..."
-            placeholderTextColor="#999"
-            value={citySearch}
-            onChangeText={setCitySearch}
-          />
-
-          <ScrollView style={styles.citiesList} showsVerticalScrollIndicator={false}>
-            {filteredCities.map((city, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.cityItem}
-                onPress={() => handleCitySelect(city)}
-              >
-                <Icon name="map-pin" size={18} color="#FF1493" />
-                <Text style={styles.cityName}>{city}</Text>
+          <View style={styles.searchContainer}>
+            <Icon name="search" size={20} color="#999" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search cities..."
+              placeholderTextColor="#999"
+              value={citySearch}
+              onChangeText={setCitySearch}
+              autoFocus={true}
+            />
+            {citySearch !== '' && (
+              <TouchableOpacity onPress={() => setCitySearch('')}>
+                <Icon name="x" size={20} color="#999" />
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+            )}
+          </View>
+
+          {citiesLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#FF1493" />
+              <Text style={styles.loadingText}>Loading cities...</Text>
+            </View>
+          ) : filteredCities.length > 0 ? (
+            <ScrollView style={styles.citiesList} showsVerticalScrollIndicator={false}>
+              {filteredCities.map((city) => (
+                <TouchableOpacity
+                  key={city.id}
+                  style={styles.cityItem}
+                  onPress={() => handleCitySelect(city)}
+                >
+                  <View style={styles.cityItemContent}>
+                    <Icon name="map-pin" size={18} color="#FF1493" />
+                    <View style={styles.cityTextContainer}>
+                      <Text style={styles.cityName}>{city.name}</Text>
+                      <Text style={styles.stateName}>{city.state_name}</Text>
+                    </View>
+                  </View>
+                  <Icon name="chevron-right" size={18} color="#ccc" />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.noResultsContainer}>
+              <Icon name="search" size={48} color="#ccc" />
+              <Text style={styles.noResultsText}>No cities found</Text>
+              <Text style={styles.noResultsSubtext}>Try searching with a different name</Text>
+            </View>
+          )}
         </View>
       </Modal>
     </View>
@@ -566,16 +651,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  searchInput: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginHorizontal: 15,
     marginVertical: 12,
+    paddingHorizontal: 12,
     backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#333',
   },
   citiesList: {
     flex: 1,
@@ -584,16 +678,58 @@ const styles = StyleSheet.create({
   cityItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+  },
+  cityItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
     gap: 12,
+  },
+  cityTextContainer: {
+    flex: 1,
   },
   cityName: {
     fontSize: 14,
     color: '#333',
+    fontWeight: '500',
+  },
+  stateName: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#666',
+  },
+  noResultsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  noResultsText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#666',
+    marginTop: 16,
+  },
+  noResultsSubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
   },
 });
 

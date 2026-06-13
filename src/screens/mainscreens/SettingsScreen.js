@@ -1,6 +1,6 @@
 // screens/mainscreens/SettingsScreen.js
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -15,6 +15,8 @@ import Icon from 'react-native-vector-icons/Feather';
 import { LOGOUT_SUCCESS } from '../../redux/actions/action-types';
 import LinearGradient from 'react-native-linear-gradient';
 import { fetchPagesByRole } from '../../services/Services';
+import { GET_PROFILE } from '../../redux/actions/action-creator';
+import { useFocusEffect } from '@react-navigation/native';
 
 const SimpleHeader = ({ title }) => {
     return (
@@ -31,11 +33,18 @@ const SimpleHeader = ({ title }) => {
 
 const SettingsScreen = ({ navigation }) => {
     const dispatch = useDispatch();
-    const { userData } = useSelector((state) => state.auth);
+  const { userData, driverProfileData } = useSelector(
+  (state) => state.auth
+);
     const [pages, setPages] = useState([]);
     const [loadingPages, setLoadingPages] = useState(false);
     const [pagesError, setPagesError] = useState(null);
 
+useFocusEffect(
+  useCallback(() => {
+    dispatch(GET_PROFILE());
+  }, [])
+);
     useEffect(() => {
         const loadPages = async () => {
             setLoadingPages(true);
@@ -62,6 +71,15 @@ const SettingsScreen = ({ navigation }) => {
     const handlePagePress = (page) => {
         navigation.navigate('InfoPage', { page });
     };
+
+
+    const profileImage =
+  driverProfileData?.[0]?.driver_profile_url
+    ?.replace(
+      'http://localhost:3000',
+      'http://91.108.104.79:3000'
+    );
+
 
     const handleLogout = () => {
         Alert.alert(
@@ -97,6 +115,7 @@ const SettingsScreen = ({ navigation }) => {
         </TouchableOpacity>
     );
 
+
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
             {/* Profile Section */}
@@ -104,16 +123,30 @@ const SettingsScreen = ({ navigation }) => {
             <View style={styles.profileSection}>
                 <View style={styles.profileImageContainer}>
                     <Image
-                        source={require('../../assets/logo.jpg')}
-                        style={styles.profileImage}
-                        resizeMode="cover"
-                    />
+  source={
+    profileImage
+      ? { uri: profileImage }
+      : require('../../assets/logo.jpg')
+  }
+  style={styles.profileImage}
+  resizeMode="cover"
+/>
                     {/* <TouchableOpacity style={styles.editIcon}>
                         <Icon name="edit-2" size={16} color="#fff" />
                     </TouchableOpacity> */}
                 </View>
-                <Text style={styles.profileName}>{userData?.full_name || userData?.ba_name || 'User'}</Text>
-                <Text style={styles.profilePhone}>+91 {userData?.phone || userData?.ba_mobile || '+91XXXXXXXXXX'}</Text>
+                <Text style={styles.profileName}>
+  {driverProfileData?.[0]?.full_name ||
+   userData?.full_name ||
+   userData?.ba_name ||
+   'User'}
+</Text>
+
+<Text style={styles.profilePhone}>
+  +91 {driverProfileData?.[0]?.phone ||
+       userData?.phone ||
+       userData?.ba_mobile}
+</Text>
             </View>
 
             {/* Account Settings */}

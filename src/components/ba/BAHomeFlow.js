@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Modal,
   FlatList,
+  TextInput
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import LinearGradient from 'react-native-linear-gradient';
@@ -25,6 +26,7 @@ import {
   COMPLETE_RIDE,
   START_RIDE,
 } from '../../redux/actions/action-creator';
+import axios from 'axios';
 
 const { NativeModules } = require('react-native');
 const { SoundHelper } = NativeModules;
@@ -58,7 +60,132 @@ const getStatusText = (status) => STATUS_TEXT[status] || status;
 const BAHomeFlow = ({ navigation }) => {
   const dispatch = useDispatch();
   const { userData } = useSelector((state) => state.auth);
+  const loginToken = useSelector((state) => state?.auth?.loginToken);
 
+  const [parcelRequests, setParcelRequests] = useState([]);
+const [parcelCurrent, setParcelCurrent] = useState([]);
+const [showParcelAssignModal, setShowParcelAssignModal] = useState(false);
+const [parcelDrivers, setParcelDrivers] = useState([]);
+
+
+const PARCEL_API = {
+  AVAILABLE:
+    'http://91.108.104.79:3000/api/parcel/ba/available',
+
+  ACCEPT_ASSIGN:
+    'http://91.108.104.79:3000/api/parcel/ba/accept-assign',
+
+  CURRENT:
+    'http://91.108.104.79:3000/api/parcel/ba/current',
+
+  LIST:
+    'http://91.108.104.79:3000/api/parcel/ba/list',
+    REJECT:
+'http://91.108.104.79:3000/api/parcel/reject',
+};
+
+const [showRejectModal, setShowRejectModal] =
+  useState(false);
+
+const [selectedParcelId, setSelectedParcelId] =
+  useState(null);
+
+const [rejectReason, setRejectReason] =
+  useState('');
+  
+
+
+const fetchParcelRequests = async () => {
+  try {
+    const res = await axios.get(
+      PARCEL_API.AVAILABLE,
+      {
+        headers: {
+          Authorization: `Bearer ${loginToken}`,
+        },
+      }
+    );
+console.log('ressss',res);
+
+    if (res.data?.status) {
+      setParcelRequests(res.data.data || []);
+    } else {
+      setParcelRequests([]);
+    }
+  } catch (e) {
+    setParcelRequests([]);
+  }
+};
+
+const fetchCurrentParcels = async () => {
+  try {
+    const res = await axios.get(
+      PARCEL_API.CURRENT,
+      {
+        headers: {
+          Authorization: `Bearer ${loginToken}`,
+        },
+      }
+    );
+
+    if (res.data?.status) {
+      setParcelCurrent(res.data.data || []);
+    } else {
+      setParcelCurrent([]);
+    }
+  } catch (e) {
+    setParcelCurrent([]);
+  }
+};
+
+const loadParcelDrivers = async () => {
+  try {
+    const res = await dispatch(BA_GET_DRIVER_LIST());
+
+    const list = Array.isArray(res?.data) ? res.data : [];
+  console.log('Filtered Drivers:', list.filter(driver => driver.service_id == 75));
+ const filteredDrivers = list.filter(
+  driver => Number(driver.service_id) === 75
+);
+
+setParcelDrivers(filteredDrivers);
+  } catch (e) {
+    console.log(e);
+  
+    setParcelDrivers([]);
+  }
+};
+
+const handleAssignParcel = async driverId => {
+  try {
+    const res = await axios.post(
+      PARCEL_API.ACCEPT_ASSIGN,
+      {
+        parcel_booking_id: assigningBookingId,
+        driver_id: driverId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${loginToken}`,
+        },
+      },
+    );
+
+    if (res.data?.status) {
+      Alert.alert(
+        'Success',
+        'Parcel assigned successfully',
+      );
+setShowParcelAssignModal(false);
+      setShowAssignModal(false);
+
+      fetchParcelRequests();
+      fetchCurrentParcels();
+    }
+  } catch (e) {
+    Alert.alert('Error', 'Failed');
+  }
+};
   const [refreshing, setRefreshing] = useState(false);
 
   const [baPendingBookings, setBaPendingBookings] = useState([]);
@@ -66,7 +193,7 @@ const BAHomeFlow = ({ navigation }) => {
 
   // Sound tracking for new SEARCHING booking
   const prevPendingBookingIdRef = useRef(null);
-
+const prevParcelBookingIdRef = useRef(null);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -124,10 +251,13 @@ const BAHomeFlow = ({ navigation }) => {
     fetchBABookings();
     fetchCurrentRide();
     loadBADrivers();
-
+fetchParcelRequests();
+fetchCurrentParcels();
     const interval = setInterval(() => {
       fetchBABookings();
       fetchCurrentRide();
+         fetchParcelRequests();
+    fetchCurrentParcels();
     }, 5000);
 
     return () => clearInterval(interval);
@@ -148,6 +278,26 @@ const BAHomeFlow = ({ navigation }) => {
       SoundHelper?.stopNotificationSound();
     }
   }, [baPendingBookings]);
+useEffect(() => {
+  const firstParcel = parcelRequests?.[0];
+
+  const firstParcelId =
+    firstParcel?.parcel_booking_id ||
+    firstParcel?.id;
+
+  if (
+    firstParcelId &&
+    firstParcelId !==
+      prevParcelBookingIdRef.current
+  ) {
+    prevParcelBookingIdRef.current =
+      firstParcelId;
+
+    SoundHelper?.playNotificationSound();
+  } else if (!firstParcelId) {
+    prevParcelBookingIdRef.current = null;
+  }
+}, [parcelRequests]);
 
   const [baServices, setBaServices] = useState([]);
 
@@ -176,7 +326,11 @@ const BAHomeFlow = ({ navigation }) => {
 
   const filteredBAServiceIds = new Set([72, 73]);
   const filteredServices = baServices.filter((s) => filteredBAServiceIds.has(Number(s.service_id)));
+const parcelServiceIds = new Set([75]);
 
+const parcelServices = baServices.filter((s) =>
+  parcelServiceIds.has(Number(s.service_id))
+);
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
@@ -227,7 +381,51 @@ const BAHomeFlow = ({ navigation }) => {
       setIsAssigning(false);
     }
   };
+const submitParcelReject = async () => {
+  if (!rejectReason.trim()) {
+    Alert.alert(
+      'Validation',
+      'Please enter reject reason'
+    );
+    return;
+  }
+console.log('Submitting reject for parcel ID:', selectedParcelId, 'with reason:', rejectReason);
+  try {
+    const res = await axios.post(
+      PARCEL_API.REJECT,
+      {
+        parcel_booking_id: selectedParcelId,
+        reject_reason: rejectReason,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${loginToken}`,
+        },
+      },
+    );
+console.log('res====>',res)
+    if (res.data?.status) {
+      Alert.alert(
+        'Success',
+        'Parcel rejected successfully'
+      );
 
+      setShowRejectModal(false);
+      setRejectReason('');
+      setSelectedParcelId(null);
+
+      fetchParcelRequests();
+      fetchCurrentParcels();
+    }
+  } catch (e) {
+    console.log('res====>',e?.response?.data)
+    Alert.alert(
+      'Error',
+      e?.response?.data?.message ||
+        'Something went wrong'
+    );
+  }
+};
   const renderBABookingCard = (booking) => (
     <View key={booking.booking_id} style={styles.activeRideCard}>
       <View style={styles.cardHeader}>
@@ -324,7 +522,256 @@ const BAHomeFlow = ({ navigation }) => {
       </View>
     </View>
   );
+const renderParcelRequestCard = (parcel) => (
+  <View key={parcel.id} style={styles.activeRideCard}>
+    <View style={styles.cardHeader}>
+      <View>
+        <View style={styles.requestBadge}>
+          <Icon name="package" size={16} color="#fff" />
+          <Text style={styles.requestBadgeText}>New Parcel</Text>
+        </View>
 
+        <View
+          style={{
+            ...styles.requestBadge,
+            marginTop: 6,
+            backgroundColor: '#2196F3',
+          }}>
+          <Text style={styles.requestBadgeText}>
+            {parcel.service_name}
+          </Text>
+        </View>
+      </View>
+
+      <Text style={styles.fareAmount}>₹{parcel.amount}</Text>
+    </View>
+
+    <View style={styles.locationContainer}>
+      <View style={styles.locationEntryRow}>
+        <View style={styles.dotCol}>
+          <View style={styles.pickupDot} />
+          <View style={styles.locationLine} />
+        </View>
+
+        <View style={styles.locationTextCol}>
+          <Text style={styles.locationLabel}>Pickup</Text>
+          <Text style={styles.pickupText}>
+            {parcel.pickup_address}
+          </Text>
+
+          {!!parcel.pickup_landmark && (
+            <Text style={styles.customerText}>
+              📍 {parcel.pickup_landmark}
+            </Text>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.locationEntryRow}>
+        <View style={styles.dotCol}>
+          <View style={styles.dropDot} />
+        </View>
+
+        <View style={styles.locationTextCol}>
+          <Text style={styles.locationLabel}>Drop</Text>
+          <Text style={styles.dropText}>
+            {parcel.drop_address}
+          </Text>
+
+          {!!parcel.drop_landmark && (
+            <Text style={styles.customerText}>
+              📍 {parcel.drop_landmark}
+            </Text>
+          )}
+        </View>
+      </View>
+    </View>
+
+    <View style={styles.customerInfo}>
+      <View>
+        <Text style={styles.customerText}>
+          Parcel ID : {parcel.parcel_booking_id}
+        </Text>
+
+        <Text style={styles.customerText}>
+          Receiver : {parcel.receiver_name}
+        </Text>
+
+        <Text style={styles.customerText}>
+          Mobile : {parcel.receiver_mobile}
+        </Text>
+
+        <Text style={styles.customerText}>
+          Weight : {parcel.approx_weight} Kg
+        </Text>
+
+        <Text style={styles.customerText}>
+          Plan : {parcel.plan_name}
+        </Text>
+
+        <Text style={styles.customerText}>
+          Packaging : {parcel.packaging_material_type}
+        </Text>
+      </View>
+    </View>
+
+    {!!parcel.remarks && (
+      <Text
+        style={{
+          color: '#666',
+          marginBottom: 15,
+        }}>
+        Note: {parcel.remarks}
+      </Text>
+    )}
+
+    <View style={styles.buttonRow}>
+      <TouchableOpacity
+        style={styles.rejectBtn}
+       onPress={() => {
+  setSelectedParcelId(
+    parcel.parcel_booking_id,
+  );
+  setShowRejectModal(true);
+}}>
+        <Icon name="x" size={20} color="#fff" />
+        <Text style={styles.btnText}>Reject</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.acceptBtn}
+        onPress={async () => {
+         setAssigningBookingId(parcel.parcel_booking_id);
+
+await loadParcelDrivers();
+
+setShowParcelAssignModal(true);
+        }}>
+        <Icon name="user-check" size={20} color="#fff" />
+        <Text style={styles.btnText}>Assign Driver</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+);
+const PARCEL_STATUS_COLORS = {
+  accepted: '#4CAF50',
+  arrived: '#03A9F4',
+  picked_up: '#FF9800',
+  delivered: '#8BC34A',
+  cancelled: '#F44336',
+};
+
+const getParcelStatusColor = status =>
+  PARCEL_STATUS_COLORS[status?.toLowerCase()] || '#757575';
+
+const renderCurrentParcelCard = parcel => (
+  <View key={parcel.id} style={styles.activeRideCard}>
+    <View style={styles.cardHeader}>
+      <View
+        style={[
+          styles.statusBadge,
+          {
+            backgroundColor: getParcelStatusColor(
+              parcel.status,
+            ),
+          },
+        ]}>
+        <Text style={styles.statusBadgeText}>
+          {parcel.status?.toUpperCase()}
+        </Text>
+      </View>
+
+      <Text style={styles.fareAmount}>
+        ₹{parcel.amount}
+      </Text>
+    </View>
+
+    <View
+      style={{
+        backgroundColor: '#2196F3',
+        alignSelf: 'flex-start',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        marginBottom: 10,
+      }}>
+      <Text style={styles.statusBadgeText}>
+        {parcel.service_name}
+      </Text>
+    </View>
+
+    <View style={styles.locationContainer}>
+      <View style={styles.locationEntryRow}>
+        <View style={styles.dotCol}>
+          <View style={styles.pickupDot} />
+          <View style={styles.locationLine} />
+        </View>
+
+        <View style={styles.locationTextCol}>
+          <Text style={styles.locationLabel}>
+            Pickup
+          </Text>
+
+          <Text style={styles.pickupText}>
+            {parcel.pickup_address}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.locationEntryRow}>
+        <View style={styles.dotCol}>
+          <View style={styles.dropDot} />
+        </View>
+
+        <View style={styles.locationTextCol}>
+          <Text style={styles.locationLabel}>
+            Drop
+          </Text>
+
+          <Text style={styles.dropText}>
+            {parcel.drop_address}
+          </Text>
+        </View>
+      </View>
+    </View>
+
+    <View style={styles.customerInfo}>
+      <View>
+        <Text style={styles.customerText}>
+          Parcel ID : {parcel.parcel_booking_id}
+        </Text>
+
+        <Text style={styles.customerText}>
+          Receiver : {parcel.receiver_name}
+        </Text>
+
+        <Text style={styles.customerText}>
+          Mobile : {parcel.receiver_mobile}
+        </Text>
+
+        <Text style={styles.customerText}>
+          Weight : {parcel.approx_weight} Kg
+        </Text>
+
+        <Text style={styles.customerText}>
+          Driver : {parcel.driver_name}
+        </Text>
+
+        <Text style={styles.customerText}>
+          Driver Mobile : {parcel.driver_phone}
+        </Text>
+
+        <Text style={styles.customerText}>
+          Driver Status : {parcel.driver_status}
+        </Text>
+
+        <Text style={styles.customerText}>
+          Plan : {parcel.plan_name}
+        </Text>
+      </View>
+    </View>
+  </View>
+);
   const renderBAActiveBookingCard = (booking) => {
     console.log('Rendering active booking:', booking);
     const status = booking?.status;
@@ -460,6 +907,7 @@ const BAHomeFlow = ({ navigation }) => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#FF1493']} tintColor="#FF1493" />}
       >
         <StatsCard />
+
  {filteredServices.length > 0 ? (
           <>
             <Text style={[styles.sectionTitle, { marginHorizontal: 16, marginTop: 16 }]}>Self Sharing Services</Text>
@@ -479,16 +927,67 @@ const BAHomeFlow = ({ navigation }) => {
                 <Icon name="chevron-right" size={18} color="#ccc" />
               </TouchableOpacity>
             ))}
+          
              <TouchableOpacity
                                   style={[styles.specialTripBtn, { backgroundColor: '#4CAF50' }]}
 onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
                                 >
                                   <Icon name="list" size={18} color="#fff" />
-                                  <Text style={styles.specialTripBtnText}>My Trips</Text>
+                                  <Text style={styles.specialTripBtnText}>My Sharing Trips</Text>
                                 </TouchableOpacity>
+
           </>
         ) : null}
-        
+          {parcelServices.length > 0 && (
+  <TouchableOpacity
+    style={[
+      styles.specialTripBtn,
+      { backgroundColor: '#FF9800', marginTop: 10 },
+    ]}
+    onPress={() => navigation.navigate('BAParcelHistory')}
+  >
+    <Icon name="package" size={18} color="#fff" />
+    <Text style={styles.specialTripBtnText}>
+      My Parcel Bookings
+    </Text>
+  </TouchableOpacity>
+)}
+        {parcelRequests.length > 0 && (
+  <>
+    <Text
+      style={[
+        styles.sectionTitle,
+        {
+          marginHorizontal: 16,
+          marginTop: 8,
+        },
+      ]}>
+      Parcel Requests
+    </Text>
+
+    {parcelRequests.map(parcel =>
+      renderParcelRequestCard(parcel),
+    )}
+  </>
+)}
+{parcelCurrent.length > 0 && (
+  <>
+    <Text
+      style={[
+        styles.sectionTitle,
+        {
+          marginHorizontal: 16,
+          marginTop: 8,
+        },
+      ]}>
+      Active Parcels
+    </Text>
+
+    {parcelCurrent.map(parcel =>
+      renderCurrentParcelCard(parcel),
+    )}
+  </>
+)}
         {baPendingBookings.length > 0 ? (
           <>
             <Text style={[styles.sectionTitle, { marginHorizontal: 16, marginTop: 8 }]}>New Requests</Text>
@@ -550,6 +1049,123 @@ onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
           </View>
         </View>
       </Modal>
+      <Modal
+  visible={showParcelAssignModal}
+  transparent
+  animationType="slide"
+  onRequestClose={() => setShowParcelAssignModal(false)}>
+
+  <View style={styles.modalContainer}>
+    <View style={[styles.modalContent, { maxHeight: '70%' }]}>
+
+      <Text style={styles.modalTitle}>
+        Assign Parcel Driver
+      </Text>
+
+      <FlatList
+        data={parcelDrivers}
+        keyExtractor={(item, i) =>
+          item.id?.toString() || i.toString()
+        }
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.driverSelectItem}
+            onPress={() => handleAssignParcel(item.id)}
+          >
+            <View style={styles.driverSelectLeft}>
+              <View style={styles.driverSelectAvatar}>
+                <Icon
+                  name="user"
+                  size={20}
+                  color="#FF1493"
+                />
+              </View>
+
+              <View>
+                <Text style={styles.driverSelectName}>
+                  {item.full_name}
+                </Text>
+
+                <Text style={styles.driverSelectPhone}>
+                  {item.phone}
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
+      />
+
+      <TouchableOpacity
+        style={[styles.modalBtn, styles.cancelBtn]}
+        onPress={() =>
+          setShowParcelAssignModal(false)
+        }>
+        <Text style={styles.cancelBtnText}>
+          Cancel
+        </Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+<Modal
+  visible={showRejectModal}
+  transparent
+  animationType="slide">
+
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+
+      <Text style={styles.modalTitle}>
+        Reject Parcel
+      </Text>
+
+      <TextInput
+        value={rejectReason}
+        onChangeText={setRejectReason}
+        placeholder="Enter reject reason"
+        multiline
+        style={{
+          borderWidth: 1,
+          borderColor: '#ddd',
+          borderRadius: 10,
+          minHeight: 100,
+          padding: 10,
+          marginVertical: 15,
+        }}
+      />
+
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+
+        <TouchableOpacity
+          style={[styles.modalBtn, styles.cancelBtn]}
+          onPress={() => {
+            setShowRejectModal(false);
+            setRejectReason('');
+          }}>
+          <Text style={styles.cancelBtnText}>
+            Cancel
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.modalBtn,
+            { backgroundColor: '#F44336' },
+          ]}
+          onPress={submitParcelReject}>
+          <Text
+            style={{
+              color: '#fff',
+              fontWeight: '600',
+            }}>
+            Reject
+          </Text>
+        </TouchableOpacity>
+
+      </View>
+    </View>
+  </View>
+</Modal>
     </View>
   );
 };

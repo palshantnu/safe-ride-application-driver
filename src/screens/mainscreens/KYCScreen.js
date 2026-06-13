@@ -914,6 +914,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         color: '#333',
+        width:'70%'
     },
     modalBody: {
         padding: 16,
