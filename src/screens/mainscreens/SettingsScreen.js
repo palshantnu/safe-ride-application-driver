@@ -52,6 +52,7 @@ useFocusEffect(
 
             try {
                 const response = await fetchPagesByRole({ role: 'driver' });
+      
                 setPages(response.data || []);
             } catch (error) {
                 setPagesError('Unable to load pages at the moment');

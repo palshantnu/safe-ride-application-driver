@@ -1,5 +1,3 @@
-// screens/mainscreens/KYCScreen.js
-
 import React, { useState, useEffect } from 'react';
 import {
     View,
@@ -18,18 +16,41 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Feather';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import { KYC_DOCUMENT, KYC_DOCUMENT_LIST, SUBMIT_KYC } from '../../redux/actions/action-creator';
+import { KYC_DOCUMENT, KYC_DOCUMENT_LIST, SUBMIT_KYC, BA_KYC_DOCUMENT, SUBMIT_BA_KYC } from '../../redux/actions/action-creator';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
+import axios from 'axios';
+
+const API_BASE_URL = 'http://91.108.104.79:3000';
+const IMAGE_BASE_URL = `${API_BASE_URL}/uploads/documents/`;
 
 const KYCScreen = ({ navigation }) => {
-    const { driverKycDocuments, driverKycDocumentsList } = useSelector((state) => state.auth);
+    const { driverKycDocuments, driverKycDocumentsList, userData } = useSelector((state) => state.auth);
+    const dispatch = useDispatch();
+  const loginToken = useSelector((state) => state?.auth?.loginToken);
+    // Check if user is BA (Business Associate)
+    const isBA = !!userData?.ba_name;
+    
+    console.log('Is BA User:', isBA);
+    console.log('UserData:', userData);
 
-    console.log('driverKycDocuments', driverKycDocuments);
+    // BA KYC States
+    const [baKycData, setBaKycData] = useState(null);
+    const [baKycStatus, setBaKycStatus] = useState(null);
+    const [baKycLoading, setBaKycLoading] = useState(false);
+
+    // BA Document Upload States
+    const [aadharFront, setAadharFront] = useState(null);
+    const [aadharBack, setAadharBack] = useState(null);
+    const [panCard, setPanCard] = useState(null);
+    const [gstNumber, setGstNumber] = useState('');
+    const [uploading, setUploading] = useState(false);
+
+    // Driver KYC States (existing)
     const [documents, setDocuments] = useState(driverKycDocuments || []);
     const [uploadedDocs, setUploadedDocs] = useState({});
     const [loading, setLoading] = useState(false);
-    const [uploading, setUploading] = useState({});
+    const [docUploading, setDocUploading] = useState({});
 
     // State for document details modal
     const [selectedDoc, setSelectedDoc] = useState(null);
@@ -42,25 +63,77 @@ const KYCScreen = ({ navigation }) => {
     // Store document details per document
     const [documentDetails, setDocumentDetails] = useState({});
 
-    const { userData } = useSelector((state) => state.auth);
+    // Fetch BA KYC Data
+    const fetchBaKyc = async () => {
+        if (!isBA) return;
+        
+        setBaKycLoading(true);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/api/ba/kyc`, {
+                headers: {
+                    Authorization: `Bearer ${loginToken}`,
+                },
+            });
+            
+            console.log('BA KYC Response:', response.data);
+            
+            if (response.data?.status && response.data?.data) {
+                const kycData = response.data.data;
+                setBaKycData(kycData);
+                setBaKycStatus(kycData.status);
+                
+                // Set existing images if available
+                if (kycData.aadhar_front_image) {
+                    setAadharFront({
+                        uri: `${IMAGE_BASE_URL}${kycData.aadhar_front_image}`,
+                        isExisting: true,
+                        path: kycData.aadhar_front_image
+                    });
+                }
+                if (kycData.aadhar_back_image) {
+                    setAadharBack({
+                        uri: `${IMAGE_BASE_URL}${kycData.aadhar_back_image}`,
+                        isExisting: true,
+                        path: kycData.aadhar_back_image
+                    });
+                }
+                if (kycData.pan_card_image) {
+                    setPanCard({
+                        uri: `${IMAGE_BASE_URL}${kycData.pan_card_image}`,
+                        isExisting: true,
+                        path: kycData.pan_card_image
+                    });
+                }
+                if (kycData.gst_number) {
+                    setGstNumber(kycData.gst_number);
+                }
+            }
+        } catch (error) {
+            console.log('Error fetching BA KYC:', error);
+        } finally {
+            setBaKycLoading(false);
+        }
+    };
 
     useEffect(() => {
-        fetchDocuments();
-        fetchDocumentsData();
-    }, []);
+        if (isBA) {
+            fetchBaKyc();
+        } else {
+            fetchDocuments();
+            fetchDocumentsData();
+        }
+    }, [isBA]);
 
     // Populate existing data when driverKycDocumentsList is available
     useEffect(() => {
-        if (driverKycDocumentsList && driverKycDocumentsList.length > 0) {
+        if (!isBA && driverKycDocumentsList && driverKycDocumentsList.length > 0) {
             const existingData = {};
             const uploadedData = {};
 
             driverKycDocumentsList.forEach((existingDoc) => {
-                // Find matching document from the required documents list
                 const matchedDoc = documents.find(doc => String(doc.id) === String(existingDoc.document_type));
 
                 if (matchedDoc) {
-                    // Store document details
                     existingData[matchedDoc.id] = {
                         document_number: existingDoc.document_number || '',
                         expiry_date: existingDoc.expiry_date ? existingDoc.expiry_date : '',
@@ -68,7 +141,6 @@ const KYCScreen = ({ navigation }) => {
                         document_type: matchedDoc.document_type || existingDoc.document_type
                     };
 
-                    // Store uploaded file info
                     if (existingDoc.document_file_url) {
                         uploadedData[matchedDoc.id] = {
                             uri: existingDoc.document_file_url,
@@ -79,7 +151,7 @@ const KYCScreen = ({ navigation }) => {
                             expiry_date: existingDoc.expiry_date ? new Date(existingDoc.expiry_date).toLocaleDateString('en-GB') : '',
                             remark: existingDoc.remark || '',
                             document_type: matchedDoc.document_type || existingDoc.document_type,
-                            isExisting: true // Flag to indicate this is an existing uploaded file
+                            isExisting: true
                         };
                     }
                 }
@@ -88,11 +160,7 @@ const KYCScreen = ({ navigation }) => {
             setDocumentDetails(existingData);
             setUploadedDocs(uploadedData);
         }
-    }, [driverKycDocumentsList, documents]);
-
-    const dispatch = useDispatch();
-
-  
+    }, [driverKycDocumentsList, documents, isBA]);
 
     const fetchDocuments = async () => {
         await dispatch(KYC_DOCUMENT());
@@ -146,6 +214,214 @@ const KYCScreen = ({ navigation }) => {
         return true;
     };
 
+    // ==================== BA KYC Functions ====================
+
+    const showImagePickerForBA = (type) => {
+        Alert.alert(
+            'Upload Document',
+            `Choose option to upload ${getBADocumentTitle(type)}`,
+            [
+                { text: 'Take Photo', onPress: () => openCameraForBA(type) },
+                { text: 'Choose from Gallery', onPress: () => openGalleryForBA(type) },
+                { text: 'Cancel', style: 'cancel' },
+            ]
+        );
+    };
+
+    const openCameraForBA = async (type) => {
+        const hasPermission = await requestCameraPermission();
+        if (!hasPermission) {
+            Alert.alert('Permission Denied', 'Camera permission is required to capture photos');
+            return;
+        }
+
+        const options = {
+            mediaType: 'photo',
+            includeBase64: false,
+            quality: 0.8,
+            saveToPhotos: true,
+            maxWidth: 1024,
+            maxHeight: 1024,
+        };
+
+        launchCamera(options, (response) => {
+            if (response.assets && response.assets[0]) {
+                handleBADocumentUpload(type, response.assets[0]);
+            }
+        });
+    };
+
+    const openGalleryForBA = async (type) => {
+        const hasPermission = await requestStoragePermission();
+        if (!hasPermission) {
+            Alert.alert('Permission Denied', 'Storage permission is required to access gallery');
+            return;
+        }
+
+        const options = {
+            mediaType: 'photo',
+            includeBase64: false,
+            quality: 0.8,
+            selectionLimit: 1,
+            maxWidth: 1024,
+            maxHeight: 1024,
+        };
+
+        launchImageLibrary(options, (response) => {
+            if (response.assets && response.assets[0]) {
+                handleBADocumentUpload(type, response.assets[0]);
+            }
+        });
+    };
+
+    const handleBADocumentUpload = (type, file) => {
+        const imageData = {
+            uri: file.uri,
+            name: file.fileName || `${type}_${Date.now()}.jpg`,
+            type: file.type || 'image/jpeg',
+            isExisting: false
+        };
+
+        switch (type) {
+            case 'aadhar_front':
+                setAadharFront(imageData);
+                break;
+            case 'aadhar_back':
+                setAadharBack(imageData);
+                break;
+            case 'pan_card':
+                setPanCard(imageData);
+                break;
+        }
+    };
+
+    const removeBADocument = (type) => {
+        Alert.alert(
+            'Remove Document',
+            'Are you sure you want to remove this document?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Remove',
+                    onPress: () => {
+                        switch (type) {
+                            case 'aadhar_front':
+                                setAadharFront(null);
+                                break;
+                            case 'aadhar_back':
+                                setAadharBack(null);
+                                break;
+                            case 'pan_card':
+                                setPanCard(null);
+                                break;
+                        }
+                    },
+                    style: 'destructive'
+                }
+            ]
+        );
+    };
+
+    const getBADocumentTitle = (type) => {
+        const titles = {
+            'aadhar_front': 'Aadhar Card (Front)',
+            'aadhar_back': 'Aadhar Card (Back)',
+            'pan_card': 'PAN Card',
+        };
+        return titles[type] || type;
+    };
+
+    const getBAStatusColor = (status) => {
+        switch (status) {
+            case 'approved': return '#4CAF50';
+            case 'pending': return '#FF9800';
+            case 'rejected': return '#F44336';
+            default: return '#757575';
+        }
+    };
+
+    const getBAStatusText = (status) => {
+        switch (status) {
+            case 'approved': return 'Approved';
+            case 'pending': return 'Pending Verification';
+            case 'rejected': return 'Rejected';
+            default: return 'Not Submitted';
+        }
+    };
+
+    const handleSubmitBAKYC = async () => {
+        if (!aadharFront || !aadharBack || !panCard) {
+            Alert.alert('Error', 'Please upload all required documents (Aadhar Front, Aadhar Back, PAN Card)');
+            return;
+        }
+
+        if (!gstNumber.trim()) {
+            Alert.alert('Error', 'Please enter GST number');
+            return;
+        }
+
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            
+            // Append files only if they are new uploads (not existing)
+            if (aadharFront && !aadharFront.isExisting) {
+                formData.append('aadhar_front_image', {
+                    uri: aadharFront.uri,
+                    type: aadharFront.type,
+                    name: aadharFront.name,
+                });
+            }
+            
+            if (aadharBack && !aadharBack.isExisting) {
+                formData.append('aadhar_back_image', {
+                    uri: aadharBack.uri,
+                    type: aadharBack.type,
+                    name: aadharBack.name,
+                });
+            }
+            
+            if (panCard && !panCard.isExisting) {
+                formData.append('pan_card_image', {
+                    uri: panCard.uri,
+                    type: panCard.type,
+                    name: panCard.name,
+                });
+            }
+            
+            formData.append('gst_number', gstNumber);
+
+            console.log('Submitting BA KYC...');
+
+            const response = await axios.post(`${API_BASE_URL}/api/ba/upload-kyc`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${loginToken}`,
+                },
+            });
+
+            console.log('BA KYC Response:', response.data);
+
+            if (response.data?.status) {
+                Alert.alert(
+                    'Success',
+                    response.data?.message || 'KYC submitted successfully. Pending verification.',
+                    [{ text: 'OK', onPress: () => navigation.goBack() }]
+                );
+                await fetchBaKyc(); // Refresh data
+            } else {
+                Alert.alert('Error', response.data?.message || 'Failed to submit KYC');
+            }
+        } catch (error) {
+            console.log('BA KYC Error:', error);
+            Alert.alert('Error', error?.response?.data?.message || 'Something went wrong');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    // ==================== Driver KYC Functions (Existing) ====================
+
     const getDocumentTypeKey = (documentType) => {
         const normalized = String(documentType || '').toLowerCase().trim();
 
@@ -163,7 +439,6 @@ const KYCScreen = ({ navigation }) => {
     };
 
     const showImagePickerOptions = (documentId, documentType) => {
-        // First check if document details are filled
         const details = documentDetails[documentId];
         const hasRequiredExpiry = requiresExpiryDate(documentType) ? !!details?.expiry_date : true;
 
@@ -187,21 +462,86 @@ const KYCScreen = ({ navigation }) => {
             'Upload Document',
             `Choose option to upload ${getDocumentTitle(documentType)}`,
             [
-                {
-                    text: 'Take Photo',
-                    onPress: () => openCamera(documentId, documentType),
-                },
-                {
-                    text: 'Choose from Gallery',
-                    onPress: () => openGallery(documentId, documentType),
-                },
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
-                },
-            ],
-            { cancelable: true }
+                { text: 'Take Photo', onPress: () => openDriverCamera(documentId, documentType) },
+                { text: 'Choose from Gallery', onPress: () => openDriverGallery(documentId, documentType) },
+                { text: 'Cancel', style: 'cancel' },
+            ]
         );
+    };
+
+    const openDriverCamera = async (documentId, documentType) => {
+        const hasPermission = await requestCameraPermission();
+        if (!hasPermission) {
+            Alert.alert('Permission Denied', 'Camera permission is required to capture photos');
+            return;
+        }
+
+        const options = {
+            mediaType: 'photo',
+            includeBase64: false,
+            quality: 0.8,
+            saveToPhotos: true,
+            maxWidth: 1024,
+            maxHeight: 1024,
+        };
+
+        launchCamera(options, (response) => {
+            if (response.assets && response.assets[0]) {
+                handleDriverDocumentUpload(documentId, documentType, response.assets[0]);
+            }
+        });
+    };
+
+    const openDriverGallery = async (documentId, documentType) => {
+        const hasPermission = await requestStoragePermission();
+        if (!hasPermission) {
+            Alert.alert('Permission Denied', 'Storage permission is required to access gallery');
+            return;
+        }
+
+        const options = {
+            mediaType: 'photo',
+            includeBase64: false,
+            quality: 0.8,
+            selectionLimit: 1,
+            maxWidth: 1024,
+            maxHeight: 1024,
+        };
+
+        launchImageLibrary(options, (response) => {
+            if (response.assets && response.assets[0]) {
+                handleDriverDocumentUpload(documentId, documentType, response.assets[0]);
+            }
+        });
+    };
+
+    const handleDriverDocumentUpload = async (documentId, documentType, file) => {
+        setDocUploading(prev => ({ ...prev, [documentId]: true }));
+
+        try {
+            const details = documentDetails[documentId];
+
+            setUploadedDocs(prev => ({
+                ...prev,
+                [documentId]: {
+                    uri: file.uri,
+                    name: file.fileName,
+                    type: file.type,
+                    uploaded: true,
+                    document_number: details?.document_number || '',
+                    expiry_date: details?.expiry_date || '',
+                    remark: details?.remark || '',
+                    isExisting: false
+                }
+            }));
+
+            Alert.alert('Success', `${getDocumentTitle(documentType)} uploaded successfully`);
+        } catch (error) {
+            console.log('Upload error:', error);
+            Alert.alert('Error', 'Failed to upload document');
+        } finally {
+            setDocUploading(prev => ({ ...prev, [documentId]: false }));
+        }
     };
 
     const openDetailsModal = (documentId, documentType) => {
@@ -249,91 +589,6 @@ const KYCScreen = ({ navigation }) => {
         }
     };
 
-    const openCamera = async (documentId, documentType) => {
-        const hasPermission = await requestCameraPermission();
-        if (!hasPermission) {
-            Alert.alert('Permission Denied', 'Camera permission is required to capture photos');
-            return;
-        }
-
-        const options = {
-            mediaType: 'photo',
-            includeBase64: false,
-            quality: 0.8,
-            saveToPhotos: true,
-            maxWidth: 1024,
-            maxHeight: 1024,
-        };
-
-        launchCamera(options, (response) => {
-            if (response.didCancel) {
-                console.log('User cancelled camera');
-            } else if (response.error) {
-                console.log('Camera Error: ', response.error);
-                Alert.alert('Error', 'Failed to capture image');
-            } else if (response.assets && response.assets[0]) {
-                handleDocumentUpload(documentId, documentType, response.assets[0]);
-            }
-        });
-    };
-
-    const openGallery = async (documentId, documentType) => {
-        const hasPermission = await requestStoragePermission();
-        if (!hasPermission) {
-            Alert.alert('Permission Denied', 'Storage permission is required to access gallery');
-            return;
-        }
-
-        const options = {
-            mediaType: 'photo',
-            includeBase64: false,
-            quality: 0.8,
-            selectionLimit: 1,
-            maxWidth: 1024,
-            maxHeight: 1024,
-        };
-
-        launchImageLibrary(options, (response) => {
-            if (response.didCancel) {
-                console.log('User cancelled gallery');
-            } else if (response.error) {
-                console.log('Gallery Error: ', response.error);
-                Alert.alert('Error', 'Failed to select image');
-            } else if (response.assets && response.assets[0]) {
-                handleDocumentUpload(documentId, documentType, response.assets[0]);
-            }
-        });
-    };
-
-    const handleDocumentUpload = async (documentId, documentType, file) => {
-        setUploading(prev => ({ ...prev, [documentId]: true }));
-
-        try {
-            const details = documentDetails[documentId];
-
-            setUploadedDocs(prev => ({
-                ...prev,
-                [documentId]: {
-                    uri: file.uri,
-                    name: file.fileName,
-                    type: file.type,
-                    uploaded: true,
-                    document_number: details?.document_number || '',
-                    expiry_date: details?.expiry_date || '',
-                    remark: details?.remark || '',
-                    isExisting: false // This is a new upload
-                }
-            }));
-
-            Alert.alert('Success', `${getDocumentTitle(documentType)} uploaded successfully`);
-        } catch (error) {
-            console.log('Upload error:', error);
-            Alert.alert('Error', 'Failed to upload document');
-        } finally {
-            setUploading(prev => ({ ...prev, [documentId]: false }));
-        }
-    };
-
     const getDocumentTitle = (documentType) => {
         const type = getDocumentTypeKey(documentType);
         const titles = {
@@ -345,7 +600,6 @@ const KYCScreen = ({ navigation }) => {
             'insurance': 'Insurance Document',
             'vehicle_number': 'Vehicle Number',
         };
-        // If documentType is a number/id, try to find from driverKycDocuments
         return titles[type] || type.replace('_', ' ').toUpperCase();
     };
 
@@ -382,9 +636,9 @@ const KYCScreen = ({ navigation }) => {
         return isDocumentDetailsFilled(docId) && isDocumentUploaded(docId);
     };
 
-    const renderDocumentCard = (doc) => {
+    const renderDriverDocumentCard = (doc) => {
         const isUploaded = uploadedDocs[doc.id];
-        const isUploading = uploading[doc.id];
+        const isUploading = docUploading[doc.id];
         const detailsFilled = isDocumentDetailsFilled(doc.id);
         const isComplete = isDocumentComplete(doc.id);
         const details = documentDetails[doc.id];
@@ -432,15 +686,8 @@ const KYCScreen = ({ navigation }) => {
 
                 {isUploaded && (
                     <View style={styles.uploadedPreview}>
-                        {console.log('isUploaded.uri ', isUploaded.uri)
-                        }
                         <Image
-                            source={{
-                                uri: isUploaded.uri.replace(
-                                    'http://localhost:3000',
-                                    'http://91.108.104.79:3000'
-                                )
-                            }}
+                            source={{ uri: isUploaded.uri?.replace('http://localhost:3000', API_BASE_URL) }}
                             style={styles.previewImage}
                         />
                         <TouchableOpacity
@@ -495,11 +742,10 @@ const KYCScreen = ({ navigation }) => {
         );
     };
 
-    const handleSubmitKYC = async () => {
+    const handleDriverSubmitKYC = async () => {
         const totalDocuments = documents.length;
         let completedCount = 0;
 
-        // Check each document has details and file
         documents.forEach(doc => {
             if (isDocumentComplete(doc.id)) {
                 completedCount++;
@@ -507,8 +753,6 @@ const KYCScreen = ({ navigation }) => {
         });
 
         const formData = new FormData();
-
-        // driver_id
         formData.append('driver_id', userData?.id);
 
         documents.forEach((doc, index) => {
@@ -516,13 +760,11 @@ const KYCScreen = ({ navigation }) => {
             const details = documentDetails[doc.id];
 
             if (uploadedFile && details) {
-                // documents array fields
                 formData.append(`documents[${index}][document_type]`, doc.id);
                 formData.append(`documents[${index}][document_number]`, details.document_number);
                 formData.append(`documents[${index}][expiry_date]`, details.expiry_date);
                 formData.append(`documents[${index}][remark]`, details.remark || '');
 
-                // Only append file if it's a new upload (not existing from server)
                 if (!uploadedFile.isExisting) {
                     formData.append(`document_files[${index}]`, {
                         uri: uploadedFile.uri,
@@ -533,180 +775,368 @@ const KYCScreen = ({ navigation }) => {
             }
         });
 
-        console.log('formData', formData);
-
         try {
             setLoading(true);
-
             const response = await dispatch(SUBMIT_KYC(formData));
-
-            Alert.alert(
-                'Success',
-                response?.message || 'KYC submitted successfully',
-                [{ text: 'OK', onPress: () => navigation.goBack() }]
-            );
-
+            Alert.alert('Success', response?.message || 'KYC submitted successfully', [{ text: 'OK', onPress: () => navigation.goBack() }]);
         } catch (error) {
-            Alert.alert(
-                'Error',
-                error?.response?.data?.message || 'Failed to submit KYC'
-            );
+            Alert.alert('Error', error?.response?.data?.message || 'Failed to submit KYC');
         } finally {
             setLoading(false);
         }
     };
 
-    const BackHeader = ({ title, navigation }) => {
-      return (
-       <LinearGradient
-            colors={['#ff7f50', '#ff7f50', '#e20f7a']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.topHeader}
-          >
-          <TouchableOpacity 
-            style={styles.backBtn} 
-            onPress={() => navigation.goBack()}
-          >
-            <Icon name="arrow-left" size={22} color="#fff" />
-          </TouchableOpacity>
-    
-          <Text style={styles.topHeaderTitle}>{title}</Text>
-    
-          {/* Right side empty space for perfect center alignment */}
-          <View style={{ width: 30 }} />
-        </LinearGradient>
-      );
-    };
+    // ==================== BA KYC Render Component ====================
 
-    if (loading && documents.length === 0) {
+    const renderBAKYCScreen = () => {
+        if (baKycLoading) {
+            return (
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color="#FF1493" />
+                </View>
+            );
+        }
+
+        const isVerified = baKycStatus === 'approved';
+        const isPending = baKycStatus === 'pending';
+        const canEdit = !isVerified;
+
         return (
-            <View style={styles.loaderContainer}>
-                <ActivityIndicator size="large" color="#FF1493" />
-            </View>
-        );
-    }
+            <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+                <BackHeader title="BA KYC Verification" navigation={navigation} />
 
-    return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-               <BackHeader title="KYC Verification" navigation={navigation} />
-            <View style={styles.kycIntroHeader}>
-                <Text style={styles.kycIntroHeaderTitle}>KYC Verification</Text>
-                <Text style={styles.headerSubtitle}>
-                    Please fill document details and upload the following documents to complete your KYC verification
-                </Text>
-            </View>
+                <View style={styles.kycIntroHeader}>
+                    <Text style={styles.kycIntroHeaderTitle}>Business Associate KYC</Text>
+                    <Text style={styles.headerSubtitle}>
+                        Please upload the following documents to complete your KYC verification
+                    </Text>
+                </View>
 
-            <View style={styles.documentsContainer}>
-                {documents.map(renderDocumentCard)}
-            </View>
-
-            <View style={styles.infoBox}>
-                <Icon name="info" size={20} color="#FF1493" />
-                <Text style={styles.infoText}>
-                    Make sure all documents are clear and readable.
-                    Accepted formats: JPG, PNG (Max size: 5MB)
-                </Text>
-            </View>
-
-            <TouchableOpacity
-                style={styles.submitButton}
-                onPress={handleSubmitKYC}
-                disabled={loading}
-            >
-                {loading ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                    <Text style={styles.submitButtonText}>Submit KYC</Text>
+                {/* Status Card */}
+                {baKycStatus && (
+                    <View style={[styles.statusCard, { backgroundColor: getBAStatusColor(baKycStatus) + '20' }]}>
+                        <View style={[styles.statusDot, { backgroundColor: getBAStatusColor(baKycStatus) }]} />
+                        <Text style={[styles.statusText, { color: getBAStatusColor(baKycStatus) }]}>
+                            Status: {getBAStatusText(baKycStatus)}
+                        </Text>
+                    </View>
                 )}
-            </TouchableOpacity>
 
-            {/* Document Details Modal */}
-            <Modal
-                visible={showDetailsModal}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setShowDetailsModal(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>
-                                Document Details - {selectedDoc ? getDocumentTitle(selectedDoc.type) : ''}
-                            </Text>
-                            <TouchableOpacity onPress={() => setShowDetailsModal(false)}>
-                                <Icon name="x" size={24} color="#333" />
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={styles.modalBody}>
-                            <Text style={styles.inputLabel}>Document Number *</Text>
-                            <TextInput
-                                style={styles.textInput}
-                                placeholder="Enter document number"
-                                placeholderTextColor="#000"
-                                value={documentNumber}
-                                onChangeText={setDocumentNumber}
-                            />
-
-                            {requiresExpiryDate(selectedDoc?.type) && (
-                                <>
-                                    <Text style={styles.inputLabel}>Expiry Date *</Text>
-                                    <TouchableOpacity
-                                        style={styles.dateInput}
-                                        onPress={() => setShowDatePicker(true)}
-                                    >
-                                        <Text style={[styles.dateText, !expiryDate && styles.placeholderText]}>
-                                            {expiryDate || 'Select expiry date'}
-                                        </Text>
-                                        <Icon name="calendar" size={20} color="#999" />
-                                    </TouchableOpacity>
-                                </>
-                            ) }
-
-                            {showDatePicker && (
-                                <DateTimePicker
-                                    value={new Date()}
-                                    mode="date"
-                                    display="default"
-                                    onChange={onDateChange}
-                                    minimumDate={new Date()}
-                                />
-                            )}
-
-                            <Text style={styles.inputLabel}>Remark (Optional)</Text>
-                            <TextInput
-                                style={[styles.textInput, styles.textArea]}
-                                placeholder="Enter any remarks"
-                                placeholderTextColor="#000"
-                                value={remark}
-                                onChangeText={setRemark}
-                                multiline
-                                numberOfLines={3}
-                            />
-                        </View>
-
-                        <View style={styles.modalFooter}>
+                <View style={styles.documentsContainer}>
+                    {/* Aadhar Front */}
+                    <View style={styles.baDocumentCard}>
+                        <Text style={styles.baDocumentTitle}>Aadhar Card (Front) *</Text>
+                        {aadharFront ? (
+                            <View style={styles.baPreviewContainer}>
+                                <Image source={{ uri: aadharFront.uri }} style={styles.baPreviewImage} />
+                                {canEdit && (
+                                    <View style={styles.baButtonRow}>
+                                        <TouchableOpacity
+                                            style={[styles.baButton, styles.baChangeButton]}
+                                            onPress={() => showImagePickerForBA('aadhar_front')}
+                                        >
+                                            <Icon name="edit-2" size={16} color="#fff" />
+                                            <Text style={styles.baButtonText}>Change</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.baButton, styles.baRemoveButton]}
+                                            onPress={() => removeBADocument('aadhar_front')}
+                                        >
+                                            <Icon name="trash-2" size={16} color="#fff" />
+                                            <Text style={styles.baButtonText}>Remove</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            </View>
+                        ) : (
                             <TouchableOpacity
-                                style={styles.cancelButton}
-                                onPress={() => setShowDetailsModal(false)}
+                                style={styles.baUploadButton}
+                                onPress={() => showImagePickerForBA('aadhar_front')}
+                                disabled={!canEdit}
                             >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                                <Icon name="upload-cloud" size={24} color="#FF1493" />
+                                <Text style={styles.baUploadText}>Upload Aadhar Front</Text>
                             </TouchableOpacity>
+                        )}
+                    </View>
+
+                    {/* Aadhar Back */}
+                    <View style={styles.baDocumentCard}>
+                        <Text style={styles.baDocumentTitle}>Aadhar Card (Back) *</Text>
+                        {aadharBack ? (
+                            <View style={styles.baPreviewContainer}>
+                                <Image source={{ uri: aadharBack.uri }} style={styles.baPreviewImage} />
+                                {canEdit && (
+                                    <View style={styles.baButtonRow}>
+                                        <TouchableOpacity
+                                            style={[styles.baButton, styles.baChangeButton]}
+                                            onPress={() => showImagePickerForBA('aadhar_back')}
+                                        >
+                                            <Icon name="edit-2" size={16} color="#fff" />
+                                            <Text style={styles.baButtonText}>Change</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.baButton, styles.baRemoveButton]}
+                                            onPress={() => removeBADocument('aadhar_back')}
+                                        >
+                                            <Icon name="trash-2" size={16} color="#fff" />
+                                            <Text style={styles.baButtonText}>Remove</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            </View>
+                        ) : (
                             <TouchableOpacity
-                                style={styles.saveButton}
-                                onPress={saveDocumentDetails}
+                                style={styles.baUploadButton}
+                                onPress={() => showImagePickerForBA('aadhar_back')}
+                                disabled={!canEdit}
                             >
-                                <Text style={styles.saveButtonText}>Save Details</Text>
+                                <Icon name="upload-cloud" size={24} color="#FF1493" />
+                                <Text style={styles.baUploadText}>Upload Aadhar Back</Text>
                             </TouchableOpacity>
-                        </View>
+                        )}
+                    </View>
+
+                    {/* PAN Card */}
+                    <View style={styles.baDocumentCard}>
+                        <Text style={styles.baDocumentTitle}>PAN Card *</Text>
+                        {panCard ? (
+                            <View style={styles.baPreviewContainer}>
+                                <Image source={{ uri: panCard.uri }} style={styles.baPreviewImage} />
+                                {canEdit && (
+                                    <View style={styles.baButtonRow}>
+                                        <TouchableOpacity
+                                            style={[styles.baButton, styles.baChangeButton]}
+                                            onPress={() => showImagePickerForBA('pan_card')}
+                                        >
+                                            <Icon name="edit-2" size={16} color="#fff" />
+                                            <Text style={styles.baButtonText}>Change</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.baButton, styles.baRemoveButton]}
+                                            onPress={() => removeBADocument('pan_card')}
+                                        >
+                                            <Icon name="trash-2" size={16} color="#fff" />
+                                            <Text style={styles.baButtonText}>Remove</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                style={styles.baUploadButton}
+                                onPress={() => showImagePickerForBA('pan_card')}
+                                disabled={!canEdit}
+                            >
+                                <Icon name="upload-cloud" size={24} color="#FF1493" />
+                                <Text style={styles.baUploadText}>Upload PAN Card</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
+                    {/* GST Number */}
+                    <View style={styles.baDocumentCard}>
+                        <Text style={styles.baDocumentTitle}>GST Number *</Text>
+                        <TextInput
+                            style={[styles.textInput, !canEdit && styles.disabledInput]}
+                            placeholder="Enter GST Number"
+                            placeholderTextColor="#999"
+                            value={gstNumber}
+                            onChangeText={setGstNumber}
+                            editable={canEdit}
+                        />
                     </View>
                 </View>
-            </Modal>
 
-            <View style={styles.footer} />
-        </ScrollView>
-    );
+                <View style={styles.infoBox}>
+                    <Icon name="info" size={20} color="#FF1493" />
+                    <Text style={styles.infoText}>
+                        Make sure all documents are clear and readable.
+                        Accepted formats: JPG, PNG (Max size: 5MB)
+                    </Text>
+                </View>
+
+                {canEdit && (
+                    <TouchableOpacity
+                        style={styles.submitButton}
+                        onPress={handleSubmitBAKYC}
+                        disabled={uploading}
+                    >
+                        {uploading ? (
+                            <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>
+                                {baKycData ? 'Update KYC' : 'Submit KYC'}
+                            </Text>
+                        )}
+                    </TouchableOpacity>
+                )}
+
+                {isVerified && (
+                    <View style={styles.verifiedContainer}>
+                        <Icon name="check-circle" size={24} color="#4CAF50" />
+                        <Text style={styles.verifiedText}>Your KYC has been verified successfully!</Text>
+                    </View>
+                )}
+
+                <View style={styles.footer} />
+            </ScrollView>
+        );
+    };
+
+    // ==================== Driver KYC Render Component ====================
+
+    const renderDriverKYCScreen = () => {
+        if (loading && documents.length === 0) {
+            return (
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color="#FF1493" />
+                </View>
+            );
+        }
+
+        return (
+            <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+                <BackHeader title="KYC Verification" navigation={navigation} />
+
+                <View style={styles.kycIntroHeader}>
+                    <Text style={styles.kycIntroHeaderTitle}>KYC Verification</Text>
+                    <Text style={styles.headerSubtitle}>
+                        Please fill document details and upload the following documents to complete your KYC verification
+                    </Text>
+                </View>
+
+                <View style={styles.documentsContainer}>
+                    {documents.map(renderDriverDocumentCard)}
+                </View>
+
+                <View style={styles.infoBox}>
+                    <Icon name="info" size={20} color="#FF1493" />
+                    <Text style={styles.infoText}>
+                        Make sure all documents are clear and readable.
+                        Accepted formats: JPG, PNG (Max size: 5MB)
+                    </Text>
+                </View>
+
+                <TouchableOpacity
+                    style={styles.submitButton}
+                    onPress={handleDriverSubmitKYC}
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                        <Text style={styles.submitButtonText}>Submit KYC</Text>
+                    )}
+                </TouchableOpacity>
+
+                {/* Document Details Modal */}
+                <Modal
+                    visible={showDetailsModal}
+                    animationType="slide"
+                    transparent={true}
+                    onRequestClose={() => setShowDetailsModal(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContent}>
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>
+                                    Document Details - {selectedDoc ? getDocumentTitle(selectedDoc.type) : ''}
+                                </Text>
+                                <TouchableOpacity onPress={() => setShowDetailsModal(false)}>
+                                    <Icon name="x" size={24} color="#333" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.modalBody}>
+                                <Text style={styles.inputLabel}>Document Number *</Text>
+                                <TextInput
+                                    style={styles.textInput}
+                                    placeholder="Enter document number"
+                                    placeholderTextColor="#999"
+                                    value={documentNumber}
+                                    onChangeText={setDocumentNumber}
+                                />
+
+                                {requiresExpiryDate(selectedDoc?.type) && (
+                                    <>
+                                        <Text style={styles.inputLabel}>Expiry Date *</Text>
+                                        <TouchableOpacity
+                                            style={styles.dateInput}
+                                            onPress={() => setShowDatePicker(true)}
+                                        >
+                                            <Text style={[styles.dateText, !expiryDate && styles.placeholderText]}>
+                                                {expiryDate || 'Select expiry date'}
+                                            </Text>
+                                            <Icon name="calendar" size={20} color="#999" />
+                                        </TouchableOpacity>
+                                    </>
+                                )}
+
+                                {showDatePicker && (
+                                    <DateTimePicker
+                                        value={new Date()}
+                                        mode="date"
+                                        display="default"
+                                        onChange={onDateChange}
+                                        minimumDate={new Date()}
+                                    />
+                                )}
+
+                                <Text style={styles.inputLabel}>Remark (Optional)</Text>
+                                <TextInput
+                                    style={[styles.textInput, styles.textArea]}
+                                    placeholder="Enter any remarks"
+                                    placeholderTextColor="#999"
+                                    value={remark}
+                                    onChangeText={setRemark}
+                                    multiline
+                                    numberOfLines={3}
+                                />
+                            </View>
+
+                            <View style={styles.modalFooter}>
+                                <TouchableOpacity
+                                    style={styles.cancelButton}
+                                    onPress={() => setShowDetailsModal(false)}
+                                >
+                                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.saveButton}
+                                    onPress={saveDocumentDetails}
+                                >
+                                    <Text style={styles.saveButtonText}>Save Details</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
+                <View style={styles.footer} />
+            </ScrollView>
+        );
+    };
+
+    const BackHeader = ({ title, navigation }) => {
+        return (
+            <LinearGradient
+                colors={['#ff7f50', '#ff7f50', '#e20f7a']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.topHeader}
+            >
+                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+                    <Icon name="arrow-left" size={22} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.topHeaderTitle}>{title}</Text>
+                <View style={{ width: 30 }} />
+            </LinearGradient>
+        );
+    };
+
+    // Render based on user type
+    return isBA ? renderBAKYCScreen() : renderDriverKYCScreen();
 };
 
 const styles = StyleSheet.create({
@@ -719,6 +1149,24 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#f5f5f5',
+    },
+    topHeader: {
+        height: 60,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 4,
+        borderBottomLeftRadius: 40,
+        borderBottomRightRadius: 40,
+    },
+    topHeaderTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#ffffff',
+    },
+    backBtn: {
+        position: 'absolute',
+        left: 16,
     },
     kycIntroHeader: {
         backgroundColor: '#fff',
@@ -736,6 +1184,24 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
         lineHeight: 20,
+    },
+    statusCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        marginHorizontal: 16,
+        marginTop: 16,
+        borderRadius: 8,
+        gap: 8,
+    },
+    statusDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    statusText: {
+        fontSize: 14,
+        fontWeight: '600',
     },
     documentsContainer: {
         padding: 16,
@@ -850,6 +1316,93 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
     },
+    // BA Specific Styles
+    baDocumentCard: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    baDocumentTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 12,
+    },
+    baUploadButton: {
+        borderWidth: 1,
+        borderColor: '#FF1493',
+        borderStyle: 'dashed',
+        borderRadius: 8,
+        padding: 20,
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#FFF0F6',
+    },
+    baUploadText: {
+        fontSize: 14,
+        color: '#FF1493',
+        fontWeight: '500',
+    },
+    baPreviewContainer: {
+        alignItems: 'center',
+    },
+    baPreviewImage: {
+        width: '100%',
+        height: 150,
+        borderRadius: 8,
+        resizeMode: 'cover',
+        marginBottom: 12,
+    },
+    baButtonRow: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    baButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 8,
+        borderRadius: 6,
+        gap: 6,
+    },
+    baChangeButton: {
+        backgroundColor: '#2196F3',
+    },
+    baRemoveButton: {
+        backgroundColor: '#F44336',
+    },
+    baButtonText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    disabledInput: {
+        backgroundColor: '#f5f5f5',
+        color: '#999',
+    },
+    verifiedContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#E8F5E9',
+        marginHorizontal: 16,
+        marginTop: 16,
+        padding: 16,
+        borderRadius: 12,
+        gap: 8,
+    },
+    verifiedText: {
+        fontSize: 14,
+        color: '#4CAF50',
+        fontWeight: '500',
+    },
     infoBox: {
         flexDirection: 'row',
         backgroundColor: '#FFF0F6',
@@ -914,7 +1467,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         color: '#333',
-        width:'70%'
+        width: '70%',
     },
     modalBody: {
         padding: 16,
@@ -949,22 +1502,12 @@ const styles = StyleSheet.create({
         padding: 12,
         backgroundColor: '#fff',
     },
-    optionalNoteBox: {
-        marginTop: 8,
-        padding: 10,
-        borderRadius: 8,
-        backgroundColor: '#FFF0F6',
-    },
-    optionalNoteText: {
-        fontSize: 12,
-        color: '#7A1F5A',
-    },
     dateText: {
         fontSize: 14,
         color: '#333',
     },
     placeholderText: {
-        color: '#000',
+        color: '#999',
     },
     modalFooter: {
         flexDirection: 'row',
@@ -997,26 +1540,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
     },
-    topHeader: {
-  height: 60,
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-  elevation: 4,
-  borderBottomLeftRadius: 40,
-  borderBottomRightRadius: 40,
-},
-
-topHeaderTitle: {
-  fontSize: 20,
-  fontWeight: '600',
-  color: '#ffffff',
-},
-
-backBtn: {
-  position: 'absolute',
-  left: 16,
-},
 });
 
 export default KYCScreen;

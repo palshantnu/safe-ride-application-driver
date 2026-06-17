@@ -48,6 +48,8 @@ const STATUS_COLORS = {
   BALANCE_PAID: '#4CAF50',
   COMPLETED: '#9E9E9E',
   CANCELLED: '#F44336',
+  ASSIGNED: '#FF9800',
+  PENDING: '#FFC107',
 };
 
 const STATUS_TEXT = {
@@ -59,6 +61,8 @@ const STATUS_TEXT = {
   BALANCE_PAID: 'Balance Paid',
   COMPLETED: 'Completed',
   CANCELLED: 'Cancelled',
+  ASSIGNED: 'Assigned',
+  PENDING: 'Pending',
 };
 
 const DriverHomeFlow = ({ navigation }) => {
@@ -67,11 +71,15 @@ const DriverHomeFlow = ({ navigation }) => {
   const { userData } = useSelector((state) => state.auth);
   const driveronlineStatus = useSelector((state) => state?.auth?.driveronlineStatus);
   const loginToken = useSelector((state) => state?.auth?.loginToken);
-console.log('userData===>',userData);
+  
+  console.log('userData===>', userData);
+  const prevOnSpotBookingRef = useRef(null);
+
+  const isOnSpotCaptain = userData?.service_id === 77;
 
   // Check if driver has special service (72 or 73)
   const hasSpecialService = userData?.service_id === 72 || userData?.service_id === 73;
-  
+
   // Get service name for display
   const getSpecialServiceName = () => {
     if (userData?.service_id === 72) return 'Self Sharing';
@@ -85,6 +93,15 @@ console.log('userData===>',userData);
   const [rideRequest, setRideRequest] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentRides, setCurrentRides] = useState([]);
+
+  // On-spot (service_id = 77) state
+  const [onSpotRequests, setOnSpotRequests] = useState([]);
+  const [showOnSpotRejectModal, setShowOnSpotRejectModal] = useState(false);
+  const [onSpotRejectReason, setOnSpotRejectReason] = useState('');
+  const [selectedOnSpotBookingNo, setSelectedOnSpotBookingNo] = useState(null);
+const [showCancelModal, setShowCancelModal] = useState(false);
+const [cancelReason, setCancelReason] = useState('');
+const [selectedBookingNo, setSelectedBookingNo] = useState('');
 
   const [showTopupModal, setShowTopupModal] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -140,14 +157,55 @@ console.log('userData===>',userData);
       SoundHelper?.stopNotificationSound();
     }
   }, [rideRequest]);
+  
+  useEffect(() => {
+    if (!isOnSpotCaptain) return;
 
+    const latestBookingNo = onSpotRequests?.[0]?.booking_no || onSpotRequests?.[0]?.id;
+
+    if (latestBookingNo && latestBookingNo !== prevOnSpotBookingRef.current) {
+      prevOnSpotBookingRef.current = latestBookingNo;
+      SoundHelper?.playNotificationSound();
+    }
+
+    if (onSpotRequests?.length === 0) {
+      prevOnSpotBookingRef.current = null;
+      SoundHelper?.stopNotificationSound();
+    }
+  }, [onSpotRequests, isOnSpotCaptain]);
+  
   // Stop sound on unmount
   useEffect(() => {
     return () => SoundHelper?.stopNotificationSound();
   }, []);
 
+  const fetchOnSpotCurrentBookings = async () => {
+    if (!isOnSpotCaptain) return;
+    try {
+      const axios = (await import('../../axios/axiosinstance')).default;
+      const res = await axios.get('onspot/captain/currentbooking', {
+        headers: { Authorization: `Bearer ${loginToken}` },
+      });
+
+      if (res?.data?.status && Array.isArray(res?.data?.data)) {
+        setCurrentRides(res.data.data);
+        setRideRequest(null);
+      } else {
+        setCurrentRides([]);
+      }
+    } catch (error) {
+      console.log('Error fetching on-spot current bookings:', error);
+      setCurrentRides([]);
+    }
+  };
+
   const fetchCurrentRide = async () => {
     try {
+      if (isOnSpotCaptain) {
+        await fetchOnSpotCurrentBookings();
+        return;
+      }
+
       const res = await dispatch(GET_CURRENT_BOOKING());
       if (res?.status && res?.data) {
         const bookings = Array.isArray(res.data) ? res.data : [res.data];
@@ -161,10 +219,32 @@ console.log('userData===>',userData);
     }
   };
 
+  const fetchOnSpotAvailableBookings = async () => {
+    if (!isOnSpotCaptain) return;
+    try {
+      setOnSpotRequests([]);
+      const axios = (await import('../../axios/axiosinstance')).default;
+
+      const res = await axios.get('onspot/captain/available', {
+        headers: { Authorization: `Bearer ${loginToken}` },
+      });
+
+      if (res?.data?.status && Array.isArray(res?.data?.data)) {
+        const list = res.data.data;
+        setOnSpotRequests(list);
+        if (list.length > 0) animateRequest();
+      } else {
+        setOnSpotRequests([]);
+      }
+    } catch (error) {
+      console.log('fetchOnSpotAvailableBookings error:', error);
+      setOnSpotRequests([]);
+    }
+  };
+
   const fetchBookingRequests = async () => {
-    // Special service drivers don't get auto requests
-    if (hasSpecialService) return;
-    
+    if (hasSpecialService || isOnSpotCaptain) return;
+
     try {
       const res = await dispatch(GET_BOOKING_REQUESTS());
       if (res?.status && res?.data?.length > 0 && currentRides.length === 0) {
@@ -206,16 +286,22 @@ console.log('userData===>',userData);
       fetchCurrentRide();
       fetchBookingRequests();
 
+      if (isOnSpotCaptain) {
+        fetchOnSpotAvailableBookings();
+      }
+
       interval = setInterval(() => {
         if (currentRides.length > 0) {
           fetchCurrentRide();
+        } else if (isOnSpotCaptain) {
+          fetchOnSpotAvailableBookings();
         } else if (!hasSpecialService) {
           fetchBookingRequests();
         }
       }, 5000);
     }
     return () => clearInterval(interval);
-  }, [isOnline, currentRides.length, hasSpecialService]);
+  }, [isOnline, currentRides.length, hasSpecialService, isOnSpotCaptain]);
 
   useEffect(() => {
     if (driveronlineStatus?.is_online !== undefined) {
@@ -245,12 +331,6 @@ console.log('userData===>',userData);
   };
 
   const toggleOnlineStatus = (value) => {
-    // Special service drivers can't toggle online/offline?
-    // if (hasSpecialService) {
-    //   Alert.alert('Info', 'You will receive bookings assigned by Business Associate automatically.');
-    //   return;
-    // }
-    
     if (value) {
       Alert.alert('Go Online', 'You will start receiving ride requests.', [
         { text: 'Cancel', onPress: () => setIsOnline(false) },
@@ -354,6 +434,203 @@ console.log('userData===>',userData);
     ]);
   };
 
+  const submitOnSpotAccept = async (bookingNo) => {
+    SoundHelper?.stopNotificationSound();
+    if (!bookingNo) return;
+
+    try {
+      setIsLoading(true);
+      const axios = (await import('../../axios/axiosinstance')).default;
+      const res = await axios.post('onspot/captain/accept', { booking_no: bookingNo }, {
+        headers: { Authorization: `Bearer ${loginToken}` },
+      });
+
+      if (res?.data?.status) {
+        Alert.alert('Success', 'On-spot booking accepted');
+        await fetchCurrentRide();
+        setOnSpotRequests([]);
+      } else {
+        Alert.alert('Error', res?.data?.message || 'Failed to accept');
+      }
+    } catch (e) {
+      Alert.alert('Error', e?.response?.data?.message || e?.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const submitOnSpotReject = async () => {
+    SoundHelper?.stopNotificationSound();
+    if (!selectedOnSpotBookingNo) return;
+    if (!onSpotRejectReason.trim()) {
+      Alert.alert('Error', 'Please enter reject reason');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const axios = (await import('../../axios/axiosinstance')).default;
+      const res = await axios.post('onspot/captain/reject', {
+        booking_no: selectedOnSpotBookingNo,
+        cancel_reason: onSpotRejectReason.trim(),
+      }, {
+        headers: { Authorization: `Bearer ${loginToken}` },
+      });
+
+      if (res?.data?.status) {
+        Alert.alert('Success', 'On-spot booking rejected');
+        setShowOnSpotRejectModal(false);
+        setOnSpotRejectReason('');
+        setSelectedOnSpotBookingNo(null);
+        if (isOnSpotCaptain) await fetchOnSpotAvailableBookings();
+      } else {
+        Alert.alert('Error', res?.data?.message || 'Failed to reject');
+      }
+    } catch (e) {
+      Alert.alert('Error', e?.response?.data?.message || e?.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // OnSpot Arrive API
+  const handleOnSpotArrived = async (bookingNo) => {
+    Alert.alert('Arrived at Location', 'Have you arrived at the service location?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Yes, Arrived',
+        onPress: async () => {
+          setIsLoading(true);
+          try {
+            const axios = (await import('../../axios/axiosinstance')).default;
+            const res = await axios.post('onspot/captain/arrive', 
+              { booking_no: bookingNo },
+              { headers: { Authorization: `Bearer ${loginToken}` } }
+            );
+          console.log('Arrive response:', res);
+            if (res?.data?.status) {
+              Alert.alert('Success', 'You have marked as arrived');
+              await fetchCurrentRide();
+            } else {
+              Alert.alert('Error', res?.data?.message || 'Failed to update status');
+            }
+          } catch (error) {
+            console.log('Arrive error:', error);
+              console.log('Cancel Booking Error:', error);
+        console.log('error', error.response?.data);
+      console.log('status', error.response?.status); 
+            Alert.alert('Error', error?.response?.data?.message || 'Something went wrong');
+          } finally {
+            setIsLoading(false);
+          }
+        },
+      },
+    ]);
+  };
+
+  // OnSpot Verify OTP and Start Service
+  const handleOnSpotVerifyOtp = async (bookingNo) => {
+    if (!enteredOtp) {
+      Alert.alert('Error', 'Please enter OTP');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const axios = (await import('../../axios/axiosinstance')).default;
+      const res = await axios.post('onspot/captain/verify-otp', 
+        { 
+          booking_no: bookingNo, 
+          otp: enteredOtp 
+        },
+        { headers: { Authorization: `Bearer ${loginToken}` } }
+      );
+
+      if (res?.data?.status) {
+        Alert.alert('Success', 'OTP verified, service started');
+        setShowOtpModal(false);
+        setEnteredOtp('');
+        setActiveRideForAction(null);
+        await fetchCurrentRide();
+      } else {
+        Alert.alert('Error', res?.data?.message || 'Invalid OTP');
+      }
+    } catch (error) {
+      console.log('Verify OTP error:', error);
+      Alert.alert('Error', error?.response?.data?.message || 'Failed to verify OTP');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // OnSpot Complete Service API
+  const handleOnSpotComplete = async (bookingNo) => {
+    Alert.alert('Complete Service', 'Are you sure you want to complete this service?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Yes, Complete',
+        onPress: async () => {
+          setIsLoading(true);
+          try {
+            const axios = (await import('../../axios/axiosinstance')).default;
+            const res = await axios.post('onspot/captain/complete', 
+              { booking_no: bookingNo },
+              { headers: { Authorization: `Bearer ${loginToken}` } }
+            );
+
+            if (res?.data?.status) {
+              Alert.alert('Success', 'Service completed successfully');
+              await fetchCurrentRide();
+            } else {
+              Alert.alert('Error', res?.data?.message || 'Failed to complete service');
+            }
+          } catch (error) {
+            console.log('Complete error:', error);
+            Alert.alert('Error', error?.response?.data?.message || 'Something went wrong');
+          } finally {
+            setIsLoading(false);
+          }
+        },
+      },
+    ]);
+  };
+
+  // OnSpot Cancel Booking API
+  const handleOnSpotCancel = async (bookingNo, cancelReason = 'Cancelled by driver') => {
+    Alert.alert('Cancel Booking', 'Are you sure you want to cancel this booking?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Yes, Cancel',
+        style: 'destructive',
+        onPress: async () => {
+          setIsLoading(true);
+          try {
+            const axios = (await import('../../axios/axiosinstance')).default;
+            const res = await axios.post('onspot/captain/cancel', 
+              { 
+                booking_no: bookingNo, 
+                cancel_reason: cancelReason 
+              },
+              { headers: { Authorization: `Bearer ${loginToken}` } }
+            );
+console.log('Cancel Booking Response:', res);
+            if (res?.data?.status) {
+              Alert.alert('Cancelled', 'Booking has been cancelled');
+              await fetchCurrentRide();
+            } else {
+              Alert.alert('Error', res?.data?.message || 'Failed to cancel booking');
+            }
+          } catch (error) {
+            console.log('Cancel error:', error);
+            Alert.alert('Error', error?.response?.data?.message || 'Something went wrong');
+          } finally {
+            setIsLoading(false);
+          }
+        },
+      },
+    ]);
+  };
+
   const requestCameraPermission = async () => {
     if (Platform.OS !== 'android') return true;
     try {
@@ -447,9 +724,6 @@ console.log('userData===>',userData);
   };
 
   const isDriverServiceRide = (booking) => String(booking?.service_name || '').includes('Driver');
-
-  const isSelfSharingService = () => userData?.service_id === 72 || userData?.service_id === 73;
-
 
   const handleStartRide = (booking) => {
     setAssigningBookingId(booking?.booking_id || booking?.id);
@@ -683,8 +957,187 @@ console.log('userData===>',userData);
   const getStatusColor = (status) => STATUS_COLORS[status] || '#757575';
   const getStatusText = (status) => STATUS_TEXT[status] || status;
 
+  // Render OnSpot current booking card
+  const renderOnSpotActiveRide = (booking) => {
+    if (!booking) return null;
+
+    const bookingNo = booking.booking_no;
+    const status = booking.status;
+    console.log('Rendering On-Spot Booking:', bookingNo, 'Status:', status);
+    const fullAddress = booking.full_address;
+    const landmark = booking.landmark;
+    const userName = booking.user_name;
+    const userMobile = booking.user_mobile;
+    const scheduleDateTime = booking.schedule_datetime;
+    const planName = booking.plan_name;
+    const totalAmount = booking.total_amount;
+    const tokenAmount = booking.token_amount;
+    const balanceAmount = booking.balance_amount;
+
+    return (
+      <Animated.View key={booking.id} style={styles.activeRideCard}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
+            <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icon name="map" size={14} color="#810a45" />
+            <Text style={{ fontSize: 12, color: '#810a45', fontWeight: '600' }}>On-Spot</Text>
+          </View>
+        </View>
+
+        <View style={styles.locationContainer}>
+          <View style={styles.locationEntryRow}>
+            <View style={styles.dotCol}>
+              <View style={styles.pickupDot} />
+            </View>
+            <View style={styles.locationTextCol}>
+              <Text style={styles.locationLabel}>Location</Text>
+              <Text style={styles.pickupText}>{fullAddress || 'N/A'}</Text>
+              {landmark ? (
+                <Text style={[styles.dropText, { marginTop: 4 }]}>📍 {landmark}</Text>
+              ) : null}
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.rideInfo}>
+          <View style={styles.infoItem}>
+            <Icon name="user" size={16} color="#666" />
+            <Text style={styles.infoText}>{userName || 'N/A'}</Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Icon name="phone" size={16} color="#666" />
+            <Text style={styles.infoText}>{userMobile || 'N/A'}</Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Icon name="tag" size={16} color="#666" />
+            <Text style={styles.infoText}>{planName || 'N/A'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.paymentInfo}>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentLabel}>Total Amount:</Text>
+            <Text style={styles.totalAmount}>₹{totalAmount}</Text>
+          </View>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentLabel}>Token:</Text>
+            <Text style={styles.tokenAmount}>₹{tokenAmount}</Text>
+          </View>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentLabel}>Balance:</Text>
+            <Text style={styles.balanceAmount}>₹{balanceAmount}</Text>
+          </View>
+        </View>
+
+        <View style={styles.rideInfo}>
+          <View style={styles.infoItem}>
+            <Icon name="calendar" size={16} color="#666" />
+            <Text style={styles.infoText}>
+              {scheduleDateTime ? new Date(scheduleDateTime).toLocaleString() : 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Icon name="hash" size={16} color="#666" />
+            <Text style={styles.infoText}>{bookingNo}</Text>
+          </View>
+        </View>
+
+        {/* ASSIGNED status - Show Arrive button */}
+        
+        {status === 'TOKEN_PAID' && (
+          <TouchableOpacity
+            style={[styles.acceptBtn, { backgroundColor: '#00BCD4' }]}
+            onPress={() => handleOnSpotArrived(bookingNo)}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Icon name="navigation" size={20} color="#fff" />
+                <Text style={styles.btnText}>Arrived at Location</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {/* ARRIVED status - Show Start Service button (opens OTP modal) */}
+        {status === 'ARRIVED' && (
+          <TouchableOpacity
+            style={[styles.acceptBtn, { backgroundColor: '#FF9800' }]}
+            onPress={() => {
+              setActiveRideForAction(booking);
+              setAssigningBookingId(bookingNo);
+              setEnteredOtp('');
+              setShowOtpModal(true);
+            }}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Icon name="play" size={20} color="#fff" />
+                <Text style={styles.btnText}>Start Service</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {/* STARTED status - Show Complete button */}
+        {status === 'IN_PROGRESS' && (
+          <TouchableOpacity
+            style={[styles.acceptBtn, { backgroundColor: '#4CAF50' }]}
+            onPress={() => handleOnSpotComplete(bookingNo)}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Icon name="check-circle" size={20} color="#fff" />
+                <Text style={styles.btnText}>Complete Service</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {/* COMPLETED status - Show completion message */}
+        {status === 'COMPLETED' && (
+          <View style={styles.waitingCard}>
+            <Icon name="check-circle" size={40} color="#4CAF50" />
+            <Text style={styles.waitingTitle}>Service Completed</Text>
+            <Text style={styles.waitingText}>Thank you for your service!</Text>
+          </View>
+        )}
+
+        {/* Cancel button for non-completed statuses */}
+        {status !== 'COMPLETED' && (
+         <TouchableOpacity
+  style={styles.cancelRideBtn}
+  onPress={() => {
+    setSelectedBookingNo(bookingNo);
+    setCancelReason('');
+    setShowCancelModal(true);
+  }}
+>
+  <Icon name="x-circle" size={18} color="#FF5252" />
+  <Text style={styles.cancelRideBtnText}>Cancel Booking</Text>
+</TouchableOpacity>
+        )}
+      </Animated.View>
+    );
+  };
+
   const renderActiveRide = (booking) => {
     if (!booking) return null;
+
+    // For OnSpot bookings, use special renderer
+    if (isOnSpotCaptain) {
+      return renderOnSpotActiveRide(booking);
+    }
 
     const bookingId = booking.booking_id;
     const pickupLocation = booking.pickup_address || booking.pickup_city;
@@ -1009,6 +1462,94 @@ console.log('userData===>',userData);
     </Animated.View>
   );
 
+  const OnSpotRequestCard = ({ booking }) => {
+    const bookingNo = booking?.booking_no;
+    const pickupText = booking?.full_address;
+    const landmarkText = booking?.landmark;
+    const fare = booking?.total_amount;
+
+    return (
+      <Animated.View
+        style={[styles.requestCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+      >
+        <View style={styles.cardHeader}>
+          <View style={[styles.requestBadge, { backgroundColor: '#810a45' }]}>
+            <Icon name="bell" size={16} color="#fff" />
+            <Text style={styles.requestBadgeText}>On-spot Booking</Text>
+          </View>
+          <Text style={styles.fareAmount}>₹{fare}</Text>
+        </View>
+
+        <View style={styles.locationContainer}>
+          <View style={styles.locationEntryRow}>
+            <View style={styles.dotCol}>
+              <View style={styles.pickupDot} />
+            </View>
+            <View style={styles.locationTextCol}>
+              <Text style={styles.locationLabel}>Location</Text>
+              <Text style={styles.pickupText}>{pickupText || 'N/A'}</Text>
+              {landmarkText ? (
+                <Text style={[styles.dropText, { marginTop: 4 }]}>📍 {landmarkText}</Text>
+              ) : null}
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.rideInfo}>
+          <View style={styles.infoItem}>
+            <Icon name="calendar" size={16} color="#666" />
+            <Text style={styles.infoText}>
+              {booking?.schedule_datetime
+                ? new Date(booking.schedule_datetime).toLocaleString()
+                : 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Icon name="tag" size={16} color="#666" />
+            <Text style={styles.infoText}>{bookingNo || booking?.id}</Text>
+          </View>
+        </View>
+
+        <View style={styles.paymentInfo}>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentLabel}>Token: ₹{booking?.token_amount}</Text>
+            <Text style={styles.paymentLabel}>Balance: ₹{booking?.balance_amount}</Text>
+          </View>
+        </View>
+
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={styles.rejectBtn}
+            onPress={() => {
+              setSelectedOnSpotBookingNo(bookingNo || booking?.id);
+              setOnSpotRejectReason('');
+              setShowOnSpotRejectModal(true);
+            }}
+            disabled={isLoading}
+          >
+            <Icon name="x" size={20} color="#fff" />
+            <Text style={styles.btnText}>Reject</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.acceptBtn}
+            onPress={() => submitOnSpotAccept(bookingNo || booking?.id)}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Icon name="check" size={20} color="#fff" />
+                <Text style={styles.btnText}>Accept</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    );
+  };
+
   const StatsCard = () => (
     <View style={styles.statsContainer}>
       <View style={styles.statItem}>
@@ -1035,61 +1576,48 @@ console.log('userData===>',userData);
 
   return (
     <View style={styles.outer}>
-      {/* Special Service Banner */}
-      {/* {hasSpecialService && (
-        <View style={styles.specialServiceBanner}>
-          <Icon name="info" size={16} color="#FF1493" />
-          <Text style={styles.specialServiceText}>
-            You are a {getSpecialServiceName()} driver. Bookings assigned by BA will appear here.
-          </Text>
+      <View style={styles.specialTripActions}>
+        {hasSpecialService && (
+          <>
+            {userData?.service_id === 72 || userData?.service_id === 73 ? (
+              <>
+                <Text style={styles.specialTripTitle}>Self Sharing Trips</Text>
+
+                <View style={styles.specialTripBtnRow}>
+                  <TouchableOpacity
+                    style={[styles.specialTripBtn, { backgroundColor: '#2196F3' }]}
+                    onPress={() => navigation.navigate('SelfSharingCreateTrip', { service_id: userData?.service_id })}
+                  >
+                    <Icon name="plus-circle" size={18} color="#fff" />
+                    <Text style={styles.specialTripBtnText}>Create Booking</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.specialTripBtn, { backgroundColor: '#4CAF50' }]}
+                    onPress={() => navigation.navigate('SelfSharingMyTrips')}
+                  >
+                    <Icon name="list" size={18} color="#fff" />
+                    <Text style={styles.specialTripBtnText}>My Trips</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : null}
+          </>
+        )}
+      </View>
+
+      <View style={styles.statusCard}>
+        <View style={styles.statusInfo}>
+          <Icon name={isOnline ? "circle" : "circle"} size={12} color={isOnline ? "#4CAF50" : "#FF5252"} />
+          <Text style={styles.statusText}>{isOnline ? 'Online' : 'Offline'}</Text>
         </View>
-      )} */}
-
-        {/* Online Status Card - Only show for normal drivers */}
-
-        <View style={styles.specialTripActions}>
-          {hasSpecialService && (
-            <>
-              {userData?.service_id === 72 || userData?.service_id === 73 ? (
-                <>
-                  <Text style={styles.specialTripTitle}>Self Sharing Trips</Text>
-
-                  <View style={styles.specialTripBtnRow}>
-                    <TouchableOpacity
-                      style={[styles.specialTripBtn, { backgroundColor: '#2196F3' }]}
-                      onPress={() => navigation.navigate('SelfSharingCreateTrip', { service_id: userData?.service_id })}
-                    >
-                      <Icon name="plus-circle" size={18} color="#fff" />
-                      <Text style={styles.specialTripBtnText}>Create Booking</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[styles.specialTripBtn, { backgroundColor: '#4CAF50' }]}
-                      onPress={() => navigation.navigate('SelfSharingMyTrips')}
-                    >
-                      <Icon name="list" size={18} color="#fff" />
-                      <Text style={styles.specialTripBtnText}>My Trips</Text>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              ) : null}
-            </>
-          )}
-        </View>
-
-        <View style={styles.statusCard}>
-
-          <View style={styles.statusInfo}>
-            <Icon name={isOnline ? "circle" : "circle"} size={12} color={isOnline ? "#4CAF50" : "#FF5252"} />
-            <Text style={styles.statusText}>{isOnline ? 'Online' : 'Offline'}</Text>
-          </View>
-          <Switch
-            value={isOnline}
-            onValueChange={toggleOnlineStatus}
-            trackColor={{ false: "#ddd", true: "#FF1493" }}
-            thumbColor={isOnline ? "#fff" : "#fff"}
-          />
-        </View>
+        <Switch
+          value={isOnline}
+          onValueChange={toggleOnlineStatus}
+          trackColor={{ false: "#ddd", true: "#FF1493" }}
+          thumbColor={isOnline ? "#fff" : "#fff"}
+        />
+      </View>
 
       <ScrollView
         style={styles.content}
@@ -1103,6 +1631,23 @@ console.log('userData===>',userData);
             <Text style={[styles.sectionTitle, { marginHorizontal: 16, marginTop: 8 }]}>Active Bookings</Text>
             {currentRides.map((ride) => renderActiveRide(ride))}
           </>
+        ) : isOnSpotCaptain ? (
+          onSpotRequests.length > 0 ? (
+            <>
+              <Text style={[styles.sectionTitle, { marginHorizontal: 16, marginTop: 8 }]}>
+                On-spot Available Bookings ({onSpotRequests.length})
+              </Text>
+              {onSpotRequests.map((b) => (
+                <OnSpotRequestCard key={b.booking_no || b.id} booking={b} />
+              ))}
+            </>
+          ) : (
+            <View style={styles.waitingContainer}>
+              <Animated.View style={styles.waitingContent}>
+                <Icon name={'radio'} size={60} color={'#FF1493'} />
+              </Animated.View>
+            </View>
+          )
         ) : !hasSpecialService && isOnline && rideRequest ? (
           <RideRequestCard />
         ) : (
@@ -1113,46 +1658,37 @@ console.log('userData===>',userData);
                 size={60} 
                 color={hasSpecialService ? "#FF1493" : (isOnline ? "#FF1493" : "#ccc")} 
               />
-              {/* <Text style={styles.waitingTitle}>
-                {hasSpecialService 
-                  ? 'Waiting for Assigned Bookings' 
-                  : (isOnline ? 'Waiting for Ride Requests' : 'You are Offline')}
-              </Text> */}
-              {/* <Text style={styles.waitingText}>
-                {hasSpecialService
-                  ? 'Your profile is active. Bookings assigned by Business Associate will appear here.'
-                  : (isOnline
-                    ? 'Your location is active. You will receive ride requests shortly.'
-                    : 'Please go online to start receiving ride requests and earn money.')}
-              </Text> */}
             </Animated.View>
           </View>
         )}
       </ScrollView>
 
-      {/* Modals - Same as before */}
+      {/* OTP Modal - For OnSpot start service */}
       <Modal visible={showOtpModal} animationType="slide" transparent onRequestClose={() => setShowOtpModal(false)}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Start Ride</Text>
-            <Text style={styles.modalSubtitle}>Enter OTP</Text>
+            <Text style={styles.modalTitle}>
+              {isOnSpotCaptain ? 'Start Service' : 'Start Ride'}
+            </Text>
+            <Text style={styles.modalSubtitle}>Enter OTP to verify and start</Text>
 
             <TextInput
               style={styles.input}
               placeholder="Enter OTP"
-              placeholderTextColor="#000"
+              placeholderTextColor="#999"
               keyboardType="number-pad"
               value={enteredOtp}
               onChangeText={setEnteredOtp}
               maxLength={6}
             />
 
-            {!isDriverFlow && (
+            {/* For regular rides, show meter fields */}
+            {!isOnSpotCaptain && !isDriverFlow && (
               <>
                 <TextInput
                   style={styles.input}
                   placeholder="Enter meter reading (km)"
-                  placeholderTextColor="#000"
+                  placeholderTextColor="#999"
                   keyboardType="numeric"
                   value={meterKmText}
                   onChangeText={setMeterKmText}
@@ -1179,8 +1715,22 @@ console.log('userData===>',userData);
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.modalBtn, styles.submitBtn]} onPress={submitStartRide} disabled={isLoading}>
-                {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.submitBtnText}>Start Ride</Text>}
+              <TouchableOpacity 
+                style={[styles.modalBtn, styles.submitBtn]} 
+                onPress={() => {
+                  if (isOnSpotCaptain && activeRideForAction) {
+                    handleOnSpotVerifyOtp(assigningBookingId);
+                  } else {
+                    submitStartRide();
+                  }
+                }} 
+                disabled={isLoading}
+              >
+                {isLoading ? <ActivityIndicator color="#fff" size="small" /> : 
+                  <Text style={styles.submitBtnText}>
+                    {isOnSpotCaptain ? 'Verify & Start' : 'Start Ride'}
+                  </Text>
+                }
               </TouchableOpacity>
             </View>
           </View>
@@ -1192,11 +1742,11 @@ console.log('userData===>',userData);
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Request Topup</Text>
-            <TextInput style={styles.input} placeholderTextColor={'#000'} placeholder="Extra Kilometers" keyboardType="numeric" value={extraKm} onChangeText={setExtraKm} />
+            <TextInput style={styles.input} placeholderTextColor={'#999'} placeholder="Extra Kilometers" keyboardType="numeric" value={extraKm} onChangeText={setExtraKm} />
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Reason for topup"
-              placeholderTextColor={'#000'}
+              placeholderTextColor={'#999'}
               multiline
               numberOfLines={3}
               value={reason}
@@ -1234,7 +1784,7 @@ console.log('userData===>',userData);
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Verify Topup</Text>
-            <TextInput style={styles.input} placeholder="Enter OTP" placeholderTextColor={'#000'} value={topupOtp} onChangeText={setTopupOtp} keyboardType="number-pad" />
+            <TextInput style={styles.input} placeholder="Enter OTP" placeholderTextColor={'#999'} value={topupOtp} onChangeText={setTopupOtp} keyboardType="number-pad" />
             <TouchableOpacity style={[styles.submitBtn, { padding: 10, borderRadius: 10 }]} onPress={handleVerifyTopup}>
               <Text style={styles.submitBtnText}>Verify</Text>
             </TouchableOpacity>
@@ -1242,79 +1792,170 @@ console.log('userData===>',userData);
         </View>
       </Modal>
 
-      {/* Complete Ride Modal */}
-       <Modal
-    visible={showCompleteRideModal}
-    animationType="slide"
-    transparent={true}
-    onRequestClose={() => setShowCompleteRideModal(false)}
-  >
-    <View style={styles.modalContainer}>
-      <View style={styles.modalContent}>
-        <Text style={styles.modalTitle}>Complete Ride</Text>
-        <Text style={styles.modalSubtitle}>{isDriverFlow ? 'Capture final ride details if required by your service' : 'Enter meter reading and capture image'}</Text>
+      {/* On-spot Reject Modal */}
+      <Modal
+        visible={showOnSpotRejectModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowOnSpotRejectModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Reject On-spot Booking</Text>
+            <Text style={styles.modalSubtitle}>Enter reject reason</Text>
 
-        {!isDriverFlow && (
-          <>
             <TextInput
               style={styles.input}
-              placeholder="Enter meter reading (km)"
-              placeholderTextColor="#000"
-              keyboardType="numeric"
-              value={meterKmText}
-              onChangeText={setMeterKmText}
+              placeholder="Enter reject reason"
+              value={onSpotRejectReason}
+              onChangeText={setOnSpotRejectReason}
+              multiline
+              numberOfLines={3}
             />
 
-            <TouchableOpacity
-              style={styles.imagePickerBtn}
-              onPress={() =>
-                Alert.alert('Select Image', 'Choose meter reading image from', [
-                  { text: 'Camera', onPress: openCompleteRideCamera },
-                  { text: 'Gallery', onPress: openCompleteRideGallery },
-                  { text: 'Cancel', style: 'cancel' },
-                ])
-              }
-            >
-              <Icon name="camera" size={20} color="#FF1493" />
-              <Text style={styles.imagePickerText}>
-                {completeRideImageUri ? 'Change Meter Image' : 'Capture Meter Image'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.cancelBtn]}
+                onPress={() => {
+                  setShowOnSpotRejectModal(false);
+                  setOnSpotRejectReason('');
+                  setSelectedOnSpotBookingNo(null);
+                }}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
 
-            {completeRideImageUri ? (
-              <Image source={{ uri: completeRideImageUri }} style={styles.previewImage} />
-            ) : null}
-          </>
-        )}
-
-        <View style={styles.modalButtons}>
-          <TouchableOpacity
-            style={[styles.modalBtn, styles.cancelBtn]}
-            onPress={() => {
-              setShowCompleteRideModal(false);
-              setMeterKmText('');
-              setCompleteRideImageUri('');
-              setActiveRideForAction(null);
-            }}
-          >
-            <Text style={styles.cancelBtnText}>Cancel</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.modalBtn, styles.submitBtn]}
-            onPress={submitCompleteRide}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.submitBtnText}>Complete Ride</Text>
-            )}
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.submitBtn]}
+                onPress={submitOnSpotReject}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.submitBtnText}>Reject</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
+      </Modal>
+
+      {/* Complete Ride Modal */}
+      <Modal
+        visible={showCompleteRideModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCompleteRideModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Complete Ride</Text>
+            <Text style={styles.modalSubtitle}>{isDriverFlow ? 'Capture final ride details if required by your service' : 'Enter meter reading and capture image'}</Text>
+
+            {!isDriverFlow && (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter meter reading (km)"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  value={meterKmText}
+                  onChangeText={setMeterKmText}
+                />
+
+                <TouchableOpacity
+                  style={styles.imagePickerBtn}
+                  onPress={() =>
+                    Alert.alert('Select Image', 'Choose meter reading image from', [
+                      { text: 'Camera', onPress: openCompleteRideCamera },
+                      { text: 'Gallery', onPress: openCompleteRideGallery },
+                      { text: 'Cancel', style: 'cancel' },
+                    ])
+                  }
+                >
+                  <Icon name="camera" size={20} color="#FF1493" />
+                  <Text style={styles.imagePickerText}>
+                    {completeRideImageUri ? 'Change Meter Image' : 'Capture Meter Image'}
+                  </Text>
+                </TouchableOpacity>
+
+                {completeRideImageUri ? (
+                  <Image source={{ uri: completeRideImageUri }} style={styles.previewImage} />
+                ) : null}
+              </>
+            )}
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.cancelBtn]}
+                onPress={() => {
+                  setShowCompleteRideModal(false);
+                  setMeterKmText('');
+                  setCompleteRideImageUri('');
+                  setActiveRideForAction(null);
+                }}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.submitBtn]}
+                onPress={submitCompleteRide}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.submitBtnText}>Complete Ride</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal visible={showCancelModal} transparent animationType="slide">
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Cancel Booking</Text>
+
+      <TextInput
+        style={[styles.input, styles.textArea]}
+        placeholder="Enter cancellation reason"
+        value={cancelReason}
+        onChangeText={setCancelReason}
+        multiline
+      />
+
+      <View style={styles.modalButtons}>
+        <TouchableOpacity
+          style={[styles.modalBtn, styles.cancelBtn]}
+          onPress={() => setShowCancelModal(false)}
+        >
+          <Text>Close</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.modalBtn, styles.submitBtn]}
+          onPress={() => {
+            if (!cancelReason.trim()) {
+              Alert.alert('Error', 'Please enter cancellation reason');
+              return;
+            }
+
+            setShowCancelModal(false);
+            handleOnSpotCancel(
+              selectedBookingNo,
+              cancelReason.trim()
+            );
+          }}
+        >
+          <Text style={{color:'#fff'}}>Submit</Text>
+        </TouchableOpacity>
       </View>
     </View>
-  </Modal>
+  </View>
+</Modal>
     </View>
   );
 };
@@ -1353,7 +1994,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  
   statusCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1373,26 +2013,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     marginLeft: 8,
-  },
-  
-  specialServiceBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF0F8',
-    borderRadius: 12,
-    padding: 12,
-    margin: 15,
-    marginBottom: 0,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: '#FF1493',
-    borderStyle: 'dashed',
-  },
-  specialServiceText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#FF1493',
-    fontWeight: '500',
   },
   
   statsContainer: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 15, padding: 20, marginBottom: 15 },
@@ -1429,9 +2049,40 @@ const styles = StyleSheet.create({
   toCityText: { fontSize: 14, color: '#810a45', fontWeight: '600' },
   toCityDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#810a45', marginTop: 8 },
 
-  rideInfo: { flexDirection: 'row', marginBottom: 12, gap: 15 },
+  rideInfo: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12, gap: 15 },
   infoItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   infoText: { fontSize: 14, color: '#666' },
+
+  paymentInfo: {
+    backgroundColor: '#FFF0F5',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 15,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  paymentLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  totalAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  tokenAmount: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FF9800',
+  },
+  balanceAmount: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FF5722',
+  },
 
   customerInfo: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#f9f9f9', padding: 12, borderRadius: 10, marginBottom: 15 },
   customerDetail: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -1455,7 +2106,7 @@ const styles = StyleSheet.create({
   modalContent: { backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '90%' },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#333', textAlign: 'center', marginBottom: 8 },
   modalSubtitle: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 },
-  input: { borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 12, padding: 12, fontSize: 16, marginBottom: 15, backgroundColor: '#f9f9f9' },
+  input: { borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 12, padding: 12, fontSize: 16, marginBottom: 15, backgroundColor: '#f9f9f9', color: '#000' },
   textArea: { height: 80, textAlignVertical: 'top' },
   imagePickerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#FF1493', borderRadius: 12, padding: 12, marginBottom: 15, gap: 8 },
   imagePickerText: { color: '#FF1493', fontSize: 14, fontWeight: '500' },

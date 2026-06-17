@@ -16,6 +16,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 
 const PARCEL_HISTORY_API = 'http://91.108.104.79:3000/api/parcel/driver/my-deliveries';
+const ONSPOT_HISTORY_API = 'http://91.108.104.79:3000/api/onspot/captain/mybooking';
 const LIMIT = 10;
 
 const DriverHistoryScreen = ({ navigation }) => {
@@ -26,6 +27,7 @@ const DriverHistoryScreen = ({ navigation }) => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [stats, setStats] = useState({
     totalRides: 0,
     totalEarnings: 0,
@@ -39,6 +41,125 @@ const DriverHistoryScreen = ({ navigation }) => {
   
   // Check if driver is parcel delivery driver
   const isParcelDriver = userData?.service_id === 75;
+  // Check if driver is OnSpot captain
+  const isOnSpotCaptain = userData?.service_id === 77;
+
+  // Fetch OnSpot history with pagination
+  const fetchOnSpotHistory = async (pageNum = 1, shouldAppend = false) => {
+    if (!loginToken) return;
+    
+    try {
+      if (pageNum === 1) {
+        setIsLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+      
+      const response = await axios.get(ONSPOT_HISTORY_API, {
+        headers: {
+          Authorization: `Bearer ${loginToken}`,
+        },
+        params: {
+          page: pageNum,
+          limit: LIMIT,
+        },
+      });
+      
+      console.log('OnSpot history response:', response.data);
+
+      if (response.data?.status && Array.isArray(response.data?.data)) {
+        const formattedHistory = response.data.data.map(booking => formatOnSpotData(booking));
+        
+        if (shouldAppend) {
+          setRideHistory(prev => [...prev, ...formattedHistory]);
+        } else {
+          setRideHistory(formattedHistory);
+        }
+        
+        // Handle pagination
+        if (response.data?.pagination) {
+          setTotalCount(response.data.pagination.total);
+          setTotalPages(response.data.pagination.total_pages);
+          setHasMore(pageNum < response.data.pagination.total_pages);
+        }
+        
+        // Calculate stats from all data (if pagination info available)
+        if (!shouldAppend) {
+          calculateOnSpotStats(formattedHistory);
+        } else {
+          // Recalculate stats with all data
+          const allHistory = [...rideHistory, ...formattedHistory];
+          calculateOnSpotStats(allHistory);
+        }
+      } else {
+        if (!shouldAppend) {
+          setRideHistory([]);
+        }
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.log('Error fetching OnSpot history:', error);
+    } finally {
+      if (pageNum === 1) {
+        setIsLoading(false);
+      } else {
+        setIsLoadingMore(false);
+      }
+    }
+  };
+
+  // Format OnSpot data
+  const formatOnSpotData = (booking) => {
+    const status = booking.status?.toLowerCase() || 'pending';
+    const earnings = parseFloat(booking.total_amount) || 0;
+    const tokenPaid = parseFloat(booking.token_amount) || 0;
+    const balancePaid = parseFloat(booking.balance_amount) || 0;
+    
+    return {
+      id: booking.id,
+      booking_id: booking.booking_no,
+      is_onspot: true,
+      booking_no: booking.booking_no,
+      city: booking.city,
+      full_address: booking.full_address,
+      landmark: booking.landmark,
+      remarks: booking.remarks,
+      schedule_datetime: booking.schedule_datetime,
+      token_amount: tokenPaid,
+      balance_amount: balancePaid,
+      total_amount: earnings,
+      token_paid: booking.token_paid,
+      balance_paid: booking.balance_paid,
+      payment_mode: booking.payment_mode,
+      otp_verified: booking.otp_verified,
+      status: status,
+      cancelled_by: booking.cancelled_by,
+      cancel_reason: booking.cancel_reason,
+      completed_at: booking.completed_at,
+      created_at: booking.created_at,
+      updated_at: booking.updated_at,
+      service_name: booking.service_name,
+      plan_name: booking.plan_name,
+      customerName: booking.user_name || 'Customer',
+      customerPhone: booking.user_mobile,
+      earnings: earnings,
+      driver_id: booking.driver_id,
+    };
+  };
+
+  // Calculate OnSpot stats
+  const calculateOnSpotStats = (bookings) => {
+    const completedBookings = bookings.filter(b => b.status === 'completed');
+    const totalRides = completedBookings.length;
+    const totalEarnings = completedBookings.reduce((sum, b) => sum + b.earnings, 0);
+    const avgRating = 4.5;
+
+    setStats({
+      totalRides,
+      totalEarnings,
+      avgRating,
+    });
+  };
 
   // Fetch parcel delivery history with pagination
   const fetchParcelHistory = async (pageNum = 1, shouldAppend = false) => {
@@ -274,7 +395,9 @@ const DriverHistoryScreen = ({ navigation }) => {
     if (!hasMore || isLoadingMore || isLoading) return;
     const nextPage = page + 1;
     setPage(nextPage);
-    if (isParcelDriver) {
+    if (isOnSpotCaptain) {
+      fetchOnSpotHistory(nextPage, true);
+    } else if (isParcelDriver) {
       fetchParcelHistory(nextPage, true);
     } else {
       fetchBookingHistory(nextPage, true);
@@ -286,18 +409,22 @@ const DriverHistoryScreen = ({ navigation }) => {
     setPage(1);
     setHasMore(true);
     setRideHistory([]);
-    if (isParcelDriver) {
+    if (isOnSpotCaptain) {
+      fetchOnSpotHistory(1, false);
+    } else if (isParcelDriver) {
       fetchParcelHistory(1, false);
     } else {
       fetchBookingHistory(1, false);
     }
-  }, [isParcelDriver]);
+  }, [isOnSpotCaptain, isParcelDriver]);
 
   const onRefresh = async () => {
     setRefreshing(true);
     setPage(1);
     setHasMore(true);
-    if (isParcelDriver) {
+    if (isOnSpotCaptain) {
+      await fetchOnSpotHistory(1, false);
+    } else if (isParcelDriver) {
       await fetchParcelHistory(1, false);
     } else {
       await fetchBookingHistory(1, false);
@@ -313,6 +440,9 @@ const DriverHistoryScreen = ({ navigation }) => {
       'arrived': '#00BCD4',
       'picked_up': '#FF9800',
       'pending': '#FF9800',
+      'assigned': '#4CAF50',
+      'token_paid': '#2196F3',
+      'started': '#FF5722',
       'cancelled': '#FF5252',
     };
     return statusMap[status] || '#FF5252';
@@ -326,6 +456,9 @@ const DriverHistoryScreen = ({ navigation }) => {
       'arrived': 'navigate',
       'picked_up': 'cube',
       'pending': 'time',
+      'assigned': 'checkmark-circle',
+      'token_paid': 'cash-outline',
+      'started': 'car-sport',
       'cancelled': 'close-circle',
     };
     return iconMap[status] || 'close-circle';
@@ -339,12 +472,16 @@ const DriverHistoryScreen = ({ navigation }) => {
       'arrived': 'Arrived',
       'picked_up': 'Picked Up',
       'pending': 'Pending',
+      'assigned': 'Assigned',
+      'token_paid': 'Token Paid',
+      'started': 'Started',
       'cancelled': 'Cancelled',
     };
     return textMap[status] || status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     const today = new Date();
     const yesterday = new Date(today);
@@ -363,7 +500,20 @@ const DriverHistoryScreen = ({ navigation }) => {
     }
   };
 
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
   const formatTime = (dateString) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -373,45 +523,165 @@ const DriverHistoryScreen = ({ navigation }) => {
   };
 
   const handleItemPress = (item) => {
-    if (item.is_parcel) {
+    if (item.is_onspot) {
+      navigation.navigate('OnSpotBookingDetail', { booking: item });
+    } else if (item.is_parcel) {
       navigation.navigate('ParcelDeliveryDetail', { delivery: item });
     } else {
       navigation.navigate('BookingHistoryDetail', { ride: item });
     }
   };
 
-  // Render footer loader
-  const renderFooter = () => {
-    if (!isLoadingMore) return null;
+  // Render OnSpot Card
+  const renderOnSpotCard = ({ item }) => {
+    const status = item.status;
+    const isCompleted = status === 'completed';
+    const isCancelled = status === 'cancelled';
+    
     return (
-      <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={isParcelDriver ? "#FF9800" : "#FF1493"} />
-        <Text style={styles.footerText}>Loading more...</Text>
-      </View>
-    );
-  };
+      <TouchableOpacity
+        style={styles.rideCard}
+        onPress={() => handleItemPress(item)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.dateTimeContainer}>
+            <Icon name="calendar-outline" size={14} color="#810a45" />
+            <Text style={styles.dateText}>{formatDate(item.created_at)}</Text>
+            <Icon name="time-outline" size={14} color="#810a45" style={styles.timeIcon} />
+            <Text style={styles.timeText}>{formatTime(item.created_at)}</Text>
+          </View>
+          <View style={styles.badgeRow}>
+            <View style={styles.onspotBadge}>
+              <Icon name="flash-outline" size={10} color="#fff" />
+              <Text style={styles.onspotBadgeText}>OnSpot</Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
+              <Icon name={getStatusIcon(status)} size={12} color="#fff" />
+              <Text style={styles.statusText}>{getStatusText(status)}</Text>
+            </View>
+          </View>
+        </View>
 
-  // Render empty state
-  const renderEmpty = () => {
-    if (isLoading) return null;
-    return (
-      <View style={styles.emptyContainer}>
-        <Icon name={isParcelDriver ? "cube-outline" : "car-outline"} size={80} color="#ccc" />
-        <Text style={styles.emptyText}>
-          {isParcelDriver ? 'No deliveries yet' : 'No rides yet'}
-        </Text>
-        <Text style={styles.emptySubtext}>
-          {isParcelDriver 
-            ? 'Complete your first delivery to see it here' 
-            : 'Complete your first ride to see it here'}
-        </Text>
-        <TouchableOpacity 
-          style={[styles.refreshButton, { backgroundColor: isParcelDriver ? "#FF9800" : "#FF1493" }]}
-          onPress={onRefresh}
-        >
-          <Text style={styles.refreshButtonText}>Refresh</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Customer Info */}
+        <View style={styles.customerInfo}>
+          <Icon name="person-outline" size={16} color="#810a45" />
+          <Text style={styles.customerName}>{item.customerName}</Text>
+          <Text style={styles.customerPhone}>• {item.customerPhone}</Text>
+        </View>
+
+        {/* Location */}
+        <View style={styles.rideLocation}>
+          <View style={styles.locationPoint}>
+            <Icon name="location" size={16} color="#FF9800" />
+          </View>
+          <View style={styles.locationTextWrap}>
+            <Text style={styles.locationLabel}>Service Address</Text>
+            <Text style={styles.locationText} numberOfLines={2}>
+              {item.full_address}
+            </Text>
+            {item.landmark && (
+              <Text style={styles.landmarkText}>📍 {item.landmark}</Text>
+            )}
+            <Text style={styles.cityText}>🏙️ {item.city}</Text>
+          </View>
+        </View>
+
+        {/* Schedule Date & Time */}
+        <View style={styles.scheduleContainer}>
+          <Icon name="calendar-outline" size={14} color="#666" />
+          <Text style={styles.scheduleText}>
+            Schedule: {formatDateTime(item.schedule_datetime)}
+          </Text>
+        </View>
+
+        {/* Price Breakdown */}
+        <View style={styles.priceContainer}>
+          <View style={styles.priceItem}>
+            <Text style={styles.priceLabel}>Total</Text>
+            <Text style={styles.totalPrice}>₹{item.total_amount?.toFixed(2)}</Text>
+          </View>
+          <View style={styles.priceItem}>
+            <Text style={styles.priceLabel}>Token Paid</Text>
+            <Text style={styles.tokenPaid}>₹{item.token_amount?.toFixed(2)}</Text>
+          </View>
+          <View style={styles.priceItem}>
+            <Text style={styles.priceLabel}>Balance</Text>
+            <Text style={styles.balanceAmount}>₹{item.balance_amount?.toFixed(2)}</Text>
+          </View>
+        </View>
+
+        {/* Payment Mode */}
+        {item.payment_mode && (
+          <View style={styles.paymentModeContainer}>
+            <Icon name="card-outline" size={12} color="#666" />
+            <Text style={styles.paymentModeText}>
+              Payment: {item.payment_mode}
+            </Text>
+          </View>
+        )}
+
+        {/* OTP Verified Status */}
+        {item.otp_verified === 1 && (
+          <View style={styles.verifiedBadge}>
+            <Icon name="checkmark-circle" size={12} color="#4CAF50" />
+            <Text style={styles.verifiedText}>OTP Verified</Text>
+          </View>
+        )}
+
+        {/* Remarks */}
+        {item.remarks ? (
+          <View style={styles.remarksContainer}>
+            <Icon name="chatbubble-outline" size={12} color="#810a45" />
+            <Text style={styles.remarksText} numberOfLines={2}>
+              Note: {item.remarks}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Cancel Reason */}
+        {isCancelled && item.cancel_reason && (
+          <View style={styles.cancelReasonContainer}>
+            <Icon name="alert-circle-outline" size={12} color="#F44336" />
+            <Text style={styles.cancelReasonText}>
+              Cancelled: {item.cancel_reason}
+            </Text>
+            {item.cancelled_by && (
+              <Text style={styles.cancelledByText}>by {item.cancelled_by}</Text>
+            )}
+          </View>
+        )}
+
+        {/* Completed At */}
+        {isCompleted && item.completed_at && (
+          <View style={styles.completedContainer}>
+            <Icon name="checkmark-circle-outline" size={12} color="#4CAF50" />
+            <Text style={styles.completedText}>
+              Completed: {formatDateTime(item.completed_at)}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.divider} />
+
+        <View style={styles.rideStats}>
+          <View style={styles.statItem}>
+            <Icon name="cash-outline" size={14} color="#4CAF50" />
+            <Text style={[styles.statItemText, styles.earningsText]}>
+              Earned: ₹{item.earnings?.toFixed(2)}
+            </Text>
+          </View>
+          <View style={styles.statItem}>
+            <Icon name="receipt-outline" size={14} color="#666" />
+            <Text style={styles.statItemText}>ID: {item.booking_id}</Text>
+          </View>
+        </View>
+
+        <View style={styles.detailsIndicator}>
+          <Text style={styles.detailsText}>View booking details</Text>
+          <Icon name="chevron-forward" size={14} color="#810a45" />
+        </View>
+      </TouchableOpacity>
     );
   };
 
@@ -690,24 +960,45 @@ const DriverHistoryScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  // Get header gradient colors based on service type
+  const getHeaderColors = () => {
+    if (isOnSpotCaptain) return ['#FF9800', '#FF9800', '#e20f7a'];
+    if (isParcelDriver) return ['#FF9800', '#FF9800', '#F57C00'];
+    return ['#ff7f50', '#ff7f50', '#e20f7a'];
+  };
+
+  // Get header title based on service type
+  const getHeaderTitle = () => {
+    if (isOnSpotCaptain) return 'OnSpot History';
+    if (isParcelDriver) return 'Delivery History';
+    return 'Ride History';
+  };
+
+  // Get primary color based on service type
+  const getPrimaryColor = () => {
+    if (isOnSpotCaptain) return '#810a45';
+    if (isParcelDriver) return '#FF9800';
+    return '#FF1493';
+  };
+
   const renderHeader = () => (
     <>
       <LinearGradient
-        colors={isParcelDriver ? ['#FF9800', '#FF9800', '#F57C00'] : ['#ff7f50', '#ff7f50', '#e20f7a']}
+        colors={getHeaderColors()}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>
-          {isParcelDriver ? 'Delivery History' : 'Ride History'}
-        </Text>
+        <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
       </LinearGradient>
       <View style={styles.statsHeader}>
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Icon name={isParcelDriver ? "cube-outline" : "car-outline"} size={24} color={isParcelDriver ? "#FF9800" : "#FF1493"} />
+            <Icon name={isOnSpotCaptain ? "flash-outline" : (isParcelDriver ? "cube-outline" : "car-outline")} size={24} color={getPrimaryColor()} />
             <Text style={styles.statNumber}>{totalCount || stats.totalRides}</Text>
-            <Text style={styles.statLabel}>{isParcelDriver ? 'Total Deliveries' : 'Total Rides'}</Text>
+            <Text style={styles.statLabel}>
+              {isOnSpotCaptain ? 'Total Bookings' : (isParcelDriver ? 'Total Deliveries' : 'Total Rides')}
+            </Text>
           </View>
           <View style={styles.statCard}>
             <Icon name="cash-outline" size={24} color="#4CAF50" />
@@ -716,18 +1007,62 @@ const DriverHistoryScreen = ({ navigation }) => {
           </View>
         </View>
         <Text style={styles.sectionTitle}>
-          {isParcelDriver ? 'Recent Deliveries' : 'Recent Rides'}
+          {isOnSpotCaptain ? 'Recent Bookings' : (isParcelDriver ? 'Recent Deliveries' : 'Recent Rides')}
         </Text>
       </View>
     </>
   );
 
+  // Render footer loader
+  const renderFooter = () => {
+    if (!isLoadingMore) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={getPrimaryColor()} />
+        <Text style={styles.footerText}>Loading more...</Text>
+      </View>
+    );
+  };
+
+  // Render empty state
+  const renderEmpty = () => {
+    if (isLoading) return null;
+    return (
+      <View style={styles.emptyContainer}>
+        <Icon name={isOnSpotCaptain ? "flash-outline" : (isParcelDriver ? "cube-outline" : "car-outline")} size={80} color="#ccc" />
+        <Text style={styles.emptyText}>
+          {isOnSpotCaptain ? 'No bookings yet' : (isParcelDriver ? 'No deliveries yet' : 'No rides yet')}
+        </Text>
+        <Text style={styles.emptySubtext}>
+          {isOnSpotCaptain 
+            ? 'Complete your first OnSpot booking to see it here' 
+            : (isParcelDriver 
+              ? 'Complete your first delivery to see it here' 
+              : 'Complete your first ride to see it here')}
+        </Text>
+        <TouchableOpacity 
+          style={[styles.refreshButton, { backgroundColor: getPrimaryColor() }]}
+          onPress={onRefresh}
+        >
+          <Text style={styles.refreshButtonText}>Refresh</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  // Get render item function based on service type
+  const getRenderItem = () => {
+    if (isOnSpotCaptain) return renderOnSpotCard;
+    if (isParcelDriver) return renderParcelCard;
+    return renderRideCard;
+  };
+
   if (isLoading && !refreshing && rideHistory.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={isParcelDriver ? "#FF9800" : "#FF1493"} />
+        <ActivityIndicator size="large" color={getPrimaryColor()} />
         <Text style={styles.loadingText}>
-          {isParcelDriver ? 'Loading delivery history...' : 'Loading ride history...'}
+          {isOnSpotCaptain ? 'Loading booking history...' : (isParcelDriver ? 'Loading delivery history...' : 'Loading ride history...')}
         </Text>
       </View>
     );
@@ -736,7 +1071,7 @@ const DriverHistoryScreen = ({ navigation }) => {
   return (
     <FlatList
       data={rideHistory}
-      renderItem={isParcelDriver ? renderParcelCard : renderRideCard}
+      renderItem={getRenderItem()}
       keyExtractor={(item) => item.id.toString()}
       contentContainerStyle={styles.listContainer}
       showsVerticalScrollIndicator={false}
@@ -749,8 +1084,8 @@ const DriverHistoryScreen = ({ navigation }) => {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          colors={[isParcelDriver ? "#FF9800" : "#FF1493"]}
-          tintColor={isParcelDriver ? "#FF9800" : "#FF1493"}
+          colors={[getPrimaryColor()]}
+          tintColor={getPrimaryColor()}
         />
       }
     />
@@ -874,6 +1209,20 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+  onspotBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#810a45',
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 3,
+  },
+  onspotBadgeText: {
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: '600',
+  },
   parcelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -901,6 +1250,25 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     marginLeft: 4,
+  },
+  customerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    backgroundColor: '#F8F9FA',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 12,
+    gap: 6,
+  },
+  customerName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  customerPhone: {
+    fontSize: 12,
+    color: '#666',
   },
   rideLocation: {
     flexDirection: 'row',
@@ -937,6 +1305,26 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 2,
   },
+  cityText: {
+    fontSize: 12,
+    color: '#810a45',
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  scheduleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF0F5',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 12,
+    gap: 6,
+  },
+  scheduleText: {
+    fontSize: 12,
+    color: '#810a45',
+    fontWeight: '500',
+  },
   dateTimeDetail: {
     fontSize: 11,
     color: '#999',
@@ -950,6 +1338,47 @@ const styles = StyleSheet.create({
   toCityText: {
     color: '#810a45',
     fontWeight: '600',
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8F9FA',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  priceItem: {
+    alignItems: 'center',
+  },
+  priceLabel: {
+    fontSize: 10,
+    color: '#999',
+    marginBottom: 2,
+  },
+  totalPrice: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  tokenPaid: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2196F3',
+  },
+  balanceAmount: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF9800',
+  },
+  paymentModeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 6,
+  },
+  paymentModeText: {
+    fontSize: 11,
+    color: '#666',
   },
   divider: {
     height: 1,
@@ -1040,7 +1469,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    marginBottom: 12,
+    marginTop: 8,
     gap: 6,
   },
   remarksText: {
@@ -1048,6 +1477,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FF9800',
     fontStyle: 'italic',
+  },
+  cancelReasonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    backgroundColor: '#FFEBEE',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginTop: 8,
+    gap: 6,
+  },
+  cancelReasonText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#F44336',
+  },
+  cancelledByText: {
+    fontSize: 10,
+    color: '#F44336',
+    fontWeight: '500',
+  },
+  completedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginTop: 8,
+    gap: 6,
+  },
+  completedText: {
+    fontSize: 11,
+    color: '#4CAF50',
   },
   verificationContainer: {
     flexDirection: 'row',
