@@ -1,4 +1,4 @@
-package com.saferide_driver
+package com.sigiridecaptain
 
 import android.app.Notification
 import android.app.NotificationChannel

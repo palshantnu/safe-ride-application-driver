@@ -61,12 +61,14 @@ const getStatusColor = (driverStatus) => {
 
 const getStatusText = (driverStatus) => {
   const status = driverStatus?.toLowerCase();
+  console.log('Determining status text for:', driverStatus);
   const map = {
     accepted: 'Accepted',
     arrived: 'Arrived at Pickup',
     picked_up: 'Picked Up',
     delivered: 'Delivered',
     cancelled: 'Cancelled',
+    token_paid: 'Token Paid',
   };
   return map[status] || 'Pending';
 };
@@ -143,6 +145,7 @@ const prevParcelCountRef = useRef(0);
     delivery_otp: parcel.delivery_otp,
     pickup_otp_verified: parcel.pickup_otp_verified,
     delivery_otp_verified: parcel.delivery_otp_verified,
+    user_status: parcel.user_status,
     _raw: parcel,
   });
 
@@ -546,16 +549,20 @@ useEffect(() => {
   const renderDeliveryCard = (delivery) => {
     const status = delivery.driver_status?.toLowerCase() || 'pending';
     const parcelId = delivery.parcel_booking_id;
-
+console.log('Rendering delivery card:', delivery);
     return (
       <View key={delivery.id} style={styles.activeCard}>
         <View style={styles.cardHeader}>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.driver_status) }]}>
             <Text style={styles.statusBadgeText}>{getStatusText(delivery.driver_status)}</Text>
+           
           </View>
+          
           <Text style={styles.fareAmount}>₹{delivery.delivery_charge}</Text>
         </View>
-
+<View style={[styles.statusBadge ]}>
+             <Text style={{...styles.statusBadgeText,color:'black',fontSize:16}}>USER STATUS : {getStatusText(delivery.user_status)}</Text>
+          </View>
         <View style={styles.parcelInfo}>
           <View style={styles.infoRow}><Icon name="package" size={16} color="#666" /><Text style={styles.infoText}>ID: {delivery.parcel_booking_id}</Text></View>
           <View style={styles.infoRow}><Icon name="weight" size={16} color="#666" /><Text style={styles.infoText}>Weight: {delivery.parcel_weight} kg</Text></View>
@@ -671,6 +678,10 @@ console.log('Reject response:', response.data);
       <View style={styles.cardHeader}>
         <View style={styles.requestBadge}><Icon name="bell" size={16} color="#fff" /><Text style={styles.requestBadgeText}>New Parcel Request</Text></View>
         <Text style={styles.fareAmount}>₹{parcel.delivery_charge}</Text>
+      </View>
+      <View style={styles.cardHeader}>
+        <View><Text style={{...styles.requestBadgeText,color:'black',fontSize:16}}>Loading and Unloading : {parcel.loading_unloading}</Text></View>
+        <View/>
       </View>
       <View style={styles.parcelInfo}>
         <View style={styles.infoRow}><Icon name="package" size={16} color="#666" /><Text style={styles.infoText}>ID: {parcel.parcel_booking_id}</Text></View>
@@ -885,7 +896,7 @@ const styles = StyleSheet.create({
   dropDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#FF5252' },
   locationLine: { width: 2, height: 30, backgroundColor: '#ddd', marginVertical: 4 },
   remarksContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF8F0', padding: 10, borderRadius: 8, marginBottom: 15, gap: 8 },
-  remarksText: { flex: 1, fontSize: 12, color: '#FF9800', fontStyle: 'italic' },
+  remarksText: { flex: 1, fontSize: 15, color: '#000' },
   buttonRow: { flexDirection: 'row', gap: 12 },
   acceptBtn: { flex: 1, backgroundColor: '#4CAF50', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12, gap: 8 },
   rejectBtn: { flex: 1, backgroundColor: '#FF5252', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12, gap: 8 },

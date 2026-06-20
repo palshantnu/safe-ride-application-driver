@@ -15,10 +15,12 @@ import {
   Modal,
   PermissionsAndroid,
   Platform,
+  Linking,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Feather';
 import { useDispatch, useSelector } from 'react-redux';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {
   ACCEPT_BOOKING,
   GET_BOOKING_REQUESTS,
@@ -249,6 +251,7 @@ const [selectedBookingNo, setSelectedBookingNo] = useState('');
       const res = await dispatch(GET_BOOKING_REQUESTS());
       if (res?.status && res?.data?.length > 0 && currentRides.length === 0) {
         const booking = res.data[0];
+        console.log('New Booking Request:', booking);
         const formatted = {
           id: booking.id,
           booking_id: booking.booking_id,
@@ -269,6 +272,8 @@ const [selectedBookingNo, setSelectedBookingNo] = useState('');
             rating: 4.5,
             phone: booking.user_mobile || 'N/A',
           },
+          total_fare: booking.total_fare,
+          driver_amount:booking.driver_amount
         };
         setRideRequest(formatted);
         animateRequest();
@@ -1132,6 +1137,7 @@ console.log('Cancel Booking Response:', res);
   };
 
   const renderActiveRide = (booking) => {
+    console.log('Rendering Active Ride:',booking); 
     if (!booking) return null;
 
     // For OnSpot bookings, use special renderer
@@ -1219,7 +1225,10 @@ console.log('Cancel Booking Response:', res);
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
             <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
           </View>
-          <Text style={styles.fareAmount}>₹{booking.plan_price}</Text>
+           <View>
+          <Text style={styles.fareAmount}>₹{booking.driver_amount}</Text>
+          <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>Total Amount ₹{booking.total_fare}</Text>
+        </View>
         </View>
 
         <View style={styles.locationContainer}>
@@ -1284,12 +1293,31 @@ console.log('Cancel Booking Response:', res);
           </View>
         </View>
 
-        <View style={styles.customerInfo}>
-          <View style={styles.customerDetail}>
-            <Icon name="phone" size={14} color="#999" />
-            <Text style={styles.customerText}>{booking.user_mobile}</Text>
-          </View>
-        </View>
+  {booking.token_paid == 1 &&    <View style={{...styles.customerInfo,justifyContent:'space-between',width:'100%'}}>
+  <View style={styles.customerDetail}>
+    <Icon name="phone" size={14} color="#999" />
+
+    <Text style={styles.customerText}>
+      {booking.user_mobile}
+    </Text>
+
+    <TouchableOpacity
+      style={{ marginLeft: 70,
+  backgroundColor: '#2196F3',
+  padding: 8,
+  borderRadius: 20,
+  justifyContent: 'center',
+  alignItems: 'center',
+paddingHorizontal:20}}
+      onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)}
+    >
+     <Text style={{...styles.customerText,color:'#fff',textAlign:'center',fontWeight: '600'}}>
+      <MaterialIcons name="call" size={18} color="#fff" />
+    {'  '} Call User  
+</Text>
+    </TouchableOpacity>
+  </View>
+</View>}
 
         {(status === 'TOKEN_PAID' || status === 'ASSIGN') && (
           <TouchableOpacity style={styles.acceptBtn} onPress={() => handleArrived(bookingId)} disabled={isLoading}>
@@ -1378,14 +1406,22 @@ console.log('Cancel Booking Response:', res);
 
   const RideRequestCard = () => (
     <Animated.View style={[styles.requestCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      {console.log('rideRequest',rideRequest)}
       <View style={styles.cardHeader}>
         <View style={styles.requestBadge}>
           <Icon name="bell" size={16} color="#fff" />
           <Text style={styles.requestBadgeText}>New Ride Request</Text>
         </View>
-        <Text style={styles.fareAmount}>₹{rideRequest.fare}</Text>
+        <View>
+          <Text style={styles.fareAmount}>₹{rideRequest.driver_amount}</Text>
+          <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>Total Amount ₹{rideRequest.total_fare}</Text>
+        </View>
+        
       </View>
-
+      <View style={{...styles.requestBadge,backgroundColor:'#2196F3',marginTop:-10,marginBottom:15,alignSelf:'flex-start'}}>
+      <Icon name="bell" size={16} color="#fff" />
+      <Text style={styles.requestBadgeText}>{rideRequest.service_name}</Text>
+      </View>
       <View style={styles.locationContainer}>
         <View style={styles.locationEntryRow}>
           <View style={styles.dotCol}>
@@ -1624,7 +1660,7 @@ console.log('Cancel Booking Response:', res);
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#FF1493']} tintColor="#FF1493" />}
       >
-        <StatsCard />
+       {currentRides.length == 0 && <StatsCard />}
 
         {currentRides.length > 0 ? (
           <>
@@ -2051,7 +2087,7 @@ const styles = StyleSheet.create({
 
   rideInfo: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12, gap: 15 },
   infoItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  infoText: { fontSize: 14, color: '#666' },
+  infoText: { fontSize: 16, color: '#666' },
 
   paymentInfo: {
     backgroundColor: '#FFF0F5',
@@ -2091,7 +2127,7 @@ const styles = StyleSheet.create({
   buttonRow: { flexDirection: 'row', gap: 12 },
   acceptBtn: { flex: 1, backgroundColor: '#4CAF50', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12, gap: 8 },
   rejectBtn: { flex: 1, backgroundColor: '#FF5252', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12, gap: 8 },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  btnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
 
   cancelRideBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#FF5252', borderRadius: 12, paddingVertical: 11, marginTop: 10, gap: 8 },
   cancelRideBtnText: { color: '#FF5252', fontSize: 15, fontWeight: '600' },

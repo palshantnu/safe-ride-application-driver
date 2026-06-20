@@ -1,4 +1,4 @@
-package com.saferide_driver
+package com.sigiridecaptain
 
 import android.app.Application
 import com.facebook.react.PackageList

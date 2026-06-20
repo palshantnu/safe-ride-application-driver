@@ -121,27 +121,27 @@ const ProfileInformationScreen = ({ navigation }) => {
         return true;
     };
 
-    const requestStoragePermission = async () => {
-        if (Platform.OS === 'android') {
-            try {
-                const granted = await PermissionsAndroid.request(
-                    PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-                    {
-                        title: 'Storage Permission',
-                        message: 'App needs access to your storage to select profile photo',
-                        buttonNeutral: 'Ask Me Later',
-                        buttonNegative: 'Cancel',
-                        buttonPositive: 'OK',
-                    }
-                );
-                return granted === PermissionsAndroid.RESULTS.GRANTED;
-            } catch (err) {
-                console.log('Storage permission error:', err);
-                return false;
-            }
-        }
-        return true;
-    };
+const requestStoragePermission = async () => {
+  if (Platform.OS === 'android') {
+    try {
+      if (Platform.Version >= 33) {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } else {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      }
+    } catch (err) {
+      console.log(err);
+      return false;
+    }
+  }
+  return true;
+};
 
     const showImagePickerOptions = () => {
         Alert.alert(
@@ -305,7 +305,7 @@ const ProfileInformationScreen = ({ navigation }) => {
             }
         } catch (error) {
             console.log('Submit error:', error);
-            Alert.alert('Error', 'Failed to update profile');
+            Alert.alert('Error', error?.response?.data?.message || 'An error occurred while updating profile');
         } finally {
             setLoading(false);
         }

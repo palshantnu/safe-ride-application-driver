@@ -1,4 +1,4 @@
-package com.saferide_driver
+package com.sigiridecaptain
 
 import android.media.MediaPlayer
 import com.facebook.react.bridge.ReactApplicationContext

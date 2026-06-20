@@ -1,4 +1,4 @@
-package com.saferide_driver
+package com.sigiridecaptain
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

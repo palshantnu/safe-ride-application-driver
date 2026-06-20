@@ -567,7 +567,7 @@ const DriverHistoryScreen = ({ navigation }) => {
         <View style={styles.customerInfo}>
           <Icon name="person-outline" size={16} color="#810a45" />
           <Text style={styles.customerName}>{item.customerName}</Text>
-          <Text style={styles.customerPhone}>• {item.customerPhone}</Text>
+          {/* <Text style={styles.customerPhone}>• {item.customerPhone}</Text> */}
         </View>
 
         {/* Location */}
@@ -743,7 +743,7 @@ const DriverHistoryScreen = ({ navigation }) => {
             <Text style={styles.landmarkText}>📍 {item.delivery_landmark}</Text>
           ) : null}
           <Text style={styles.contactText}>👤 {item.receiver_name}</Text>
-          <Text style={styles.contactText}>📞 {item.receiver_mobile}</Text>
+          {/* <Text style={styles.contactText}>📞 {item.receiver_mobile}</Text> */}
         </View>
       </View>
 

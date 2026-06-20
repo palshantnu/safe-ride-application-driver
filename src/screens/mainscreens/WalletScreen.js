@@ -254,6 +254,56 @@ const WalletScreen = () => {
     </View>
   );
 
+  const renderWithdrawalItem = ({ item }) => (
+  <View style={styles.card}>
+    <View style={styles.cardRow}>
+      <View style={styles.cardIconWrap}>
+        <Icon name="cash-outline" size={20} color="#f59e0b" />
+      </View>
+
+      <View style={styles.cardBody}>
+        <View style={styles.cardTopRow}>
+          <Text style={styles.rechargeId}>
+            Withdrawal Request
+          </Text>
+
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: '700',
+              color: '#ef4444',
+            }}
+          >
+            -₹{parseFloat(item.amount || 0).toFixed(2)}
+          </Text>
+        </View>
+
+        <Text style={styles.dateText}>
+          {formatDate(item.created_at)}
+        </Text>
+
+        <View
+          style={[
+            styles.statusBadge,
+            {
+              backgroundColor:
+                statusColor(item.status) + '20',
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.statusText,
+              { color: statusColor(item.status) },
+            ]}
+          >
+            {item.status}
+          </Text>
+        </View>
+      </View>
+    </View>
+  </View>
+);
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -278,28 +328,79 @@ const WalletScreen = () => {
         <Text style={styles.balanceAmount}>₹{parseFloat(balance).toFixed(2)}</Text>
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.rechargeBtn} onPress={() => setModalVisible(true)}>
-            <Icon name="add-circle-outline" size={18} color="#810a45" />
+            <Icon name="add-circle-outline" size={18} color="#fff" />
             <Text style={styles.rechargeBtnText}>Add Money</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.withdrawBtn} onPress={() => setWithdrawModalVisible(true)}>
-            <Icon name="cash-outline" size={18} color="#810a45" />
+            <Icon name="cash-outline" size={18} color="#fff" />
             <Text style={styles.withdrawBtnText}>Withdraw</Text>
           </TouchableOpacity>
         </View>
+         <Text style={{...styles.balanceLabel,marginTop:15}}>​Keep at least ₹100 in your wallet to booking</Text>
       </LinearGradient>
 
       {/* History */}
-      <Text style={styles.sectionTitle}>Recharge History</Text>
+     <View style={styles.historyTabContainer}>
+  <TouchableOpacity
+    style={[
+      styles.historyTab,
+      activeHistoryTab === 'recharge' && styles.historyTabActive,
+    ]}
+    onPress={() => setActiveHistoryTab('recharge')}
+  >
+    <Text
+      style={[
+        styles.historyTabText,
+        activeHistoryTab === 'recharge' && styles.historyTabTextActive,
+      ]}
+    >
+      Recharge History
+    </Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={[
+      styles.historyTab,
+      activeHistoryTab === 'withdrawal' && styles.historyTabActive,
+    ]}
+    onPress={() => setActiveHistoryTab('withdrawal')}
+  >
+    <Text
+      style={[
+        styles.historyTabText,
+        activeHistoryTab === 'withdrawal' && styles.historyTabTextActive,
+      ]}
+    >
+      Withdrawal History
+    </Text>
+  </TouchableOpacity>
+</View>
 
       {loading ? (
         <ActivityIndicator size="large" color="#810a45" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
-          data={history}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#810a45']} />}
+        data={
+    activeHistoryTab === 'recharge'
+      ? history
+      : withdrawalHistory
+  }
+  keyExtractor={(item, index) =>
+    String(item.id || item._id || index)
+  }
+  renderItem={({ item }) =>
+    activeHistoryTab === 'recharge'
+      ? renderItem({ item })
+      : renderWithdrawalItem({ item })
+  }
+  contentContainerStyle={styles.listContent}
+  refreshControl={
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      colors={['#810a45']}
+    />
+  }
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <Icon name="wallet-outline" size={48} color="#ccc" />
@@ -503,24 +604,28 @@ const styles = StyleSheet.create({
   },
   rechargeBtn: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 24,
-    gap: 6,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      borderRadius: 25,
+      alignItems: 'center',
   },
-  rechargeBtnText: { color: '#810a45', fontWeight: '700', fontSize: 15 },
+  rechargeBtnText: {   color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,},
   withdrawBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 24,
-    gap: 6,
+   flexDirection: 'row',
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      borderRadius: 25,
+      alignItems: 'center',
   },
-  withdrawBtnText: { color: '#810a45', fontWeight: '700', fontSize: 15 },
+  withdrawBtnText: {   color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,},
 
   sectionTitle: {
     fontSize: 14,
@@ -646,6 +751,38 @@ const styles = StyleSheet.create({
   },
   payBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   submitBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    historyTabContainer: {
+      flexDirection: 'row',
+      marginHorizontal: 20,
+      marginBottom: 12,
+      backgroundColor: '#fff',
+      borderRadius: 12,
+      padding: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 2,
+      elevation: 2,
+      marginTop:10
+    },
+    historyTab: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 10,
+      alignItems: 'center',
+      backgroundColor: 'transparent',
+    },
+    historyTabActive: {
+      backgroundColor: '#FF1493',
+    },
+    historyTabText: {
+      color: '#666',
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    historyTabTextActive: {
+      color: '#fff',
+    },
 });
 
 export default WalletScreen;

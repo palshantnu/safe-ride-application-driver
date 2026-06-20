@@ -148,6 +148,7 @@ const BAParcelHistoryScreen = ({ navigation }) => {
       status: displayStatus,
       original_status: status,
       driver_status: driverStatus,
+        user_status: parcel.user_status,
       driver_name: parcel.driver_name,
       driver_phone: parcel.driver_phone,
       user_name: parcel.user_name,
@@ -217,6 +218,7 @@ const BAParcelHistoryScreen = ({ navigation }) => {
       'delivered': 'Delivered',
       'completed': 'Completed',
       'cancelled': 'Cancelled',
+      'token_paid': 'Token Paid',
     };
     return textMap[status] || status.charAt(0).toUpperCase() + status.slice(1);
   };
@@ -269,7 +271,9 @@ const BAParcelHistoryScreen = ({ navigation }) => {
             <Text style={styles.statusText}>{getStatusText(status)}</Text>
           </View>
         </View>
-
+<View style={[styles.statusBadge ]}>
+             <Text style={{...styles.statusText,color:'black',fontSize:16}}>USER STATUS : {getStatusText(delivery.user_status)}</Text>
+          </View>
         <View style={styles.routeRow}>
           <View style={styles.routeCol}>
             <View style={styles.pickupDot} />

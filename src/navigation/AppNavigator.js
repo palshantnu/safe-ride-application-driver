@@ -21,6 +21,7 @@ import InCityMapScreen from '../screens/mainscreens/InCityMapScreen';
 import InCityInvoiceScreen from '../screens/mainscreens/InCityInvoiceScreen';
 import WalletScreen from '../screens/mainscreens/WalletScreen';
 import BookingHistoryDetailScreen from '../screens/mainscreens/BookingHistoryDetailScreen';
+import OnSpotBookingDetail from '../screens/mainscreens/OnSpotBookingDetail';
 import SelfSharingMyTripsScreen from '../screens/mainscreens/SelfSharingMyTripsScreen';
 import SelfSharingMyTripsBAAssignScreen from '../screens/mainscreens/SelfSharingMyTripsBAAssignScreen';
 
@@ -28,6 +29,7 @@ import SelfSharingTripDetailsScreen from '../screens/mainscreens/SelfSharingTrip
 import SelfSharingCreateTripScreen from '../screens/mainscreens/SelfSharingCreateTripScreen';
 import ParcelDeliveryDetail from '../screens/mainscreens/ParcelDeliveryDetail';
 import BAParcelHistoryScreen from '../components/ba/BAParcelHistoryScreen';
+
 
 
 const Stack = createStackNavigator();
@@ -263,6 +265,11 @@ const AppNavigator = () => {
   component={BAParcelHistoryScreen} 
   options={{ headerShown: false }}
 />
+<Stack.Screen 
+  name="OnSpotBookingDetail" 
+  component={OnSpotBookingDetail} 
+  options={{ headerShown: false }}
+/>
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthStackNavigator} />
@@ -271,5 +278,6 @@ const AppNavigator = () => {
     </NavigationContainer>
   );
 };
+
 
 export default AppNavigator;

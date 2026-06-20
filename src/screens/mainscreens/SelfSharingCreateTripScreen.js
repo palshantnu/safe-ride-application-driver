@@ -11,11 +11,13 @@ import {
   Platform,
   Modal,
   StatusBar,
+  FlatList,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Feather';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import LinearGradient from 'react-native-linear-gradient';
+import { Dropdown } from 'react-native-element-dropdown';
 import SelfSharingService from '../../services/SelfSharingService';
 import axios from 'axios';
 
@@ -30,8 +32,8 @@ const DEFAULT_PAYLOAD = {
   pickup_address: '',
   departure_time: '2026-06-08 08:00:00',
   total_seats: 4,
-  token_fare: 100,
-  full_fare: 500,
+  token_fare: 0,
+  full_fare: 0,
 };
 
 const SelfSharingCreateTripScreen = ({ navigation, route }) => {
@@ -48,6 +50,10 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
   const [showCityModal, setShowCityModal] = useState(false);
   const [cityType, setCityType] = useState(''); // 'from' or 'to'
   const [citySearch, setCitySearch] = useState('');
+
+  // Dropdown states
+  const [fromCityDropdown, setFromCityDropdown] = useState(false);
+  const [toCityDropdown, setToCityDropdown] = useState(false);
 
   // Cities data from API
   const [cities, setCities] = useState([]);
@@ -145,11 +151,12 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
       Alert.alert('Error', 'Please enter valid full fare');
       return;
     }
-
+console.log('form===>', form);
     setLoading(true);
     try {
       const res = await SelfSharingService.createTrip({
         ...form,
+         departure_time: new Date(form.departure_time).toISOString(),
         total_seats: Number(form.total_seats),
         token_fare: Number(form.token_fare),
         full_fare: Number(form.full_fare),
@@ -249,6 +256,15 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
     }
   };
 
+  // Format cities for dropdown
+  const getDropdownCities = () => {
+    return cities.map(city => ({
+      label: city.name,
+      value: city.id,
+      state: city.state_name,
+    }));
+  };
+
   const renderCityItem = ({ item }) => (
     <TouchableOpacity
       style={styles.cityItem}
@@ -265,6 +281,21 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
       <Icon name="chevron-right" size={18} color="#ccc" />
     </TouchableOpacity>
   );
+
+  // Render dropdown item
+  const renderDropdownItem = (item) => {
+    return (
+      <View style={styles.dropdownItemContainer}>
+        <Icon name="map-pin" size={16} color="#FF1493" style={styles.dropdownItemIcon} />
+        <View style={styles.dropdownItemTextContainer}>
+          <Text style={styles.dropdownItemLabel}>{item.label}</Text>
+          {item.state && (
+            <Text style={styles.dropdownItemState}>{item.state}</Text>
+          )}
+        </View>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -288,28 +319,40 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
           {/* From City */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>From City</Text>
-            <TouchableOpacity
-              style={styles.input}
-              onPress={() => {
-                setCityType('from');
-                setShowCityModal(true);
+            <Dropdown
+              style={[styles.dropdown, fromCityDropdown && styles.dropdownFocused]}
+              placeholderStyle={styles.placeholderStyle}
+              selectedTextStyle={styles.selectedTextStyle}
+              inputSearchStyle={styles.inputSearchStyle}
+              iconStyle={styles.iconStyle}
+              data={getDropdownCities()}
+              search
+              maxHeight={300}
+              labelField="label"
+              valueField="value"
+              placeholder="Select from city"
+              searchPlaceholder="Search cities..."
+              value={form.from_city_id}
+              onFocus={() => setFromCityDropdown(true)}
+              onBlur={() => setFromCityDropdown(false)}
+              onChange={item => {
+                const selectedCity = cities.find(city => city.id === item.value);
+                if (selectedCity) {
+                  update('from_city', selectedCity.name);
+                  update('from_city_id', selectedCity.id);
+                }
+                setFromCityDropdown(false);
               }}
-            >
-              <Icon name="map-pin" size={18} color="#FF1493" />
-              <Text style={[styles.inputText, !form.from_city && styles.placeholderText]}>
-                {form.from_city || 'Select from city'}
-              </Text>
-              {form.from_city ? (
-                <TouchableOpacity onPress={() => {
-                  update('from_city', '');
-                  update('from_city_id', null);
-                }}>
-                  <Icon name="x" size={18} color="#666" />
-                </TouchableOpacity>
-              ) : (
-                <Icon name="chevron-down" size={18} color="#999" />
+              renderLeftIcon={() => (
+                <Icon name="map-pin" size={18} color="#FF1493" style={styles.dropdownIcon} />
               )}
-            </TouchableOpacity>
+              renderItem={renderDropdownItem}
+              activeColor="#FFF0F5"
+              selectedTextProps={{ numberOfLines: 1 }}
+              showsVerticalScrollIndicator={true}
+              keyboardAvoiding={true}
+              statusBarIsTranslucent={true}
+            />
           </View>
 
           {/* Swap Button */}
@@ -320,28 +363,40 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
           {/* To City */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>To City</Text>
-            <TouchableOpacity
-              style={styles.input}
-              onPress={() => {
-                setCityType('to');
-                setShowCityModal(true);
+            <Dropdown
+              style={[styles.dropdown, toCityDropdown && styles.dropdownFocused]}
+              placeholderStyle={styles.placeholderStyle}
+              selectedTextStyle={styles.selectedTextStyle}
+              inputSearchStyle={styles.inputSearchStyle}
+              iconStyle={styles.iconStyle}
+              data={getDropdownCities()}
+              search
+              maxHeight={300}
+              labelField="label"
+              valueField="value"
+              placeholder="Select to city"
+              searchPlaceholder="Search cities..."
+              value={form.to_city_id}
+              onFocus={() => setToCityDropdown(true)}
+              onBlur={() => setToCityDropdown(false)}
+              onChange={item => {
+                const selectedCity = cities.find(city => city.id === item.value);
+                if (selectedCity) {
+                  update('to_city', selectedCity.name);
+                  update('to_city_id', selectedCity.id);
+                }
+                setToCityDropdown(false);
               }}
-            >
-              <Icon name="map-pin" size={18} color="#FF1493" />
-              <Text style={[styles.inputText, !form.to_city && styles.placeholderText]}>
-                {form.to_city || 'Select to city'}
-              </Text>
-              {form.to_city ? (
-                <TouchableOpacity onPress={() => {
-                  update('to_city', '');
-                  update('to_city_id', null);
-                }}>
-                  <Icon name="x" size={18} color="#666" />
-                </TouchableOpacity>
-              ) : (
-                <Icon name="chevron-down" size={18} color="#999" />
+              renderLeftIcon={() => (
+                <Icon name="map-pin" size={18} color="#FF1493" style={styles.dropdownIcon} />
               )}
-            </TouchableOpacity>
+              renderItem={renderDropdownItem}
+              activeColor="#FFF0F5"
+              selectedTextProps={{ numberOfLines: 1 }}
+              showsVerticalScrollIndicator={true}
+              keyboardAvoiding={true}
+              statusBarIsTranslucent={true}
+            />
           </View>
 
           {/* Pickup Address */}
@@ -416,11 +471,10 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
             <View style={styles.halfWidth}>
               <Text style={styles.label}>Token Fare (₹)</Text>
               <TextInput
+                editable={false}
                 style={styles.input}
                 keyboardType="numeric"
-                placeholder="Token amount"
                 value={String(form.token_fare)}
-                onChangeText={(t) => update('token_fare', t)}
               />
             </View>
 
@@ -431,7 +485,11 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
                 keyboardType="numeric"
                 placeholder="Full amount"
                 value={String(form.full_fare)}
-                onChangeText={(t) => update('full_fare', t)}
+                onChangeText={(t) => {
+                  const fullFare = Number(t) || 0;
+                  update('full_fare', t);
+                  update('token_fare', Math.round(fullFare * 0.20));
+                }}
               />
             </View>
           </View>
@@ -453,7 +511,7 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
         </View>
       </ScrollView>
 
-      {/* City Selection Modal */}
+      {/* City Selection Modal - Kept for compatibility but not used with Dropdown */}
       <Modal
         visible={showCityModal}
         animationType="slide"
@@ -502,24 +560,15 @@ const SelfSharingCreateTripScreen = ({ navigation, route }) => {
               <Text style={styles.loadingText}>Loading cities...</Text>
             </View>
           ) : filteredCities.length > 0 ? (
-            <ScrollView style={styles.citiesList} showsVerticalScrollIndicator={false}>
-              {filteredCities.map((city) => (
-                <TouchableOpacity
-                  key={city.id}
-                  style={styles.cityItem}
-                  onPress={() => handleCitySelect(city)}
-                >
-                  <View style={styles.cityItemContent}>
-                    <Icon name="map-pin" size={18} color="#FF1493" />
-                    <View style={styles.cityTextContainer}>
-                      <Text style={styles.cityName}>{city.name}</Text>
-                      <Text style={styles.stateName}>{city.state_name}</Text>
-                    </View>
-                  </View>
-                  <Icon name="chevron-right" size={18} color="#ccc" />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            <FlatList
+              data={filteredCities}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderCityItem}
+              initialNumToRender={15}
+              maxToRenderPerBatch={15}
+              windowSize={5}
+              removeClippedSubviews={true}
+            />
           ) : (
             <View style={styles.noResultsContainer}>
               <Icon name="search" size={48} color="#ccc" />
@@ -630,6 +679,66 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  
+  // Dropdown Styles
+  dropdown: {
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    height: 48,
+  },
+  dropdownFocused: {
+    borderColor: '#FF1493',
+    borderWidth: 2,
+  },
+  dropdownIcon: {
+    marginRight: 10,
+  },
+  placeholderStyle: {
+    fontSize: 14,
+    color: '#999',
+  },
+  selectedTextStyle: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  inputSearchStyle: {
+    height: 40,
+    fontSize: 14,
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    borderColor: '#E5E7EB',
+  },
+  iconStyle: {
+    width: 20,
+    height: 20,
+  },
+  dropdownItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  dropdownItemIcon: {
+    marginRight: 10,
+  },
+  dropdownItemTextContainer: {
+    flex: 1,
+  },
+  dropdownItemLabel: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  dropdownItemState: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 1,
+  },
   
   // Modal Styles
   modalContainer: {
