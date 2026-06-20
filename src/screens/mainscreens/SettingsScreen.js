@@ -15,7 +15,8 @@ import Icon from 'react-native-vector-icons/Feather';
 import { LOGOUT_SUCCESS } from '../../redux/actions/action-types';
 import LinearGradient from 'react-native-linear-gradient';
 import { fetchPagesByRole } from '../../services/Services';
-import { GET_PROFILE } from '../../redux/actions/action-creator';
+import { GET_PROFILE, GET_BA_PROFILE } from '../../redux/actions/action-creator';
+
 import { useFocusEffect } from '@react-navigation/native';
 
 const SimpleHeader = ({ title }) => {
@@ -33,18 +34,25 @@ const SimpleHeader = ({ title }) => {
 
 const SettingsScreen = ({ navigation }) => {
     const dispatch = useDispatch();
-  const { userData, driverProfileData } = useSelector(
+  const { userData, driverProfileData ,baProfile} = useSelector(
   (state) => state.auth
 );
+
+console.log('driverProfileData', baProfile);
     const [pages, setPages] = useState([]);
     const [loadingPages, setLoadingPages] = useState(false);
     const [pagesError, setPagesError] = useState(null);
 
 useFocusEffect(
   useCallback(() => {
-    dispatch(GET_PROFILE());
-  }, [])
+    if (userData?.ba_name) {
+      dispatch(GET_BA_PROFILE());
+    } else {
+      dispatch(GET_PROFILE());
+    }
+  }, [dispatch, userData?.ba_name])
 );
+
     useEffect(() => {
         const loadPages = async () => {
             setLoadingPages(true);
@@ -78,7 +86,7 @@ useFocusEffect(
   driverProfileData?.[0]?.driver_profile_url
     ?.replace(
       'http://localhost:3000',
-      'http://91.108.104.79:3000'
+      'https://sigiride.com'
     );
 
 
@@ -116,14 +124,23 @@ useFocusEffect(
         </TouchableOpacity>
     );
 
-
+console.log('baProfile?.data?.profile_pic', baProfile?.data?.profile_pic);
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
             {/* Profile Section */}
             <SimpleHeader title="Settings" />
             <View style={styles.profileSection}>
                 <View style={styles.profileImageContainer}>
-                    <Image
+                  {userData?.ba_name ?<Image
+  source={
+    baProfile?.data?.profile_pic
+      ? { uri: `https://sigiride.com/uploads/baprofile/${baProfile?.data?.profile_pic}` }
+      : require('../../assets/logo.jpg')
+  }
+  style={styles.profileImage}
+  resizeMode="cover"
+/>
+:  <Image
   source={
     profileImage
       ? { uri: profileImage }
@@ -131,30 +148,32 @@ useFocusEffect(
   }
   style={styles.profileImage}
   resizeMode="cover"
-/>
+/>}
                     {/* <TouchableOpacity style={styles.editIcon}>
                         <Icon name="edit-2" size={16} color="#fff" />
                     </TouchableOpacity> */}
                 </View>
-                <Text style={styles.profileName}>
+{userData?.ba_name ? <Text style={styles.profileName}>{baProfile?.data?.ba_name}</Text> :       
+         <Text style={styles.profileName}>
   {driverProfileData?.[0]?.full_name ||
    userData?.full_name ||
    userData?.ba_name ||
    'User'}
-</Text>
+</Text>}
 
-<Text style={styles.profilePhone}>
+{userData?.ba_name ? <Text style={styles.profilePhone}>{baProfile?.data?.ba_mobile}</Text> :<Text style={styles.profilePhone}>
   +91 {driverProfileData?.[0]?.phone ||
        userData?.phone ||
        userData?.ba_mobile}
-</Text>
+</Text>}
             </View>
 
             {/* Account Settings */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Account Settings</Text>
                 <View style={styles.sectionContent}>
-                    {renderMenuItem('user', 'Profile Information', () => navigation.navigate('Profile'))}
+                    {renderMenuItem('user', 'Profile Information', () => navigation.navigate(userData?.ba_name ? 'BAProfile' : 'Profile'))}
+
                     {renderMenuItem('credit-card', 'KYC Verification', () => navigation.navigate('KYC'))}
 
                     {/* {renderMenuItem('lock', 'Change Password', () => Alert.alert('Coming Soon', 'Change password feature will be available soon'))} */}

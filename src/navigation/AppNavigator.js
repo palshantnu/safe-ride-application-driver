@@ -14,6 +14,8 @@ import HistoryScreen from '../screens/mainscreens/HistoryScreen';
 import SettingsScreen from '../screens/mainscreens/SettingsScreen';
 import KYCScreen from '../screens/mainscreens/KYCScreen';
 import ProfileInformationScreen from '../screens/mainscreens/ProfileInformationScreen';
+import BAProfileInformationScreen from '../screens/mainscreens/BAProfileInformationScreen';
+
 import AddDriverScreen from '../screens/mainscreens/AddDriverScreen';
 import BADriverListScreen from '../screens/mainscreens/BADriverListScreen';
 import InfoPageScreen from '../screens/mainscreens/InfoPageScreen';
@@ -126,7 +128,7 @@ const AuthStackNavigator = () => {
   );
 };
 
-// ✅ Main Navigator
+
 const AppNavigator = () => {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const [showSplash, setShowSplash] = useState(true);
@@ -191,6 +193,7 @@ const AppNavigator = () => {
               options={{
                 headerShown: false,
                 headerTitle: 'Profile Information',
+
                 headerTitleAlign: 'center',
                 headerStyle: {
                   backgroundColor: '#810a45',
@@ -215,7 +218,34 @@ const AppNavigator = () => {
 
             />
             <Stack.Screen
+              name="BAProfile"
+              component={BAProfileInformationScreen}
+              options={{
+                headerShown: false,
+                headerTitle: 'BA Profile',
+                headerTitleAlign: 'center',
+                headerStyle: {
+                  backgroundColor: '#810a45',
+                  borderBottomLeftRadius: 40,
+                  borderBottomRightRadius: 40,
+                },
+                headerTintColor: '#fff',
+                headerTitleStyle: {
+                  fontWeight: 'bold',
+                },
+                headerBackTitle: 'Back',
+                headerBackTitleStyle: {
+                  color: '#fff',
+                  fontSize: 14,
+                },
+                headerBackImage: ({ tintColor }) => (
+                  <Icon name="chevron-back" size={24} color={tintColor} />
+                ),
+              }}
+            />
+            <Stack.Screen
               name="InfoPage"
+
               component={InfoPageScreen}
               options={{ headerShown: false }}
             />

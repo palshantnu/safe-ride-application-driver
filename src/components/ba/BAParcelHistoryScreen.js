@@ -50,7 +50,7 @@ const BAParcelHistoryScreen = ({ navigation }) => {
   const { userData } = useSelector((state) => state.auth);
 
   const PARCEL_API = {
-    LIST: 'http://91.108.104.79:3000/api/parcel/ba/list',
+    LIST: 'https://sigiride.com/api/parcel/ba/list',
   };
 
   const fetchParcelHistory = async (pageNum = 1, shouldAppend = false) => {

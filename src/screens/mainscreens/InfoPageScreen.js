@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/Feather';
 
 const InfoPageScreen = ({ route, navigation }) => {
   const { page } = route.params || {};
+  console.log('Received page data:', page);
   const { width } = useWindowDimensions();
   const title = page?.title
     ? page.title.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -90,6 +91,29 @@ const htmlStyles = {
   b: {
     fontWeight: '700',
      color: '#333',
+  },
+   h1: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    color: '#000',
+  },
+
+  h2: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 8,
+    color: '#000',
+  },
+  h3: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 6,
+    color: '#000',
+  },
+  li: {
+    marginBottom: 6,
+    color: '#333',
   },
 };
 

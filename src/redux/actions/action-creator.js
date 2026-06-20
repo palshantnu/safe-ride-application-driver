@@ -42,10 +42,20 @@ import {
   GET_ONLINE_STATUS_REQUEST,
   GET_ONLINE_STATUS_SUCCESS,
   GET_ONLINE_STATUS_FAILURE,
+  GET_BA_PROFILE_REQUEST,
+  GET_BA_PROFILE_SUCCESS,
+  GET_BA_PROFILE_FAILURE,
+  UPDATE_BA_PROFILE_REQUEST,
+  UPDATE_BA_PROFILE_SUCCESS,
+  UPDATE_BA_PROFILE_FAILURE,
 } from './action-types';
+
 
 import EndPoints from '../../services/EndPoints';
 import axiosinstance from '../../axios/axiosinstance';
+
+// BA profile endpoints (ba/profile, ba/update)
+
 
 const CommonError = {
   message: 'Something Went Wrong',
@@ -391,7 +401,6 @@ export const UPDATE_PROFILE = (formData) => (dispatch) => {
 export const GET_PROFILE = () => (dispatch) => {
   dispatch({ type: GET_PROFILE_REQUEST });
 
-
   return axiosinstance.get(EndPoints.driverprofile)
     .then((response) => {
       console.log('response---', response.data);
@@ -410,6 +419,58 @@ export const GET_PROFILE = () => (dispatch) => {
       throw error;
     });
 };
+
+export const GET_BA_PROFILE = () => (dispatch) => {
+  dispatch({ type: GET_BA_PROFILE_REQUEST });
+
+  return axiosinstance.get(EndPoints.baProfile)
+    .then((response) => {
+      console.log('BA profile response---', response.data);
+
+      if (response.data.status) {
+        dispatch({
+          type: GET_BA_PROFILE_SUCCESS,
+          payload: response.data,
+        });
+      }
+      return response.data;
+    })
+    .catch((error) => {
+      dispatch({ type: GET_BA_PROFILE_FAILURE });
+      throw error;
+    });
+};
+
+export const UPDATE_BA_PROFILE = (formData) => (dispatch) => {
+  dispatch({ type: UPDATE_BA_PROFILE_REQUEST });
+
+  return axiosinstance.put(
+    EndPoints.baUpdateProfile,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  )
+    .then((response) => {
+      console.log('BA profile update response---', response.data);
+
+      if (response.data.status) {
+        dispatch({
+          type: UPDATE_BA_PROFILE_SUCCESS,
+          payload: response.data,
+        });
+      }
+
+      return response.data;
+    })
+    .catch((error) => {
+      dispatch({ type: UPDATE_BA_PROFILE_FAILURE });
+      throw error;
+    });
+};
+
 
 export const GET_ONLINE_STATUS = (data) => (dispatch) => {
   dispatch({ type: GET_ONLINE_STATUS_REQUEST });

@@ -21,7 +21,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://91.108.104.79:3000';
+const API_BASE_URL = 'https://sigiride.com';
 const IMAGE_BASE_URL = `${API_BASE_URL}/uploads/documents/`;
 
 const KYCScreen = ({ navigation }) => {
@@ -44,6 +44,10 @@ const KYCScreen = ({ navigation }) => {
     const [aadharBack, setAadharBack] = useState(null);
     const [panCard, setPanCard] = useState(null);
     const [gstNumber, setGstNumber] = useState('');
+    // BA KYC extra fields
+    const [aadharNumber, setAadharNumber] = useState('');
+    const [panNumber, setPanNumber] = useState('');
+
     const [uploading, setUploading] = useState(false);
 
     // Driver KYC States (existing)
@@ -106,6 +110,12 @@ const KYCScreen = ({ navigation }) => {
                 }
                 if (kycData.gst_number) {
                     setGstNumber(kycData.gst_number);
+                }
+                if (kycData.pan_number) {
+                    setPanNumber(kycData.pan_number);
+                }
+                if (kycData.aadhar_number) {
+                    setAadharNumber(kycData.aadhar_number);
                 }
             }
         } catch (error) {
@@ -252,11 +262,11 @@ const KYCScreen = ({ navigation }) => {
     };
 
     const openGalleryForBA = async (type) => {
-        const hasPermission = await requestStoragePermission();
-        if (!hasPermission) {
-            Alert.alert('Permission Denied', 'Storage permission is required to access gallery');
-            return;
-        }
+        // const hasPermission = await requestStoragePermission();
+        // if (!hasPermission) {
+        //     Alert.alert('Permission Denied', 'Storage permission is required to access gallery');
+        //     return;
+        // }
 
         const options = {
             mediaType: 'photo',
@@ -355,10 +365,20 @@ const KYCScreen = ({ navigation }) => {
             return;
         }
 
+        // BA extra required inputs
+        if (!aadharNumber.trim()) {
+            Alert.alert('Error', 'Please enter Aadhar Number');
+            return;
+        }
+        if (!panNumber.trim()) {
+            Alert.alert('Error', 'Please enter PAN Number');
+            return;
+        }
         if (!gstNumber.trim()) {
             Alert.alert('Error', 'Please enter GST number');
             return;
         }
+
 
         setUploading(true);
         try {
@@ -389,9 +409,12 @@ const KYCScreen = ({ navigation }) => {
                 });
             }
             
+            formData.append('aadhar_number', aadharNumber);
+            formData.append('pan_number', panNumber);
             formData.append('gst_number', gstNumber);
 
             console.log('Submitting BA KYC...');
+
 
             const response = await axios.post(`${API_BASE_URL}/api/ba/upload-kyc`, formData, {
                 headers: {
@@ -493,11 +516,11 @@ const KYCScreen = ({ navigation }) => {
     };
 
     const openDriverGallery = async (documentId, documentType) => {
-        const hasPermission = await requestStoragePermission();
-        if (!hasPermission) {
-            Alert.alert('Permission Denied', 'Storage permission is required to access gallery');
-            return;
-        }
+        // const hasPermission = await requestStoragePermission();
+        // if (!hasPermission) {
+        //     Alert.alert('Permission Denied', 'Storage permission is required to access gallery');
+        //     return;
+        // }
 
         const options = {
             mediaType: 'photo',
@@ -934,6 +957,34 @@ const KYCScreen = ({ navigation }) => {
                         )}
                     </View>
 
+                    {/* Aadhar Number */}
+                    <View style={styles.baDocumentCard}>
+                        <Text style={styles.baDocumentTitle}>Aadhar Number *</Text>
+                        <TextInput
+                            style={[styles.textInput, !canEdit && styles.disabledInput]}
+                            placeholder="Enter Aadhar Number"
+                            placeholderTextColor="#999"
+                            value={aadharNumber}
+                            onChangeText={setAadharNumber}
+                            editable={canEdit}
+                            keyboardType="numeric"
+                        />
+                    </View>
+
+                    {/* PAN Number */}
+                    <View style={styles.baDocumentCard}>
+                        <Text style={styles.baDocumentTitle}>PAN Number *</Text>
+                        <TextInput
+                            style={[styles.textInput, !canEdit && styles.disabledInput]}
+                            placeholder="Enter PAN Number"
+                            placeholderTextColor="#999"
+                            value={panNumber}
+                            onChangeText={setPanNumber}
+                            editable={canEdit}
+                            autoCapitalize="characters"
+                        />
+                    </View>
+
                     {/* GST Number */}
                     <View style={styles.baDocumentCard}>
                         <Text style={styles.baDocumentTitle}>GST Number *</Text>
@@ -944,8 +995,10 @@ const KYCScreen = ({ navigation }) => {
                             value={gstNumber}
                             onChangeText={setGstNumber}
                             editable={canEdit}
+                            keyboardType="default"
                         />
                     </View>
+
                 </View>
 
                 <View style={styles.infoBox}>

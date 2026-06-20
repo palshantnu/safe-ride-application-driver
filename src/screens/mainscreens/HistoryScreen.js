@@ -15,8 +15,8 @@ import { GET_DRIVER_BOOKING_HISTORY, GET_BA_BOOKING_HISTORY } from '../../redux/
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 
-const PARCEL_HISTORY_API = 'http://91.108.104.79:3000/api/parcel/driver/my-deliveries';
-const ONSPOT_HISTORY_API = 'http://91.108.104.79:3000/api/onspot/captain/mybooking';
+const PARCEL_HISTORY_API = 'https://sigiride.com/api/parcel/driver/my-deliveries';
+const ONSPOT_HISTORY_API = 'https://sigiride.com/api/onspot/captain/mybooking';
 const LIMIT = 10;
 
 const DriverHistoryScreen = ({ navigation }) => {

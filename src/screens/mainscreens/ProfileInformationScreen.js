@@ -47,7 +47,7 @@ const ProfileInformationScreen = ({ navigation }) => {
                 profile.driver_profile_url
                     ? profile.driver_profile_url.replace(
                         'http://localhost:3000',
-                        'http://91.108.104.79:3000'
+                        'https://sigiride.com'
                     )
                     : null
             );
@@ -196,11 +196,11 @@ const requestStoragePermission = async () => {
     };
 
     const openGallery = async () => {
-        const hasPermission = await requestStoragePermission();
-        if (!hasPermission) {
-            Alert.alert('Permission Denied', 'Storage permission is required to access gallery');
-            return;
-        }
+        // const hasPermission = await requestStoragePermission();
+        // if (!hasPermission) {
+        //     Alert.alert('Permission Denied', 'Storage permission is required to access gallery');
+        //     return;
+        // }
 
         const options = {
             mediaType: 'photo',

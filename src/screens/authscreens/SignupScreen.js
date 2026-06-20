@@ -718,7 +718,7 @@ const SignupScreen = ({ navigation }) => {
                                         }}
                                     >
                                         <Image
-                                            source={{ uri: `http://91.108.104.79:3000/uploads/services/${imageUrl}` }}
+                                            source={{ uri: `https://sigiride.com/uploads/services/${imageUrl}` }}
                                             style={styles.serviceImage}
                                             resizeMode="contain"
                                         />
@@ -766,7 +766,7 @@ const SignupScreen = ({ navigation }) => {
                                         }}
                                     >
                                         <Image
-                                            source={{ uri: `http://91.108.104.79:3000/uploads/subservice/${imageUrl}` }}
+                                            source={{ uri: `https://sigiride.com/uploads/subservice/${imageUrl}` }}
                                             style={styles.serviceImage}
                                             resizeMode="contain"
                                         />

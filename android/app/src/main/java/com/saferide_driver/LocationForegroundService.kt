@@ -23,7 +23,7 @@ class LocationForegroundService : Service() {
 
     private val CHANNEL_ID = "saferide_location_channel"
     private val NOTIFICATION_ID = 101
-    private val BASE_URL = "http://91.108.104.79:3000/api/driver/update-location"
+    private val BASE_URL = "https://sigiride.com/api/driver/update-location"
 
     override fun onCreate() {
         super.onCreate()

@@ -70,18 +70,18 @@ const [parcelDrivers, setParcelDrivers] = useState([]);
 
 const PARCEL_API = {
   AVAILABLE:
-    'http://91.108.104.79:3000/api/parcel/ba/available',
+    'https://sigiride.com/api/parcel/ba/available',
 
   ACCEPT_ASSIGN:
-    'http://91.108.104.79:3000/api/parcel/ba/accept-assign',
+    'https://sigiride.com/api/parcel/ba/accept-assign',
 
   CURRENT:
-    'http://91.108.104.79:3000/api/parcel/ba/current',
+    'https://sigiride.com/api/parcel/ba/current',
 
   LIST:
-    'http://91.108.104.79:3000/api/parcel/ba/list',
+    'https://sigiride.com/api/parcel/ba/list',
     REJECT:
-'http://91.108.104.79:3000/api/parcel/reject',
+'https://sigiride.com/api/parcel/reject',
 };
 
 const [showRejectModal, setShowRejectModal] =

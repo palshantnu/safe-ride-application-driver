@@ -21,7 +21,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import SelfSharingService from '../../services/SelfSharingService';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://91.108.104.79:3000';
+const API_BASE_URL = 'https://sigiride.com';
 
 const DEFAULT_PAYLOAD = {
   service_id: 72,

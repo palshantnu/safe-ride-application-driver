@@ -2,9 +2,9 @@ import axios from 'axios';
 import { store } from '../redux/store';
 // import Config from 'react-native-config';
 
-export const baseURL = 'http://91.108.104.79:3000/api/';
+export const baseURL = 'https://sigiride.com/api/';
 // export const baseURL = `${Config.BASE_URL}/api/`;
-export const IMAGE_URL = 'http://91.108.104.79:3000/api/';
+export const IMAGE_URL = 'https://sigiride.com/api/';
 
 console.log('baseURL',baseURL);
 

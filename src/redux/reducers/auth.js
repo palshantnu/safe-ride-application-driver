@@ -29,7 +29,10 @@ import {
   KYC_DOCUMENT_LIST_SUCCESS,
   KYC_DOCUMENT_LIST_FAILURE,
   GET_ONLINE_STATUS_SUCCESS,
+  GET_BA_PROFILE_SUCCESS,
+  UPDATE_BA_PROFILE_SUCCESS,
 } from "../actions/action-types"
+
 
 const initialState = {
   // User Auth
@@ -67,7 +70,11 @@ const initialState = {
   driverKycDocumentsList: [],
   driverProfileData: {},
   driveronlineStatus: null,
+
+  // BA Profile
+  baProfile: null,
 }
+
 
 export const authReducer = (state = initialState, { type, payload }) => {
   switch (type) {
@@ -300,6 +307,21 @@ export const authReducer = (state = initialState, { type, payload }) => {
         driverProfileData: payload.data,
         error: null,
       }
+
+    case GET_BA_PROFILE_SUCCESS:
+      return {
+        ...state,
+        baProfile: payload,
+        error: null,
+      }
+
+    case UPDATE_BA_PROFILE_SUCCESS:
+      return {
+        ...state,
+        baProfile: payload,
+        error: null,
+      }
+
     case GET_ONLINE_STATUS_SUCCESS:
       return {
         ...state,

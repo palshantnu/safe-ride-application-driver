@@ -34,14 +34,14 @@ const { SoundHelper } = NativeModules;
 
 // API endpoints for parcel
 const PARCEL_API = {
-  GET_AVAILABLE: 'http://91.108.104.79:3000/api/parcel/driver/available',
-  GET_CURRENT: 'http://91.108.104.79:3000/api/parcel/driver/current-delivery',
-  ACCEPT: 'http://91.108.104.79:3000/api/parcel/driver/accept',
-  ARRIVE: 'http://91.108.104.79:3000/api/parcel/driver/arrive',
-  PICKUP_OTP: 'http://91.108.104.79:3000/api/parcel/driver/pickup-otp',
-  DELIVERY_OTP: 'http://91.108.104.79:3000/api/parcel/driver/delivery-otp',
-  CANCEL: 'http://91.108.104.79:3000/api/parcel/driver/cancel',
-    REJECT: 'http://91.108.104.79:3000/api/parcel/reject',
+  GET_AVAILABLE: 'https://sigiride.com/api/parcel/driver/available',
+  GET_CURRENT: 'https://sigiride.com/api/parcel/driver/current-delivery',
+  ACCEPT: 'https://sigiride.com/api/parcel/driver/accept',
+  ARRIVE: 'https://sigiride.com/api/parcel/driver/arrive',
+  PICKUP_OTP: 'https://sigiride.com/api/parcel/driver/pickup-otp',
+  DELIVERY_OTP: 'https://sigiride.com/api/parcel/driver/delivery-otp',
+  CANCEL: 'https://sigiride.com/api/parcel/driver/cancel',
+    REJECT: 'https://sigiride.com/api/parcel/reject',
 
 };
 

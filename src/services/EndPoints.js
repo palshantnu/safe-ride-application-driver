@@ -36,5 +36,10 @@ const EndPoints = {
   updateLocation: '/driver/update-location',
   // BA self-sharing services
   baServices: '/ba/services',
+
+  // BA profile
+  baProfile: '/ba/profile',
+  baUpdateProfile: '/ba/update',
 };
 export default EndPoints;
+
