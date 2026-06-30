@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "572734933894",
+    "project_id": "sigiride-919af",
+    "storage_bucket": "sigiride-919af.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:572734933894:android:1b9a4a3e851e9200317a07",
+        "android_client_info": {
+          "package_name": "com.sigiridecaptain"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-PTNrQTHvnijd_jrG9m2F7-q8MIChnNo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:572734933894:android:e9ace6d214bbbc1c317a07",
+        "android_client_info": {
+          "package_name": "com.sigirideuserstaxi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-PTNrQTHvnijd_jrG9m2F7-q8MIChnNo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect,useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Dimensions, Modal,Image } from 'react-native';
 
 
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 0,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,

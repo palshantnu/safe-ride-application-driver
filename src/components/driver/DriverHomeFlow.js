@@ -1495,7 +1495,7 @@ paddingHorizontal:20}}
         </View>}
         
       </View>
-      <View style={{...styles.requestBadge,backgroundColor:'#2196F3',marginTop:-10,marginBottom:15,alignSelf:'flex-start'}}>
+      <View style={{...styles.requestBadge,marginTop:-10,marginBottom:15,alignSelf:'flex-start'}}>
       <Icon name="bell" size={16} color="#fff" />
       <Text style={styles.requestBadgeText}>{rideRequest.service_name}</Text>
       </View>

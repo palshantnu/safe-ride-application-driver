@@ -50,9 +50,9 @@ import {
   UPDATE_BA_PROFILE_FAILURE,
 } from './action-types';
 
-
 import EndPoints from '../../services/EndPoints';
 import axiosinstance from '../../axios/axiosinstance';
+import messaging from '@react-native-firebase/messaging';
 
 // BA profile endpoints (ba/profile, ba/update)
 
@@ -122,54 +122,68 @@ export const SEND_OTP = (mobile) => (dispatch) => {
       throw error;
     });
 };
-export const VERIFY_DRIVER_OTP = (data) => (dispatch) => {
+export const VERIFY_DRIVER_OTP = (data) => async (dispatch) => {
   dispatch({ type: VERIFY_OTP_REQUEST });
 
-  return axiosinstance.post(EndPoints.driverRegister, data)
-    .then((response) => {
-      console.log('Driver Register Response:', response.data);
+  let fcm_token = null;
+  try {
+    fcm_token = await messaging().getToken();
+  } catch (error) {
+    console.log('Error getting FCM token:', error);
+  }
 
-      if (response.data) {
-        dispatch({
-          type: DRIVER_SIGNUP_SUCCESS,
-          payload: response.data,
-        });
-      }
-      return response.data;
-    })
-    .catch((error) => {
-      console.log('Driver Register Error:', error);
-      dispatch({ type: DRIVER_SIGNUP_FAILURE });
-      throw error;
-    });
+  const payload = { ...data, fcm_token };
+
+  try {
+    const response = await axiosinstance.post(EndPoints.driverRegister, payload);
+    console.log('Driver Register Response:', response.data);
+
+    if (response.data) {
+      dispatch({
+        type: DRIVER_SIGNUP_SUCCESS,
+        payload: response.data,
+      });
+    }
+    return response.data;
+  } catch (error) {
+    console.log('Driver Register Error:', error);
+    dispatch({ type: DRIVER_SIGNUP_FAILURE });
+    throw error;
+  }
 };
 
 // Verify OTP for Driver Registration
-export const VERIFY_OTP = (mobile, otp) => (dispatch) => {
+export const VERIFY_OTP = (mobile, otp) => async (dispatch) => {
   dispatch({ type: VERIFY_OTP_REQUEST });
   console.log('dmdkw');
 
-  return axiosinstance.post(EndPoints.verifyOtp, { mobile, otp })
-    .then((response) => {
-      console.log('dmdkw');
-      console.log('response', response);
+  let fcm_token = null;
+  try {
+    fcm_token = await messaging().getToken();
+  } catch (error) {
+    console.log('Error getting FCM token:', error);
+  }
 
-      if (response.data.status) {
-        dispatch({
-          type: VERIFY_OTP_SUCCESS,
-          payload: response.data,
-        });
-      }
-      return response.data;
-    })
-    .catch((error) => {
-      console.log('dmdkw');
-      console.log('error', error.response?.data);
-      console.log('status', error.response?.status);
+  try {
+    const response = await axiosinstance.post(EndPoints.verifyOtp, { mobile, otp, fcm_token });
+    console.log('dmdkw');
+    console.log('response', response);
 
-      dispatch({ type: VERIFY_OTP_FAILURE });
-      throw error.response?.data || CommonError;
-    });
+    if (response.data.status) {
+      dispatch({
+        type: VERIFY_OTP_SUCCESS,
+        payload: response.data,
+      });
+    }
+    return response.data;
+  } catch (error) {
+    console.log('dmdkw');
+    console.log('error', error.response?.data);
+    console.log('status', error.response?.status);
+
+    dispatch({ type: VERIFY_OTP_FAILURE });
+    throw error.response?.data || CommonError;
+  }
 };
 
 export const All_Services = () => (dispatch) => {
@@ -264,49 +278,63 @@ export const SEND_BA_OTP = (ba_mobile) => (dispatch) => {
 };
 
 // Verify OTP and Register Business Associate
-export const VERIFY_BA_OTP = (data) => (dispatch) => {
+export const VERIFY_BA_OTP = (data) => async (dispatch) => {
   dispatch({ type: VERIFY_BA_OTP_REQUEST });
   console.log('dedede');
 
-  return axiosinstance.post(EndPoints.baRegister, data)
-    .then((response) => {
+  let fcm_token = null;
+  try {
+    fcm_token = await messaging().getToken();
+  } catch (error) {
+    console.log('Error getting FCM token:', error);
+  }
 
+  const payload = { ...data, fcm_token };
 
-      if (response.data.message === 'Login/Register successful' || response.data.message === 'Login successful') {
-        console.log('BA Register Response:', response.data);
-        dispatch({
-          type: VERIFY_BA_OTP_SUCCESS, // Reusing existing success type
-          payload: response.data,
-        });
-      }
-      return response.data;
-    })
-    .catch((error) => {
-      console.log('BA Register Error:', error);
-      dispatch({ type: VERIFY_BA_OTP_FAILURE });
-      throw error;
-    });
+  try {
+    const response = await axiosinstance.post(EndPoints.baRegister, payload);
+    if (response.data.message === 'Login/Register successful' || response.data.message === 'Login successful') {
+      console.log('BA Register Response:', response.data);
+      dispatch({
+        type: VERIFY_BA_OTP_SUCCESS, // Reusing existing success type
+        payload: response.data,
+      });
+    }
+    return response.data;
+  } catch (error) {
+    console.log('BA Register Error:', error);
+    dispatch({ type: VERIFY_BA_OTP_FAILURE });
+    throw error;
+  }
 };
-export const VERIFY_BA_LOGIN = (data) => (dispatch) => {
+export const VERIFY_BA_LOGIN = (data) => async (dispatch) => {
   dispatch({ type: VERIFY_OTP_REQUEST });
 
-  return axiosinstance.post(EndPoints.baVerifyLogin, data)
-    .then((response) => {
-      console.log('BA Verify Login Response:', response.data);
+  let fcm_token = null;
+  try {
+    fcm_token = await messaging().getToken();
+  } catch (error) {
+    console.log('Error getting FCM token:', error);
+  }
 
-      if (response.data.message === 'Login successful') {
-        dispatch({
-          type: SIGN_IN_SUCCESS,
-          payload: response.data,
-        });
-      }
-      return response.data;
-    })
-    .catch((error) => {
-      // console.log('BA Verify Login Error:', error);
-      dispatch({ type: VERIFY_OTP_FAILURE });
-      throw error;
-    });
+  const payload = { ...data, fcm_token };
+
+  try {
+    const response = await axiosinstance.post(EndPoints.baVerifyLogin, payload);
+    console.log('BA Verify Login Response:', response.data);
+
+    if (response.data.message === 'Login successful') {
+      dispatch({
+        type: SIGN_IN_SUCCESS,
+        payload: response.data,
+      });
+    }
+    return response.data;
+  } catch (error) {
+    // console.log('BA Verify Login Error:', error);
+    dispatch({ type: VERIFY_OTP_FAILURE });
+    throw error;
+  }
 };
 
 
