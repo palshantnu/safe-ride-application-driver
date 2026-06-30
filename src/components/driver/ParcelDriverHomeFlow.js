@@ -72,6 +72,17 @@ const getStatusText = (driverStatus) => {
   };
   return map[status] || 'Pending';
 };
+const BRAND   = '#E91E8C';
+const BLUE    = '#1565C0';
+const GREEN   = '#2E7D32';
+const GREEN_L = '#43A047';
+const RED     = '#D32F2F';
+const AMBER   = '#F57F17';
+const SURFACE = '#FFFFFF';
+const BG      = '#F7F8FA';
+const TEXT    = '#111827';
+const SUBTLE  = '#6B7280';
+const BORDER  = '#E5E7EB';
 
 const ParcelDriverHomeFlow = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -147,6 +158,8 @@ const prevParcelCountRef = useRef(0);
     delivery_otp_verified: parcel.delivery_otp_verified,
     user_status: parcel.user_status,
     _raw: parcel,
+     total_fare: parcel.total_fare,
+          driver_amount:parcel.driver_amount
   });
 
   // Fetch current deliveries (driver_status: ACCEPTED, ARRIVED, PICKED_UP)
@@ -341,11 +354,13 @@ prevParcelCountRef.current = formatted.length;
         Alert.alert('Error', response.data?.message || 'Failed to accept');
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong');
+      console.log('Error accepting parcel:', error.response?.data);
+      Alert.alert('Error', error.response?.data.message || error.message || 'Something went wrong');
     } finally {
       setIsLoading(false);
     }
   };
+
 useEffect(() => {
   return () => {
     SoundHelper?.stopNotificationSound();
@@ -558,7 +573,10 @@ console.log('Rendering delivery card:', delivery);
            
           </View>
           
-          <Text style={styles.fareAmount}>₹{delivery.delivery_charge}</Text>
+              <View>
+        <Text style={styles.fareAmount}>₹{delivery.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
+                 <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{delivery.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
+     </View>
         </View>
 <View style={[styles.statusBadge ]}>
              <Text style={{...styles.statusBadgeText,color:'black',fontSize:16}}>USER STATUS : {getStatusText(delivery.user_status)}</Text>
@@ -569,7 +587,7 @@ console.log('Rendering delivery card:', delivery);
           <View style={styles.infoRow}><Icon name="dollar-sign" size={16} color="#666" /><Text style={styles.infoText}>Value: ₹{delivery.parcel_value}</Text></View>
           <View style={styles.infoRow}><Icon name="archive" size={16} color="#666" /><Text style={styles.infoText}>Packaging: {delivery.packaging_material}</Text></View>
         </View>
-
+{console.log('delivery.pickup_date',delivery.pickup_date)}
         <View style={styles.locationContainer}>
           <View style={styles.locationEntryRow}>
             <View style={styles.dotCol}><View style={styles.pickupDot} /><View style={styles.locationLine} /></View>
@@ -588,7 +606,23 @@ console.log('Rendering delivery card:', delivery);
               <Text style={styles.dropText}>{delivery.delivery_address}, {delivery.delivery_city}</Text>
               {delivery.delivery_landmark ? <Text style={styles.contactText}>📍 {delivery.delivery_landmark}</Text> : null}
               <Text style={styles.contactText}>👤 Receiver: {delivery.receiver_name}</Text>
-              <Text style={styles.contactText}>📞 {delivery.receiver_phone}</Text>
+              {/* <Text style={styles.contactText}>📞 {delivery.receiver_phone}</Text> */}
+              {delivery.receiver_phone  ? (
+                        <TouchableOpacity   onPress={() => Linking.openURL(`tel:${delivery.receiver_phone}`)} style={styles.passengerRow}>
+                          <View style={styles.avatarCircle}>
+                            <Icon name="user" size={18} color={BRAND} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            {/* {userName ? <Text style={styles.passengerName}>{userName}</Text> : null} */}
+                            {delivery.receiver_name    ? <Text style={styles.passengerPhone}>{delivery.receiver_phone}</Text>    : null}
+                          </View>
+                          {delivery.receiver_name ? (
+                            <View style={styles.callChip}>
+                              <Icon name="phone-call" size={14} color={BRAND} />
+                            </View>
+                          ) : null}
+                        </TouchableOpacity>
+                      ) : null}
             </View>
           </View>
         </View>
@@ -597,7 +631,7 @@ console.log('Rendering delivery card:', delivery);
           <View style={styles.remarksContainer}><Icon name="message-circle" size={14} color="#999" /><Text style={styles.remarksText}>Note: {delivery.remarks}</Text></View>
         ) : null}
 
-        {status === 'accepted' && (
+        {(status === 'accepted' && delivery?.user_status === 'TOKEN_PAID') && (
           <TouchableOpacity style={styles.arriveBtn} onPress={() => handleArrive(parcelId)} disabled={isLoading}>
             {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <><Icon name="navigation" size={20} color="#fff" /><Text style={styles.btnText}>Arrived at Pickup</Text></>}
           </TouchableOpacity>
@@ -677,10 +711,13 @@ console.log('Reject response:', response.data);
     <Animated.View style={[styles.requestCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       <View style={styles.cardHeader}>
         <View style={styles.requestBadge}><Icon name="bell" size={16} color="#fff" /><Text style={styles.requestBadgeText}>New Parcel Request</Text></View>
-        <Text style={styles.fareAmount}>₹{parcel.delivery_charge}</Text>
-      </View>
+         <View>
+        <Text style={styles.fareAmount}>₹{parcel.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
+                 <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{parcel.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
+     </View> </View>
       <View style={styles.cardHeader}>
-        <View><Text style={{...styles.requestBadgeText,color:'black',fontSize:16}}>Loading and Unloading : {parcel.loading_unloading}</Text></View>
+        <View>
+          <Text style={{...styles.requestBadgeText,color:'black',fontSize:16}}>Loading and Unloading : {parcel.loading_unloading}</Text></View>
         <View/>
       </View>
       <View style={styles.parcelInfo}>
@@ -688,6 +725,7 @@ console.log('Reject response:', response.data);
         <View style={styles.infoRow}><Icon name="weight" size={16} color="#666" /><Text style={styles.infoText}>Weight: {parcel.parcel_weight} kg</Text></View>
         <View style={styles.infoRow}><Icon name="dollar-sign" size={16} color="#666" /><Text style={styles.infoText}>Value: ₹{parcel.parcel_value}</Text></View>
       </View>
+      {console.log('delivery.pickup_date',parcel.pickup_date)}
       <View style={styles.locationContainer}>
         <View style={styles.locationEntryRow}>
           <View style={styles.dotCol}><View style={styles.pickupDot} /><View style={styles.locationLine} /></View>
@@ -927,6 +965,25 @@ const styles = StyleSheet.create({
   submitBtn: { backgroundColor: '#FF9800' },
   cancelBtnText: { color: '#666', fontSize: 16, fontWeight: '500' },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+      passengerRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: BG, borderRadius: 14,
+    paddingHorizontal: 14, paddingVertical: 10,
+    marginBottom: 4, borderWidth: 1, borderColor: BORDER,
+    marginTop:20
+  },
+  avatarCircle: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#FCE4EC',
+    justifyContent: 'center', alignItems: 'center',
+  },
+
+  passengerPhone: { fontSize: 12, color: SUBTLE, marginTop: 1 },
+  callChip: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: '#FCE4EC',
+    justifyContent: 'center', alignItems: 'center',
+  },
 });
 
 export default ParcelDriverHomeFlow;

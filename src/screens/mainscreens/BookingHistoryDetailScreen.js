@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Linking,
   Image,
+  Modal,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Feather';
@@ -55,6 +56,16 @@ const BookingHistoryDetailScreen = ({ navigation, route }) => {
   const callCustomer = () => {
     if (ride.userMobile) Linking.openURL(`tel:${ride.userMobile}`);
   };
+
+
+  const [selectedImage, setSelectedImage] = useState(null);
+const [imageModalVisible, setImageModalVisible] = useState(false);
+
+const openImage = (image) => {
+  setSelectedImage(image);
+  setImageModalVisible(true);
+};
+
 
   return (
     <View style={s.container}>
@@ -227,25 +238,55 @@ const BookingHistoryDetailScreen = ({ navigation, route }) => {
             ))}
           </Section>
         )}
+        {console.log('ride.meter_images',ride.meter_images)}
 
         {/* Meter Images */}
-        {ride.meter_images && ride.meter_images.length > 0 && (
-          <Section title={`Meter Images (${ride.meter_images.length})`} icon="camera">
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.imageScroll}>
-              {ride.meter_images.map((img, i) => (
-                <Image
-                  key={i}
-                  source={{ uri: typeof img === 'string' ? img : img.url }}
-                  style={s.meterImage}
-                  resizeMode="cover"
-                />
-              ))}
-            </ScrollView>
-          </Section>
-        )}
+   {ride.meter_images && ride.meter_images.length > 0 && (
+  <Section title={`Meter Images (${ride.meter_images.length})`} icon="camera">
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={s.imageScroll}
+    >
+      {ride.meter_images.map((img, i) => (
+        <TouchableOpacity
+          key={i}
+          onPress={() => openImage(`https://sigiride.com/${img?.image}`)}
+        >
+          <Image
+            source={{ uri: `https://sigiride.com/${img?.image}` }}
+            style={s.meterImage}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  </Section>
+)}
 
         <View style={s.footer} />
       </ScrollView>
+      <Modal
+  visible={imageModalVisible}
+  transparent={true}
+  animationType="fade"
+  onRequestClose={() => setImageModalVisible(false)}
+>
+  <View style={s.modalContainer}>
+    <TouchableOpacity
+      style={s.closeBtn}
+      onPress={() => setImageModalVisible(false)}
+    >
+      <Icon name="close" size={30} color="#fff" />
+    </TouchableOpacity>
+
+    <Image
+      source={{ uri: selectedImage }}
+      style={s.fullImage}
+      resizeMode="contain"
+    />
+  </View>
+</Modal>
     </View>
   );
 };
@@ -369,6 +410,22 @@ const s = StyleSheet.create({
   meterImage: { width: 120, height: 90, borderRadius: 10, marginRight: 10 },
 
   footer: { height: 30 },
+   modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullImage: {
+    width: "100%",
+    height: "85%",
+  },
+  closeBtn: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 10,
+  },
 });
 
 export default BookingHistoryDetailScreen;

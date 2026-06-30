@@ -12,8 +12,9 @@ import {
   PermissionsAndroid,
   StatusBar,
   Linking,
+  Touchable,
 } from 'react-native';
-// import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import Icon from 'react-native-vector-icons/Feather';
 import MaterialIcon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -559,7 +560,7 @@ const InCityMapScreen = ({ navigation, route }) => {
 
         {/* Passenger row */}
         {(userName || phone) ? (
-          <View style={s.passengerRow}>
+          <TouchableOpacity onPress={()=> Linking.openURL(`tel:${phone}`)} style={s.passengerRow}>
             <View style={s.avatarCircle}>
               <Icon name="user" size={18} color={BRAND} />
             </View>
@@ -572,7 +573,7 @@ const InCityMapScreen = ({ navigation, route }) => {
                 <Icon name="phone-call" size={14} color={BRAND} />
               </View>
             ) : null}
-          </View>
+          </TouchableOpacity>
         ) : null}
 
         {/* ── ACTION BUTTONS ── */}
@@ -631,12 +632,12 @@ const InCityMapScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {status === 'ACCEPTED' || status === 'ARRIVED' && (
+        {/* {status === 'ACCEPTED' || status === 'ARRIVED' && ( */}
           <TouchableOpacity style={s.cancelBtn} onPress={handleCancelRide} disabled={isLoading} activeOpacity={0.7}>
             <Icon name="x" size={14} color={RED} />
             <Text style={s.cancelBtnText}>Cancel Ride</Text>
           </TouchableOpacity>
-        )}
+        {/* )} */}
       </View>
 
       {/* ── OTP MODAL ── */}

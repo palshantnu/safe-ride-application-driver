@@ -753,6 +753,17 @@ export const COLLECT_PAYMENT_COMPLETE_RIDE = (data) => async () => {
   }
 };
 
+export const GET_CAPTAIN_POPUPS = () => async () => {
+  try {
+    const response = await axiosinstance.get('/popups/captain');
+
+    return response.data;
+  } catch (error) {
+    console.log('GET_USER_POPUPS Error', error);
+    return null;
+  }
+};
+
 // Logout
 export const LOGOUT = () => (dispatch) => {
   dispatch({ type: LOGOUT_SUCCESS });

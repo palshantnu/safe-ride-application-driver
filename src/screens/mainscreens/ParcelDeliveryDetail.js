@@ -297,7 +297,7 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
       {/* Payment Details */}
       {renderInfoCard('Payment Details', 'card-outline', (
         <>
-          {renderInfoRow('Total Amount', `₹${delivery.amount?.toFixed(2) || '0.00'}`, 'cash-outline')}
+          {renderInfoRow('Your amount ', `₹${delivery.amount?.toFixed(2) || '0.00'}`, 'cash-outline')}
           {renderInfoRow('Token Amount', `₹${delivery.token_amount?.toFixed(2) || '0.00'}`, 'key-outline')}
           {renderInfoRow('Balance Amount', `₹${delivery.balance_amount?.toFixed(2) || '0.00'}`, 'cash-outline')}
           {delivery.earnings && (

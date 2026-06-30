@@ -18,11 +18,18 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import RazorpayCheckout from 'react-native-razorpay';
 import { rechargeWallet, fetchRechargeHistory, fetchWithdrawalHistory, withdrawWallet } from '../../services/Services';
+import { useSelector } from 'react-redux';
 
 // Replace with your actual Razorpay key from dashboard
 const RAZORPAY_KEY_ID = 'rzp_test_DUnz7sPsonIW95';
 
 const WalletScreen = () => {
+
+    const { userData, driverProfileData ,baProfile} = useSelector(
+  (state) => state.auth
+);
+
+
   const [balance, setBalance] = useState('0');
   const [history, setHistory] = useState([]);
   const [withdrawalHistory, setWithdrawalHistory] = useState([]);
@@ -192,6 +199,11 @@ const WalletScreen = () => {
       key: RAZORPAY_KEY_ID,
       amount: String(Math.round(Number(amount) * 100)), // paise
       name: 'SIGIRIDE Captain',
+       prefill: {
+          name: userData?.name || '',
+          contact: !userData?.ba_name ? userData?.phone : '',
+          email: userData?.email || '',
+        },
       theme: { color: '#810a45' },
     };
 

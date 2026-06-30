@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Dimensions } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Dimensions, Modal,Image } from 'react-native';
 
 
 import { NativeModules } from 'react-native';
@@ -10,13 +10,55 @@ import { useSelector } from 'react-redux';
 import DriverHomeFlow from '../../components/driver/DriverHomeFlow';
 import BAHomeFlow from '../../components/ba/BAHomeFlow';
 import ParcelDriverHomeFlow from '../../components/driver/ParcelDriverHomeFlow';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GET_CAPTAIN_POPUPS } from '../../redux/actions/action-creator';
 
 
 
 const HomeScreen = ({ navigation }) => {
   const { userData } = useSelector((state) => state.auth);
   const { width } = Dimensions.get('window');
+
+
+  const [popupVisible, setPopupVisible] = useState(false);
+const [popupData, setPopupData] = useState(null);
+  const fetchPopup = async () => {
+  try {
+    const res = await dispatch(GET_CAPTAIN_POPUPS());
+
+    if (!res?.status) return;
+
+    if (!res?.data?.length) return;
+
+    const popup = res.data[0];
+
+    const lastClosedPopup = await AsyncStorage.getItem("LAST_POPUP_ID");
+
+    // Already closed
+    if (lastClosedPopup == popup.id.toString()) {
+      return;
+    }
+
+    setPopupData(popup);
+    setPopupVisible(true);
+
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const closePopup = async () => {
+
+  await AsyncStorage.setItem(
+    "LAST_POPUP_ID",
+    popupData.id.toString(),
+  );
+
+  setPopupVisible(false);
+};
+useEffect(() => {
+fetchPopup();
+},[])
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#ff7f50" />
@@ -67,6 +109,46 @@ const HomeScreen = ({ navigation }) => {
         )
 
       )}
+         <Modal
+    visible={popupVisible}
+    transparent
+    animationType="fade">
+
+    <View style={styles.popupOverlay}>
+
+        <View style={styles.popupContainer}>
+
+            {!!popupData?.image_url && (
+                <Image
+                    source={{ uri: popupData.image_url }}
+                    style={styles.popupImage}
+                    resizeMode="cover"
+                />
+            )}
+
+            <Text style={styles.popupTitle}>
+                {popupData?.title}
+            </Text>
+
+            <Text style={styles.popupMessage}>
+                {popupData?.message}
+            </Text>
+
+            <TouchableOpacity
+                style={styles.popupButton}
+                onPress={closePopup}>
+
+                <Text style={styles.popupButtonText}>
+                    Got It
+                </Text>
+
+            </TouchableOpacity>
+
+        </View>
+
+    </View>
+
+</Modal>
     </View>
   );
 };
@@ -625,6 +707,56 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  popupOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+},
+
+popupContainer: {
+    width: '88%',
+    backgroundColor: '#fff',
+    borderRadius: 22,
+    overflow: 'hidden',
+    elevation: 10,
+},
+
+popupImage: {
+    width: '100%',
+    height: 220,
+},
+
+popupTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#222',
+    marginTop: 18,
+    textAlign: 'center',
+},
+
+popupMessage: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    marginHorizontal: 20,
+    marginTop: 10,
+    lineHeight: 22,
+},
+
+popupButton: {
+    margin: 20,
+    backgroundColor: '#ff4d6d',
+    borderRadius: 30,
+    paddingVertical: 14,
+},
+
+popupButtonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '700',
+    fontSize: 16,
+},
 });
 
 export default HomeScreen;

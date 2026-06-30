@@ -71,7 +71,16 @@ const DriverHistoryScreen = ({ navigation }) => {
         const formattedHistory = response.data.data.map(booking => formatOnSpotData(booking));
         
         if (shouldAppend) {
-          setRideHistory(prev => [...prev, ...formattedHistory]);
+          setRideHistory(prev => {
+  const merged = [...prev, ...formattedHistory];
+
+  const unique = merged.filter(
+    (item, index, self) =>
+      index === self.findIndex(t => t.id === item.id)
+  );
+
+  return unique;
+});
         } else {
           setRideHistory(formattedHistory);
         }
@@ -188,7 +197,16 @@ const DriverHistoryScreen = ({ navigation }) => {
         const formattedHistory = response.data.data.map(delivery => formatParcelData(delivery));
         
         if (shouldAppend) {
-          setRideHistory(prev => [...prev, ...formattedHistory]);
+          setRideHistory(prev => {
+  const merged = [...prev, ...formattedHistory];
+
+  const unique = merged.filter(
+    (item, index, self) =>
+      index === self.findIndex(t => t.id === item.id)
+  );
+
+  return unique;
+});
         } else {
           setRideHistory(formattedHistory);
           // Calculate stats from all data (if pagination info available)
@@ -287,7 +305,16 @@ const DriverHistoryScreen = ({ navigation }) => {
         const formattedHistory = res.data.map(booking => formatRideData(booking));
         
         if (shouldAppend) {
-          setRideHistory(prev => [...prev, ...formattedHistory]);
+          setRideHistory(prev => {
+  const merged = [...prev, ...formattedHistory];
+
+  const unique = merged.filter(
+    (item, index, self) =>
+      index === self.findIndex(t => t.id === item.id)
+  );
+
+  return unique;
+});
         } else {
           setRideHistory(formattedHistory);
         }

@@ -66,6 +66,17 @@ const STATUS_TEXT = {
   ASSIGNED: 'Assigned',
   PENDING: 'Pending',
 };
+const BRAND   = '#E91E8C';
+const BLUE    = '#1565C0';
+const GREEN   = '#2E7D32';
+const GREEN_L = '#43A047';
+const RED     = '#D32F2F';
+const AMBER   = '#F57F17';
+const SURFACE = '#FFFFFF';
+const BG      = '#F7F8FA';
+const TEXT    = '#111827';
+const SUBTLE  = '#6B7280';
+const BORDER  = '#E5E7EB';
 
 const DriverHomeFlow = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -853,6 +864,11 @@ console.log('Cancel Booking Response:', res);
     setShowCompleteRideModal(true);
   };
 
+
+
+
+
+
   const openCompleteRideCamera = async () => {
     const granted = await requestCameraPermission();
     if (!granted) return Alert.alert('Permission Denied', 'Camera permission is required to capture images.');
@@ -965,7 +981,7 @@ console.log('Cancel Booking Response:', res);
   // Render OnSpot current booking card
   const renderOnSpotActiveRide = (booking) => {
     if (!booking) return null;
-
+console.log('booking====>',booking)
     const bookingNo = booking.booking_no;
     const status = booking.status;
     console.log('Rendering On-Spot Booking:', bookingNo, 'Status:', status);
@@ -975,7 +991,8 @@ console.log('Cancel Booking Response:', res);
     const userMobile = booking.user_mobile;
     const scheduleDateTime = booking.schedule_datetime;
     const planName = booking.plan_name;
-    const totalAmount = booking.total_amount;
+    const totalAmount = booking.total_fare;
+    const driver_amount = booking.driver_amount;
     const tokenAmount = booking.token_amount;
     const balanceAmount = booking.balance_amount;
 
@@ -1011,19 +1028,40 @@ console.log('Cancel Booking Response:', res);
             <Icon name="user" size={16} color="#666" />
             <Text style={styles.infoText}>{userName || 'N/A'}</Text>
           </View>
-          <View style={styles.infoItem}>
+          
+          {/* <View style={styles.infoItem}>
             <Icon name="phone" size={16} color="#666" />
             <Text style={styles.infoText}>{userMobile || 'N/A'}</Text>
-          </View>
+          </View> */}
+          
           <View style={styles.infoItem}>
             <Icon name="tag" size={16} color="#666" />
             <Text style={styles.infoText}>{planName || 'N/A'}</Text>
           </View>
         </View>
-
+    {userMobile  ? (
+                        <TouchableOpacity   onPress={() => Linking.openURL(`tel:${userMobile}`)} style={styles.passengerRow}>
+                          <View style={styles.avatarCircle}>
+                            <Icon name="user" size={18} color={BRAND} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            {/* {userName ? <Text style={styles.passengerName}>{userName}</Text> : null} */}
+                           <Text style={styles.passengerPhone}>{userMobile}</Text> 
+                          </View>
+                          {userMobile ? (
+                            <View style={styles.callChip}>
+                              <Icon name="phone-call" size={14} color={BRAND} />
+                            </View>
+                          ) : null}
+                        </TouchableOpacity>
+                      ) : null}
         <View style={styles.paymentInfo}>
           <View style={styles.paymentRow}>
-            <Text style={styles.paymentLabel}>Total Amount:</Text>
+            <Text style={styles.paymentLabel}>Captain amount :</Text>
+            <Text style={styles.totalAmount}>₹{driver_amount}</Text>
+          </View>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentLabel}>Ride amount :</Text>
             <Text style={styles.totalAmount}>₹{totalAmount}</Text>
           </View>
           <View style={styles.paymentRow}>
@@ -1037,10 +1075,19 @@ console.log('Cancel Booking Response:', res);
         </View>
 
         <View style={styles.rideInfo}>
-          <View style={styles.infoItem}>
+          {/* <View style={styles.infoItem}>
             <Icon name="calendar" size={16} color="#666" />
             <Text style={styles.infoText}>
               {scheduleDateTime ? new Date(scheduleDateTime).toLocaleString() : 'N/A'}
+            </Text>
+          </View> */}
+          <View style={{...styles.scheduleDateRow,width:'100%'}}>
+            <Icon name="calendar" size={14} color="#FF1493" />
+            <Text style={styles.scheduleDateText}>
+              {new Date(scheduleDateTime).toLocaleString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', hour12: true,
+              })}
             </Text>
           </View>
           <View style={styles.infoItem}>
@@ -1158,9 +1205,14 @@ console.log('Cancel Booking Response:', res);
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
               <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ alignItems: 'center', gap: 0 }}>
+              <View style={{marginBottom:-20}}>
+                <Text style={styles.fareAmount}>₹{booking.total_fare}{'\n'}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Icon name="map" size={14} color="#FF1493" />
               <Text style={{ fontSize: 12, color: '#FF1493', fontWeight: '600' }}>In-City</Text>
+              </View>
             </View>
           </View>
 
@@ -1226,8 +1278,8 @@ console.log('Cancel Booking Response:', res);
             <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
           </View>
            <View>
-          <Text style={styles.fareAmount}>₹{booking.driver_amount}</Text>
-          <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>Total Amount ₹{booking.total_fare}</Text>
+          <Text style={styles.fareAmount}>₹{booking.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
+          <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{booking.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
         </View>
         </View>
 
@@ -1277,7 +1329,17 @@ console.log('Cancel Booking Response:', res);
             </View>
           ) : null}
         </View>
-
+{booking?.schedule_date && (
+          <View style={styles.scheduleDateRow}>
+            <Icon name="calendar" size={14} color="#FF1493" />
+            <Text style={styles.scheduleDateText}>
+              {new Date(booking.schedule_date).toLocaleString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', hour12: true,
+              })}
+            </Text>
+          </View>
+        )}
         <View style={styles.rideInfo}>
           <View style={styles.infoItem}>
             <Icon name="user" size={16} color="#666" />
@@ -1292,8 +1354,23 @@ console.log('Cancel Booking Response:', res);
             <Text style={styles.infoText}>{booking.plan_km} km</Text>
           </View>
         </View>
-
-  {booking.token_paid == 1 &&    <View style={{...styles.customerInfo,justifyContent:'space-between',width:'100%'}}>
+  {booking.token_paid == 1 ? (
+          <TouchableOpacity   onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)} style={styles.passengerRow}>
+            <View style={styles.avatarCircle}>
+              <Icon name="user" size={18} color={BRAND} />
+            </View>
+            <View style={{ flex: 1 }}>
+              {/* {userName ? <Text style={styles.passengerName}>{userName}</Text> : null} */}
+              {booking.user_mobile    ? <Text style={styles.passengerPhone}>{booking.user_mobile}</Text>    : null}
+            </View>
+            {booking.user_mobile ? (
+              <View style={styles.callChip}>
+                <Icon name="phone-call" size={14} color={BRAND} />
+              </View>
+            ) : null}
+          </TouchableOpacity>
+        ) : null}
+  {/* {booking.token_paid == 1 &&    <View style={{...styles.customerInfo,justifyContent:'space-between',width:'100%'}}>
   <View style={styles.customerDetail}>
     <Icon name="phone" size={14} color="#999" />
 
@@ -1317,7 +1394,7 @@ paddingHorizontal:20}}
 </Text>
     </TouchableOpacity>
   </View>
-</View>}
+</View>} */}
 
         {(status === 'TOKEN_PAID' || status === 'ASSIGN') && (
           <TouchableOpacity style={styles.acceptBtn} onPress={() => handleArrived(bookingId)} disabled={isLoading}>
@@ -1412,10 +1489,10 @@ paddingHorizontal:20}}
           <Icon name="bell" size={16} color="#fff" />
           <Text style={styles.requestBadgeText}>New Ride Request</Text>
         </View>
-        <View>
-          <Text style={styles.fareAmount}>₹{rideRequest.driver_amount}</Text>
-          <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>Total Amount ₹{rideRequest.total_fare}</Text>
-        </View>
+       {rideRequest?.service_name === 'In City' ?  <Text style={styles.fareAmount}>₹{rideRequest.total_fare}{'\n'}</Text>: <View>
+         <Text style={styles.fareAmount}>₹{rideRequest.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
+          <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{rideRequest.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
+        </View>}
         
       </View>
       <View style={{...styles.requestBadge,backgroundColor:'#2196F3',marginTop:-10,marginBottom:15,alignSelf:'flex-start'}}>
@@ -1457,7 +1534,18 @@ paddingHorizontal:20}}
           </View>
         ) : null}
       </View>
-
+      {console.log('rideRequest--->',rideRequest)}
+ {rideRequest?.schedule_date && (
+          <View style={styles.scheduleDateRow}>
+            <Icon name="calendar" size={14} color="#FF1493" />
+            <Text style={styles.scheduleDateText}>
+              {new Date(rideRequest.schedule_date).toLocaleString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', hour12: true,
+              })}
+            </Text>
+          </View>
+        )}
       <View style={styles.rideInfo}>
         <View style={styles.infoItem}>
           <Icon name="user" size={16} color="#666" />
@@ -1513,7 +1601,10 @@ paddingHorizontal:20}}
             <Icon name="bell" size={16} color="#fff" />
             <Text style={styles.requestBadgeText}>On-spot Booking</Text>
           </View>
-          <Text style={styles.fareAmount}>₹{fare}</Text>
+           <View>
+                 <Text style={styles.fareAmount}>₹{booking.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
+                          <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{booking.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
+              </View>
         </View>
 
         <View style={styles.locationContainer}>
@@ -1660,9 +1751,10 @@ paddingHorizontal:20}}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#FF1493']} tintColor="#FF1493" />}
       >
-       {currentRides.length == 0 && <StatsCard />}
+      {currentRides.length === 0 && !rideRequest && (!isOnSpotCaptain || onSpotRequests.length === 0) && <StatsCard />}
 
         {currentRides.length > 0 ? (
+
           <>
             <Text style={[styles.sectionTitle, { marginHorizontal: 16, marginTop: 8 }]}>Active Bookings</Text>
             {currentRides.map((ride) => renderActiveRide(ride))}
@@ -2068,7 +2160,7 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   statusBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
 
-  fareAmount: { fontSize: 24, fontWeight: 'bold', color: '#4CAF50' },
+  fareAmount: { fontSize: 24, fontWeight: 'bold', color: '#4CAF50',textAlign:'right' },
 
   locationContainer: { marginBottom: 15 },
   locationEntryRow: { flexDirection: 'row', alignItems: 'flex-start' },
@@ -2153,6 +2245,40 @@ const styles = StyleSheet.create({
   submitBtn: { backgroundColor: '#FF1493' },
   cancelBtnText: { color: '#666', fontSize: 16, fontWeight: '500' },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+   scheduleDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFF0F5',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  scheduleDateText: {
+    fontSize: 13,
+    color: '#FF1493',
+    fontWeight: '600',
+  },
+    passengerRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: BG, borderRadius: 14,
+    paddingHorizontal: 14, paddingVertical: 10,
+    marginBottom: 14, borderWidth: 1, borderColor: BORDER,
+  },
+  avatarCircle: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#FCE4EC',
+    justifyContent: 'center', alignItems: 'center',
+  },
+
+  passengerPhone: { fontSize: 12, color: SUBTLE, marginTop: 1 },
+  callChip: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: '#FCE4EC',
+    justifyContent: 'center', alignItems: 'center',
+  },
+
 });
 
 export default DriverHomeFlow;

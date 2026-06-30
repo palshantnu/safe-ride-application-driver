@@ -9,6 +9,7 @@ import {
     ScrollView,
     Alert,
     Image,
+    Linking,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Feather';
@@ -124,6 +125,19 @@ useFocusEffect(
         </TouchableOpacity>
     );
 
+    const openPlayStore = async (url) => {
+        try {
+            const supported = await Linking.canOpenURL(url);
+            if (supported) {
+                await Linking.openURL(url);
+            } else {
+                Alert.alert('Unable to open link', 'Play Store is not available on this device.');
+            }
+        } catch (e) {
+            Alert.alert('Unable to open link', 'Something went wrong while opening Play Store.');
+        }
+    };
+
 console.log('baProfile?.data?.profile_pic', baProfile?.data?.profile_pic);
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -231,8 +245,13 @@ console.log('baProfile?.data?.profile_pic', baProfile?.data?.profile_pic);
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>About</Text>
                 <View style={styles.sectionContent}>
-                    {renderMenuItem('info', 'App Version', () => Alert.alert('App Version', 'Version 1.0.0'))}
-                    {renderMenuItem('award', 'Made with ❤️', () => null, false)}
+                    {/* {renderMenuItem('info', 'App Version', () => Alert.alert('App Version', 'Version 1.0.0'))} */}
+                    {renderMenuItem(
+                        'external-link',
+                        'SIGI ride user app',
+                        () => openPlayStore('https://play.google.com/store/apps/details?id=com.sigirideuserstaxi')
+                    )}
+                    {/* {renderMenuItem('award', 'Made with ❤️', () => null, false)} */}
                 </View>
             </View>
 
