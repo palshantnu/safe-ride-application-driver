@@ -50,7 +50,7 @@ const Row = ({ label, value, valueStyle }) => (
 
 const BookingHistoryDetailScreen = ({ navigation, route }) => {
   const { ride } = route.params;
-
+console.log('ride', ride);
   const statusCfg = getStatusCfg(ride.status);
   const totalTopup = ride.topups?.reduce((sum, t) => sum + parseFloat(t.topup_amount || 0), 0) || 0;
 
@@ -168,13 +168,13 @@ const openImage = (image) => {
         </Section>
 
         {/* Plan */}
-        <Section title="Plan Details" icon="package">
+       {ride.is_incity ? null : <Section title="Plan Details" icon="package">
           <Row label="Plan Name" value={ride.vehicle?.name || ride.plan_name || '—'} />
           <Row
             label="Base Fare"
             value={ride.basePrice != null ? `₹${parseFloat(ride.basePrice).toFixed(2)}` : ride.plan_price ? `₹${parseFloat(ride.plan_price).toFixed(2)}` : '—'}
           />
-        </Section>
+        </Section>}
 
         {/* Fare Breakdown */}
         <Section title="Fare Breakdown" icon="credit-card">
@@ -205,7 +205,7 @@ const openImage = (image) => {
         </Section>
 
         {/* Customer */}
-        <Section title="Customer" icon="user">
+        {/* <Section title="Customer" icon="user">
           {(ride.riderName || ride.userMobile) ? (
             <View style={s.driverCard}>
               <View style={s.driverRow}>
@@ -229,7 +229,7 @@ const openImage = (image) => {
               </View>
             </View>
           ) : null}
-        </Section>
+        </Section> */}
 
         {/* Topups */}
         {ride.topups && ride.topups.length > 0 && (

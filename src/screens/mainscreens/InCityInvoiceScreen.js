@@ -28,6 +28,15 @@ const BORDER = '#E5E7EB';
 const BG     = '#F7F8FA';
 const WHITE  = '#FFFFFF';
 
+const getAccessFeeValue = (totalFare, accessFee, accessFeeType) => {
+  const fare = parseFloat(totalFare) || 0;
+  const fee = parseFloat(accessFee) || 0;
+  if (accessFeeType && typeof accessFeeType === 'string' && accessFeeType.toLowerCase() === 'percent') {
+    return fare * (fee / 100);
+  }
+  return fee;
+};
+
 const Row = ({ icon, label, value, valueStyle }) => (
   <View style={s.row}>
     
@@ -253,7 +262,33 @@ const InCityInvoiceScreen = ({ navigation, route }) => {
               <Text style={s.cardTitle}>Fare Breakdown</Text>
             </View>
             <View style={s.cardDivider} />
-            {actualFare ? <Row icon="dollar-sign" label="Actual Fare" value={`₹${actualFare}`} /> : null}
+            {(() => {
+              const fb = inv.fare_breakdown || {};
+              const calculatedAccessFee = getAccessFeeValue(fb.actual_fare, fb.access_fee, fb.access_fee_type);
+              const platformFee = parseFloat(fb.platform_fee) || 0;
+              const captainAmount = (parseFloat(fb.actual_fare) || 0) - platformFee - calculatedAccessFee;
+
+              return (
+                <>
+                  {actualFare ? <Row icon="dollar-sign" label="Ride Amount" value={`₹${actualFare}`} /> : null}
+                  {fb.platform_fee !== undefined ? <Row icon="dollar-sign" label="Platform Fee" value={`₹${platformFee}`} /> : null}
+                  {fb.access_fee !== undefined ? (
+                    <Row
+                      icon="dollar-sign"
+                      label={`Access Fee${fb.access_fee_type === 'percent' ? ` (${fb.access_fee}%)` : ''}`}
+                      value={`₹${parseFloat(calculatedAccessFee.toFixed(2))}`}
+                    />
+                  ) : null}
+                  <View style={s.cardDivider} />
+                  <Row
+                    icon="dollar-sign"
+                    label="Captain Amount"
+                    value={`₹${parseFloat(captainAmount.toFixed(2))}`}
+                    valueStyle={{ color: GREEN, fontWeight: '700' }}
+                  />
+                </>
+              );
+            })()}
             {iCollect ? (
               <View style={s.totalRow}>
                 <Text style={s.totalLabel}>Amount to Collect</Text>

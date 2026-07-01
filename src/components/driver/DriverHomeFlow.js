@@ -79,6 +79,15 @@ const TEXT    = '#111827';
 const SUBTLE  = '#6B7280';
 const BORDER  = '#E5E7EB';
 
+const getAccessFeeValue = (totalFare, accessFee, accessFeeType) => {
+  const fare = parseFloat(totalFare) || 0;
+  const fee = (accessFee && accessFee !== 'N/A') ? parseFloat(accessFee) || 0 : 0;
+  if (accessFeeType && typeof accessFeeType === 'string' && accessFeeType.toLowerCase() === 'percent') {
+    return fare * (fee / 100);
+  }
+  return fee;
+};
+
 const DriverHomeFlow = ({ navigation }) => {
   const dispatch = useDispatch();
 
@@ -288,6 +297,7 @@ const [selectedBookingNo, setSelectedBookingNo] = useState('');
           total_fare: booking.total_fare,
           driver_amount:booking.driver_amount,
           access_fee:booking.access_fee || 'N/A',
+          access_fee_type:booking.access_fee_type || 'N/A',
           platform_fee:booking.platform_fee || 'N/A',
         };
         setRideRequest(formatted);
@@ -1225,7 +1235,15 @@ console.log('booking====>',booking)
             <View style={{ alignItems: 'center', gap: 0 }}>
               <View style={{marginBottom:10}}>
                 {/* <Text style={styles.fareAmount}>₹{booking.total_fare}{'\n'}</Text> */}
-                <Text style={styles.fareAmount}>₹{parseFloat(booking.total_fare) - parseFloat(booking.platform_fee)- parseFloat(booking.access_fee)} {'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
+                <Text style={styles.fareAmount}>
+                  ₹{(() => {
+                    const calculatedAccessFee = getAccessFeeValue(booking.total_fare, booking.access_fee, booking.access_fee_type);
+                    const captainAmount = parseFloat(booking.total_fare || 0) - parseFloat(booking.platform_fee || 0) - calculatedAccessFee;
+                    return parseFloat(captainAmount.toFixed(2));
+                  })()}{' '}
+                  {'\n'}
+                  <Text style={{fontSize:12}}>Captain amount</Text>
+                </Text>
          <Text style={styles.fareAmount}>₹{booking.total_fare}{'\n'}<Text style={{fontSize:12}}>Ride amount</Text></Text>
               </View>
               {/* <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -1517,7 +1535,15 @@ paddingHorizontal:20}}
         </View>
        {rideRequest?.service_name === 'In City' ? 
         <View>  
-        <Text style={styles.fareAmount}>₹{parseFloat(rideRequest.total_fare) - parseFloat(rideRequest.platform_fee)- parseFloat(rideRequest.access_fee)} {'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
+        <Text style={styles.fareAmount}>
+          ₹{(() => {
+            const calculatedAccessFee = getAccessFeeValue(rideRequest.total_fare, rideRequest.access_fee, rideRequest.access_fee_type);
+            const captainAmount = parseFloat(rideRequest.total_fare || 0) - parseFloat(rideRequest.platform_fee || 0) - calculatedAccessFee;
+            return parseFloat(captainAmount.toFixed(2));
+          })()}{' '}
+          {'\n'}
+          <Text style={{fontSize:12}}>Captain amount</Text>
+        </Text>
          <Text style={styles.fareAmount}>₹{rideRequest.total_fare}{'\n'}<Text style={{fontSize:12}}>Ride amount</Text></Text>
         </View>
         : 
