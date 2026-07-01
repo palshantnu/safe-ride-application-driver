@@ -48,6 +48,15 @@ const Row = ({ label, value, valueStyle }) => (
   </View>
 );
 
+const getAccessFeeValue = (totalFare, accessFee, accessFeeType) => {
+  const fare = parseFloat(totalFare) || 0;
+  const fee = parseFloat(accessFee) || 0;
+  if (accessFeeType && typeof accessFeeType === 'string' && accessFeeType.toLowerCase() === 'percent') {
+    return fare * (fee / 100);
+  }
+  return fee;
+};
+
 const BookingHistoryDetailScreen = ({ navigation, route }) => {
   const { ride } = route.params;
 console.log('ride', ride);
@@ -178,23 +187,55 @@ const openImage = (image) => {
 
         {/* Fare Breakdown */}
         <Section title="Fare Breakdown" icon="credit-card">
-          <Row label="Plan Price" value={ride.plan_price ? `₹${parseFloat(ride.plan_price).toFixed(2)}` : '—'} />
-          {totalTopup > 0 && (
-            <Row
-              label={`Topup (${ride.topups?.length || 0})`}
-              value={`+₹${totalTopup.toFixed(2)}`}
-              valueStyle={s.topupValue}
-            />
+          {ride.is_incity ? (
+            (() => {
+              const rideFare = parseFloat(ride.price || 0);
+              const calculatedAccessFee = getAccessFeeValue(rideFare, ride.access_fee, ride.access_fee_type);
+              const platformFee = parseFloat(ride.platform_fee) || 0;
+              const captainAmount = rideFare - platformFee - calculatedAccessFee;
+
+              return (
+                <>
+                  <Row label="Ride Amount" value={`₹${rideFare.toFixed(2)}`} />
+                  {ride.platform_fee !== undefined && (
+                    <Row label="Platform Fee" value={`₹${platformFee.toFixed(2)}`} />
+                  )}
+                  {ride.access_fee !== undefined && (
+                    <Row
+                      label={`Access Fee${ride.access_fee_type === 'percent' ? ` (${ride.access_fee}%)` : ''}`}
+                      value={`₹${calculatedAccessFee.toFixed(2)}`}
+                    />
+                  )}
+                  <View style={s.divider} />
+                  <Row
+                    label="Captain Amount"
+                    value={`₹${captainAmount.toFixed(2)}`}
+                    valueStyle={s.finalFare}
+                  />
+                </>
+              );
+            })()
+          ) : (
+            <>
+              <Row label="Plan Price" value={ride.plan_price ? `₹${parseFloat(ride.plan_price).toFixed(2)}` : '—'} />
+              {totalTopup > 0 && (
+                <Row
+                  label={`Topup (${ride.topups?.length || 0})`}
+                  value={`+₹${totalTopup.toFixed(2)}`}
+                  valueStyle={s.topupValue}
+                />
+              )}
+              {ride.actual_fare != null && (
+                <Row label="Actual Fare" value={`₹${parseFloat(ride.actual_fare).toFixed(2)}`} />
+              )}
+              <View style={s.divider} />
+              <Row
+                label="Final Fare"
+                value={`₹${parseFloat(ride.final_fare || ride.price || 0).toFixed(2)}`}
+                valueStyle={s.finalFare}
+              />
+            </>
           )}
-          {ride.actual_fare != null && (
-            <Row label="Actual Fare" value={`₹${parseFloat(ride.actual_fare).toFixed(2)}`} />
-          )}
-          <View style={s.divider} />
-          <Row
-            label="Final Fare"
-            value={`₹${parseFloat(ride.final_fare || ride.price || 0).toFixed(2)}`}
-            valueStyle={s.finalFare}
-          />
         </Section>
 
         {/* Status Details */}

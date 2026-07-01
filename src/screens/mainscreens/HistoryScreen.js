@@ -363,6 +363,9 @@ const DriverHistoryScreen = ({ navigation }) => {
         created_at: booking.created_at,
         topupAmount: 0,
         topups: [],
+        access_fee: booking.access_fee,
+        access_fee_type: booking.access_fee_type,
+        platform_fee: booking.platform_fee,
       };
     }
 
