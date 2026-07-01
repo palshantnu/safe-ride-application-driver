@@ -95,6 +95,8 @@ const InCityMapScreen = ({ navigation, route }) => {
 
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [enteredOtp, setEnteredOtp]     = useState('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   const [pickupCoords, setPickupCoords]       = useState(null);
   const [routeCoords, setRouteCoords]         = useState([]);
@@ -362,22 +364,35 @@ const InCityMapScreen = ({ navigation, route }) => {
   };
 
   const handleCancelRide = () => {
-    Alert.alert('Cancel Ride', 'Are you sure you want to cancel this booking?', [
-      { text: 'No', style: 'cancel' },
-      {
-        text: 'Yes, Cancel',
-        style: 'destructive',
-        onPress: async () => {
-          setIsLoading(true);
-          try {
-            const res = await dispatch(CANCEL_BOOKING({ role: 'DRIVER', booking_id: currentRide?.booking_id, cancel_reason: 'Cancelled by driver' }));
-            if (res?.status) { navigation.goBack(); }
-            else { Alert.alert('Error', res?.message || 'Failed to cancel ride'); }
-          } catch { Alert.alert('Error', 'Something went wrong'); }
-          finally { setIsLoading(false); }
-        },
-      },
-    ]);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const submitCancelRide = async () => {
+    if (!cancelReason.trim()) {
+      Alert.alert('Error', 'Please enter reason');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const res = await dispatch(
+        CANCEL_BOOKING({
+          role: 'DRIVER',
+          booking_id: currentRide?.booking_id,
+          cancel_reason: cancelReason.trim(),
+        })
+      );
+      if (res?.status) {
+        setShowCancelModal(false);
+        navigation.goBack();
+      } else {
+        Alert.alert('Error', res?.message || 'Failed to cancel ride');
+      }
+    } catch {
+      Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const status     = currentRide?.status;
@@ -692,6 +707,64 @@ const InCityMapScreen = ({ navigation, route }) => {
               activeOpacity={0.7}
             >
               <Text style={s.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── CANCEL MODAL ── */}
+      <Modal visible={showCancelModal} animationType="slide" transparent onRequestClose={() => setShowCancelModal(false)}>
+        <View style={s.modalBg}>
+          <View style={s.modalSheet}>
+            <View style={s.handle} />
+
+            <View style={[s.otpIconWrap, { backgroundColor: '#FFEBEE' }]}>
+              <MaterialIcon name="close-circle-outline" size={32} color={RED} />
+            </View>
+            <Text style={s.modalTitle}>Cancel Ride</Text>
+            <Text style={s.modalSub}>Please enter the reason for cancellation</Text>
+
+            <TextInput
+              style={[
+                s.otpInput,
+                {
+                  fontSize: 16,
+                  height: 100,
+                  paddingHorizontal: 16,
+                  textAlign: 'left',
+                  letterSpacing: 0,
+                  paddingTop: 12,
+                  textAlignVertical: 'top'
+                }
+              ]}
+              placeholder="Enter reason"
+              placeholderTextColor="#CBD5E1"
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              multiline
+            />
+
+            <TouchableOpacity
+              style={[s.actionBtn, { backgroundColor: RED, marginTop: 8 }]}
+              onPress={submitCancelRide}
+              disabled={isLoading}
+              activeOpacity={0.85}
+            >
+              {isLoading
+                ? <ActivityIndicator color={SURFACE} size="small" />
+                : <>
+                    <View style={s.btnIconWrap}><Icon name="x-circle" size={18} color={SURFACE} /></View>
+                    <Text style={s.btnLabel}>Cancel Ride</Text>
+                  </>
+              }
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={s.modalCancelBtn}
+              onPress={() => { setShowCancelModal(false); setCancelReason(''); }}
+              activeOpacity={0.7}
+            >
+              <Text style={s.modalCancelText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>

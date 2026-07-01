@@ -125,6 +125,8 @@ const DriverHomeFlow = ({ navigation }) => {
 const [showCancelModal, setShowCancelModal] = useState(false);
 const [cancelReason, setCancelReason] = useState('');
 const [selectedBookingNo, setSelectedBookingNo] = useState('');
+const [actionType, setActionType] = useState(''); // 'ONSPOT_CANCEL', 'ACTIVE_CANCEL', 'REJECT'
+const [actionBookingId, setActionBookingId] = useState(null);
 
   const [showTopupModal, setShowTopupModal] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -437,31 +439,36 @@ const [selectedBookingNo, setSelectedBookingNo] = useState('');
     }
   };
 
-  const handleReject = async () => {
+  const handleReject = () => {
     SoundHelper?.stopNotificationSound();
-    Alert.alert('Reject Ride', 'Are you sure you want to reject this ride request?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reject',
-        style: 'destructive',
-        onPress: async () => {
-          const res = await dispatch(
-            REJECT_BOOKING({
-              role: 'driver',
-              booking_id: rideRequest?.booking_id,
-            })
-          );
+    setActionType('REJECT');
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
 
-          if (res?.status) {
-            Alert.alert('Success', 'Ride rejected successfully');
-            await fetchCurrentRide();
-            setRideRequest(null);
-          } else {
-            Alert.alert('Error', res?.message || 'Failed to reject ride');
-          }
-        },
-      },
-    ]);
+  const submitRejectRide = async (reason) => {
+    setIsLoading(true);
+    try {
+      const res = await dispatch(
+        REJECT_BOOKING({
+          role: 'driver',
+          booking_id: rideRequest?.booking_id,
+          cancel_reason: reason,
+        })
+      );
+
+      if (res?.status) {
+        Alert.alert('Success', 'Ride rejected successfully');
+        await fetchCurrentRide();
+        setRideRequest(null);
+      } else {
+        Alert.alert('Error', res?.message || 'Failed to reject ride');
+      }
+    } catch {
+      Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const submitOnSpotAccept = async (bookingNo) => {
@@ -958,35 +965,33 @@ console.log('Cancel Booking Response:', res);
   };
 
   const handleCancelRide = (bookingId) => {
-    Alert.alert('Cancel Ride', 'Are you sure you want to cancel this ride?', [
-      { text: 'No', style: 'cancel' },
-      {
-        text: 'Yes, Cancel',
-        style: 'destructive',
-        onPress: async () => {
-          setIsLoading(true);
-          try {
-            const res = await dispatch(
-              CANCEL_BOOKING({
-                role: 'DRIVER',
-                booking_id: bookingId,
-                cancel_reason: 'Cancelled by driver',
-              })
-            );
-            if (res?.status) {
-              Alert.alert('Cancelled', 'Ride has been cancelled');
-              await fetchCurrentRide();
-            } else {
-              Alert.alert('Error', res?.message || 'Failed to cancel ride');
-            }
-          } catch {
-            Alert.alert('Error', 'Something went wrong');
-          } finally {
-            setIsLoading(false);
-          }
-        },
-      },
-    ]);
+    setActionType('ACTIVE_CANCEL');
+    setActionBookingId(bookingId);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const submitCancelActiveRide = async (bookingId, reason) => {
+    setIsLoading(true);
+    try {
+      const res = await dispatch(
+        CANCEL_BOOKING({
+          role: 'DRIVER',
+          booking_id: bookingId,
+          cancel_reason: reason,
+        })
+      );
+      if (res?.status) {
+        Alert.alert('Cancelled', 'Ride has been cancelled');
+        await fetchCurrentRide();
+      } else {
+        Alert.alert('Error', res?.message || 'Failed to cancel ride');
+      }
+    } catch {
+      Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStatusColor = (status) => STATUS_COLORS[status] || '#757575';
@@ -1188,17 +1193,18 @@ console.log('booking====>',booking)
 
         {/* Cancel button for non-completed statuses */}
         {status !== 'COMPLETED' && (
-         <TouchableOpacity
-  style={styles.cancelRideBtn}
-  onPress={() => {
-    setSelectedBookingNo(bookingNo);
-    setCancelReason('');
-    setShowCancelModal(true);
-  }}
->
-  <Icon name="x-circle" size={18} color="#FF5252" />
-  <Text style={styles.cancelRideBtnText}>Cancel Booking</Text>
-</TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cancelRideBtn}
+            onPress={() => {
+              setSelectedBookingNo(bookingNo);
+              setActionType('ONSPOT_CANCEL');
+              setCancelReason('');
+              setShowCancelModal(true);
+            }}
+          >
+            <Icon name="x-circle" size={18} color="#FF5252" />
+            <Text style={styles.cancelRideBtnText}>Cancel Booking</Text>
+          </TouchableOpacity>
         )}
       </Animated.View>
     );
@@ -2103,11 +2109,13 @@ paddingHorizontal:20}}
       <Modal visible={showCancelModal} transparent animationType="slide">
   <View style={styles.modalContainer}>
     <View style={styles.modalContent}>
-      <Text style={styles.modalTitle}>Cancel Booking</Text>
+      <Text style={styles.modalTitle}>
+        {actionType === 'REJECT' ? 'Reject Booking' : 'Cancel Booking'}
+      </Text>
 
       <TextInput
         style={[styles.input, styles.textArea]}
-        placeholder="Enter cancellation reason"
+        placeholder="Enter reason"
         value={cancelReason}
         onChangeText={setCancelReason}
         multiline
@@ -2125,15 +2133,18 @@ paddingHorizontal:20}}
           style={[styles.modalBtn, styles.submitBtn]}
           onPress={() => {
             if (!cancelReason.trim()) {
-              Alert.alert('Error', 'Please enter cancellation reason');
+              Alert.alert('Error', 'Please enter reason');
               return;
             }
 
             setShowCancelModal(false);
-            handleOnSpotCancel(
-              selectedBookingNo,
-              cancelReason.trim()
-            );
+            if (actionType === 'ONSPOT_CANCEL') {
+              handleOnSpotCancel(selectedBookingNo, cancelReason.trim());
+            } else if (actionType === 'ACTIVE_CANCEL') {
+              submitCancelActiveRide(actionBookingId, cancelReason.trim());
+            } else if (actionType === 'REJECT') {
+              submitRejectRide(cancelReason.trim());
+            }
           }}
         >
           <Text style={{color:'#fff'}}>Submit</Text>
