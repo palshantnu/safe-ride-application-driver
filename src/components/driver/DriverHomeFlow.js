@@ -18,9 +18,9 @@ import {
   Linking,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Icon from 'react-native-vector-icons/Feather';
-import { useDispatch, useSelector } from 'react-redux';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
+import Icon from 'react-native-vector-icons/Feather';
 import {
   ACCEPT_BOOKING,
   GET_BOOKING_REQUESTS,
@@ -37,6 +37,7 @@ import {
 } from '../../redux/actions/action-creator';
 import LocationService from '../../services/LocationService';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import { useDispatch, useSelector } from 'react-redux';
 
 const { NativeModules } = require('react-native');
 const { SoundHelper } = NativeModules;
@@ -220,6 +221,7 @@ const [selectedBookingNo, setSelectedBookingNo] = useState('');
       }
 
       const res = await dispatch(GET_CURRENT_BOOKING());
+      console.log('Current Ride Response:', res);
       if (res?.status && res?.data) {
         const bookings = Array.isArray(res.data) ? res.data : [res.data];
         setCurrentRides(bookings);
@@ -284,7 +286,9 @@ const [selectedBookingNo, setSelectedBookingNo] = useState('');
             phone: booking.user_mobile || 'N/A',
           },
           total_fare: booking.total_fare,
-          driver_amount:booking.driver_amount
+          driver_amount:booking.driver_amount,
+          access_fee:booking.access_fee || 'N/A',
+          platform_fee:booking.platform_fee || 'N/A',
         };
         setRideRequest(formatted);
         animateRequest();
@@ -1039,22 +1043,29 @@ console.log('booking====>',booking)
             <Text style={styles.infoText}>{planName || 'N/A'}</Text>
           </View>
         </View>
-    {userMobile  ? (
-                        <TouchableOpacity   onPress={() => Linking.openURL(`tel:${userMobile}`)} style={styles.passengerRow}>
-                          <View style={styles.avatarCircle}>
-                            <Icon name="user" size={18} color={BRAND} />
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            {/* {userName ? <Text style={styles.passengerName}>{userName}</Text> : null} */}
-                           <Text style={styles.passengerPhone}>{userMobile}</Text> 
-                          </View>
-                          {userMobile ? (
-                            <View style={styles.callChip}>
-                              <Icon name="phone-call" size={14} color={BRAND} />
-                            </View>
-                          ) : null}
-                        </TouchableOpacity>
-                      ) : null}
+    {userMobile ? (
+      <View style={styles.driverCard}>
+        <View style={styles.driverRow}>
+          <View style={styles.driverAvatar}>
+            <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
+          </View>
+          <View style={styles.driverMeta}>
+            <Text style={styles.driverName}>{userName || 'Passenger'}</Text>
+            {userMobile ? (
+              <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${userMobile}`)}>
+                <Icon name="phone" size={14} color="#4CAF50" />
+                <Text style={styles.driverPhone}>{userMobile}</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          {userMobile ? (
+            <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${userMobile}`)}>
+              <Icon name="phone-call" size={20} color="#fff" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
+    ) : null}
         <View style={styles.paymentInfo}>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>Captain amount :</Text>
@@ -1202,17 +1213,25 @@ console.log('booking====>',booking)
       return (
         <Animated.View key={bookingId} style={styles.activeRideCard}>
           <View style={styles.cardHeader}>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
-              <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
-            </View>
+      <View>
+      <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
+      <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
+      </View>
+      <View style={{...styles.requestBadge,marginTop:10,marginBottom:15,alignSelf:'flex-start'}}>
+      <Icon name="bell" size={16} color="#fff" />
+      <Text style={styles.requestBadgeText}>{booking.service_name}</Text>
+      </View>
+      </View>
             <View style={{ alignItems: 'center', gap: 0 }}>
-              <View style={{marginBottom:-20}}>
-                <Text style={styles.fareAmount}>₹{booking.total_fare}{'\n'}</Text>
+              <View style={{marginBottom:10}}>
+                {/* <Text style={styles.fareAmount}>₹{booking.total_fare}{'\n'}</Text> */}
+                <Text style={styles.fareAmount}>₹{parseFloat(booking.total_fare) - parseFloat(booking.platform_fee)- parseFloat(booking.access_fee)} {'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
+         <Text style={styles.fareAmount}>₹{booking.total_fare}{'\n'}<Text style={{fontSize:12}}>Ride amount</Text></Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {/* <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Icon name="map" size={14} color="#FF1493" />
               <Text style={{ fontSize: 12, color: '#FF1493', fontWeight: '600' }}>In-City</Text>
-              </View>
+              </View> */}
             </View>
           </View>
 
@@ -1354,21 +1373,28 @@ console.log('booking====>',booking)
             <Text style={styles.infoText}>{booking.plan_km} km</Text>
           </View>
         </View>
-  {booking.token_paid == 1 ? (
-          <TouchableOpacity   onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)} style={styles.passengerRow}>
-            <View style={styles.avatarCircle}>
-              <Icon name="user" size={18} color={BRAND} />
-            </View>
-            <View style={{ flex: 1 }}>
-              {/* {userName ? <Text style={styles.passengerName}>{userName}</Text> : null} */}
-              {booking.user_mobile    ? <Text style={styles.passengerPhone}>{booking.user_mobile}</Text>    : null}
-            </View>
-            {booking.user_mobile ? (
-              <View style={styles.callChip}>
-                <Icon name="phone-call" size={14} color={BRAND} />
+        {booking.token_paid == 1 ? (
+          <View style={styles.driverCard}>
+            <View style={styles.driverRow}>
+              <View style={styles.driverAvatar}>
+                <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
               </View>
-            ) : null}
-          </TouchableOpacity>
+              <View style={styles.driverMeta}>
+                <Text style={styles.driverName}>{booking.user_name || 'Passenger'}</Text>
+                {booking.user_mobile ? (
+                  <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)}>
+                    <Icon name="phone" size={14} color="#4CAF50" />
+                    <Text style={styles.driverPhone}>{booking.user_mobile}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              {booking.user_mobile ? (
+                <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)}>
+                  <Icon name="phone-call" size={20} color="#fff" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
         ) : null}
   {/* {booking.token_paid == 1 &&    <View style={{...styles.customerInfo,justifyContent:'space-between',width:'100%'}}>
   <View style={styles.customerDetail}>
@@ -1489,7 +1515,13 @@ paddingHorizontal:20}}
           <Icon name="bell" size={16} color="#fff" />
           <Text style={styles.requestBadgeText}>New Ride Request</Text>
         </View>
-       {rideRequest?.service_name === 'In City' ?  <Text style={styles.fareAmount}>₹{rideRequest.total_fare}{'\n'}</Text>: <View>
+       {rideRequest?.service_name === 'In City' ? 
+        <View>  
+        <Text style={styles.fareAmount}>₹{parseFloat(rideRequest.total_fare) - parseFloat(rideRequest.platform_fee)- parseFloat(rideRequest.access_fee)} {'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
+         <Text style={styles.fareAmount}>₹{rideRequest.total_fare}{'\n'}<Text style={{fontSize:12}}>Ride amount</Text></Text>
+        </View>
+        : 
+        <View>
          <Text style={styles.fareAmount}>₹{rideRequest.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
           <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{rideRequest.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
         </View>}
@@ -2091,6 +2123,28 @@ paddingHorizontal:20}}
 const styles = StyleSheet.create({
   outer: { flex: 1, backgroundColor: '#f5f5f5' },
   content: { flex: 1, padding: 15 },
+  driverCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  driverRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  driverAvatar: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: '#FFF0F7', alignItems: 'center', justifyContent: 'center',
+  },
+  driverMeta: { flex: 1 },
+  driverName: { fontSize: 15, fontWeight: '700', color: '#222' },
+  callRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  driverPhone: { fontSize: 13, color: '#4CAF50', fontWeight: '500' },
+  callBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#4CAF50', alignItems: 'center', justifyContent: 'center',
+  },
 
   specialTripActions: {
     paddingHorizontal: 16,

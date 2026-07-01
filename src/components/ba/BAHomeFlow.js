@@ -14,7 +14,9 @@ import {
   TextInput
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
+import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import LinearGradient from 'react-native-linear-gradient';
+import { Linking } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   BA_ACCEPT_BOOKING,
@@ -479,12 +481,25 @@ console.log('res====>',res)
         </View>
       </View>
 
-      <View style={styles.customerInfo}>
-        <View style={styles.customerDetail}>
-          <Icon name="phone" size={14} color="#999" />
-          <Text style={styles.customerText}>{booking.user_mobile}</Text>
+      {booking.user_mobile ? (
+        <View style={styles.driverCard}>
+          <View style={styles.driverRow}>
+            <View style={styles.driverAvatar}>
+              <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
+            </View>
+            <View style={styles.driverMeta}>
+              <Text style={styles.driverName}>{booking.user_name || 'Passenger'}</Text>
+              <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)}>
+                <Icon name="phone" size={14} color="#4CAF50" />
+                <Text style={styles.driverPhone}>{booking.user_mobile}</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)}>
+              <Icon name="phone-call" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      ) : null}
 
       <View style={styles.buttonRow}>
         <TouchableOpacity
@@ -1173,6 +1188,28 @@ onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
 const styles = StyleSheet.create({
   outer: { flex: 1 },
   content: { flex: 1, padding: 15 },
+  driverCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  driverRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  driverAvatar: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: '#FFF0F7', alignItems: 'center', justifyContent: 'center',
+  },
+  driverMeta: { flex: 1 },
+  driverName: { fontSize: 15, fontWeight: '700', color: '#222' },
+  callRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  driverPhone: { fontSize: 13, color: '#4CAF50', fontWeight: '500' },
+  callBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#4CAF50', alignItems: 'center', justifyContent: 'center',
+  },
 
   statsContainer: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 15, padding: 20, marginBottom: 15 },
   statItem: { flex: 1, alignItems: 'center' },

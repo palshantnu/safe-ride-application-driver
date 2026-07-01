@@ -19,6 +19,7 @@ import Geolocation from '@react-native-community/geolocation';
 import Icon from 'react-native-vector-icons/Feather';
 import MaterialIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useDispatch } from 'react-redux';
+import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import {
   GET_CURRENT_BOOKING,
   DRIVER_ARRIVED,
@@ -560,20 +561,27 @@ const InCityMapScreen = ({ navigation, route }) => {
 
         {/* Passenger row */}
         {(userName || phone) ? (
-          <TouchableOpacity onPress={()=> Linking.openURL(`tel:${phone}`)} style={s.passengerRow}>
-            <View style={s.avatarCircle}>
-              <Icon name="user" size={18} color={BRAND} />
-            </View>
-            <View style={{ flex: 1 }}>
-              {userName ? <Text style={s.passengerName}>{userName}</Text> : null}
-              {phone    ? <Text style={s.passengerPhone}>{phone}</Text>    : null}
-            </View>
-            {phone ? (
-              <View style={s.callChip}>
-                <Icon name="phone-call" size={14} color={BRAND} />
+          <View style={s.driverCard}>
+            <View style={s.driverRow}>
+              <View style={s.driverAvatar}>
+                <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
               </View>
-            ) : null}
-          </TouchableOpacity>
+              <View style={s.driverMeta}>
+                <Text style={s.driverName}>{userName || 'Passenger'}</Text>
+                {phone ? (
+                  <TouchableOpacity style={s.callRow} onPress={() => Linking.openURL(`tel:${phone}`)}>
+                    <Icon name="phone" size={14} color="#4CAF50" />
+                    <Text style={s.driverPhone}>{phone}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              {phone ? (
+                <TouchableOpacity style={s.callBtn} onPress={() => Linking.openURL(`tel:${phone}`)}>
+                  <Icon name="phone-call" size={20} color="#fff" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
         ) : null}
 
         {/* ── ACTION BUTTONS ── */}
@@ -694,6 +702,28 @@ const InCityMapScreen = ({ navigation, route }) => {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
+  driverCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  driverRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  driverAvatar: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: '#FFF0F7', alignItems: 'center', justifyContent: 'center',
+  },
+  driverMeta: { flex: 1 },
+  driverName: { fontSize: 15, fontWeight: '700', color: '#222' },
+  callRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  driverPhone: { fontSize: 13, color: '#4CAF50', fontWeight: '500' },
+  callBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#4CAF50', alignItems: 'center', justifyContent: 'center',
+  },
   map:       { flex: 1 },
 
   /* ── Driver marker ── */

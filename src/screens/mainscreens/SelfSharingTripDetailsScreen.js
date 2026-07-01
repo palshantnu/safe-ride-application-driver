@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import Icon from 'react-native-vector-icons/Feather';
+import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import LinearGradient from 'react-native-linear-gradient';
 import SelfSharingService from '../../services/SelfSharingService';
 
@@ -231,18 +232,29 @@ const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
       <View key={booking.id || index} style={s.bookingCard}>
         <Text style={s.bookingTitle}>Booking #{booking.booking_id || index + 1}</Text>
         
-        <View style={s.bookingRow}>
-          <Text style={s.bookingLabel}>Passenger:</Text>
-          <Text style={s.bookingValue}>{booking.user_name || 'N/A'}</Text>
-        </View>
-
-        
-        <View style={s.bookingRow}>
-          <Text style={s.bookingLabel}>Mobile:</Text>
-          <TouchableOpacity onPress={() => handleCallPassenger(booking.user_mobile)}>
-            <Text style={[s.bookingValue, s.phoneText]}>{booking.user_mobile || 'N/A'}</Text>
-          </TouchableOpacity>
-        </View>
+        {(booking.user_name || booking.user_mobile) ? (
+          <View style={s.driverCard}>
+            <View style={s.driverRow}>
+              <View style={s.driverAvatar}>
+                <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
+              </View>
+              <View style={s.driverMeta}>
+                <Text style={s.driverName}>{booking.user_name || 'Passenger'}</Text>
+                {booking.user_mobile ? (
+                  <TouchableOpacity style={s.callRow} onPress={() => handleCallPassenger(booking.user_mobile)}>
+                    <Icon name="phone" size={14} color="#4CAF50" />
+                    <Text style={s.driverPhone}>{booking.user_mobile}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              {booking.user_mobile ? (
+                <TouchableOpacity style={s.callBtn} onPress={() => handleCallPassenger(booking.user_mobile)}>
+                  <Icon name="phone-call" size={20} color="#fff" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
         
         <View style={s.bookingRow}>
           <Text style={s.bookingLabel}>Seats:</Text>
@@ -507,6 +519,28 @@ const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F8FA' },
+  driverCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  driverRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  driverAvatar: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: '#FFF0F7', alignItems: 'center', justifyContent: 'center',
+  },
+  driverMeta: { flex: 1 },
+  driverName: { fontSize: 15, fontWeight: '700', color: '#222' },
+  callRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  driverPhone: { fontSize: 13, color: '#4CAF50', fontWeight: '500' },
+  callBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#4CAF50', alignItems: 'center', justifyContent: 'center',
+  },
 
   header: {
     height: 60,

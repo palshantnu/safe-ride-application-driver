@@ -17,8 +17,10 @@ import {
   Modal,
   PermissionsAndroid,
   Platform,
+  Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
+import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import { useDispatch, useSelector } from 'react-redux';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import axios from 'axios';
@@ -607,22 +609,29 @@ console.log('Rendering delivery card:', delivery);
               {delivery.delivery_landmark ? <Text style={styles.contactText}>📍 {delivery.delivery_landmark}</Text> : null}
               <Text style={styles.contactText}>👤 Receiver: {delivery.receiver_name}</Text>
               {/* <Text style={styles.contactText}>📞 {delivery.receiver_phone}</Text> */}
-              {delivery.receiver_phone  ? (
-                        <TouchableOpacity   onPress={() => Linking.openURL(`tel:${delivery.receiver_phone}`)} style={styles.passengerRow}>
-                          <View style={styles.avatarCircle}>
-                            <Icon name="user" size={18} color={BRAND} />
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            {/* {userName ? <Text style={styles.passengerName}>{userName}</Text> : null} */}
-                            {delivery.receiver_name    ? <Text style={styles.passengerPhone}>{delivery.receiver_phone}</Text>    : null}
-                          </View>
-                          {delivery.receiver_name ? (
-                            <View style={styles.callChip}>
-                              <Icon name="phone-call" size={14} color={BRAND} />
-                            </View>
-                          ) : null}
+              {delivery.receiver_phone ? (
+                <View style={styles.driverCard}>
+                  <View style={styles.driverRow}>
+                    <View style={styles.driverAvatar}>
+                      <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
+                    </View>
+                    <View style={styles.driverMeta}>
+                      <Text style={styles.driverName}>{delivery.receiver_name || 'Receiver'}</Text>
+                      {delivery.receiver_phone ? (
+                        <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${delivery.receiver_phone}`)}>
+                          <Icon name="phone" size={14} color="#4CAF50" />
+                          <Text style={styles.driverPhone}>{delivery.receiver_phone}</Text>
                         </TouchableOpacity>
                       ) : null}
+                    </View>
+                    {delivery.receiver_phone ? (
+                      <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${delivery.receiver_phone}`)}>
+                        <Icon name="phone-call" size={20} color="#fff" />
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                </View>
+              ) : null}
             </View>
           </View>
         </View>
@@ -899,6 +908,28 @@ console.log('Reject response:', response.data);
 // Styles (same as before, keeping all existing styles)
 const styles = StyleSheet.create({
   outer: { flex: 1, backgroundColor: '#f5f5f5' },
+  driverCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  driverRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  driverAvatar: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: '#FFF0F7', alignItems: 'center', justifyContent: 'center',
+  },
+  driverMeta: { flex: 1 },
+  driverName: { fontSize: 15, fontWeight: '700', color: '#222' },
+  callRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  driverPhone: { fontSize: 13, color: '#4CAF50', fontWeight: '500' },
+  callBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#4CAF50', alignItems: 'center', justifyContent: 'center',
+  },
   content: { flex: 1, padding: 15 },
   parcelBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF8F0', borderRadius: 12, padding: 12, margin: 15, marginBottom: 0, gap: 10, borderWidth: 1, borderColor: '#FF9800', borderStyle: 'dashed' },
   parcelBannerText: { flex: 1, fontSize: 12, color: '#FF9800', fontWeight: '500' },

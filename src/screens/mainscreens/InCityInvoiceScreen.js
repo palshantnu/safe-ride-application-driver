@@ -16,6 +16,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useDispatch } from 'react-redux';
 import { GET_INVOICE, COLLECT_PAYMENT_COMPLETE_RIDE } from '../../redux/actions/action-creator';
 
+
+
+
 const BRAND  = '#E91E8C';
 const AMBER  = '#F59E0B';
 const GREEN  = '#16A34A';
@@ -27,7 +30,8 @@ const WHITE  = '#FFFFFF';
 
 const Row = ({ icon, label, value, valueStyle }) => (
   <View style={s.row}>
-    <Icon name={icon} size={14} color={SUBTLE} style={{ marginTop: 1 }} />
+    
+    {icon == 'dollar-sign' ? <MaterialIcon name="currency-inr" size={16} color={SUBTLE} />:<Icon name={icon} size={14} color={SUBTLE} style={{ marginTop: 1 }} />}
     <Text style={s.rowLabel}>{label}</Text>
     <Text style={[s.rowValue, valueStyle]}>{value ?? '—'}</Text>
   </View>
@@ -48,6 +52,7 @@ const InCityInvoiceScreen = ({ navigation, route }) => {
   const fetchInvoice = useCallback(async () => {
     try {
       const res = await dispatch(GET_INVOICE({ booking_id: bookingId }));
+      console.log('fetchInvoice res', res);
       if (res?.status && res?.invoice) {
         setInvoice(res.invoice);
       }
@@ -168,7 +173,30 @@ const InCityInvoiceScreen = ({ navigation, route }) => {
             </View>
           </View>
         )}
-
+   {isPaymentDone ? (
+          <TouchableOpacity
+            style={s.collectBtn}
+            onPress={handleCollect}
+            disabled={isCollecting}
+            activeOpacity={0.85}
+          >
+            {isCollecting ? (
+              <ActivityIndicator color={WHITE} size="small" />
+            ) : (
+              <>
+                <MaterialIcon name="cash" size={22} color={WHITE} />
+                <Text style={s.collectBtnText}>
+                  I Collect {iCollect ? `₹${iCollect}` : ''}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        ) : (
+          <View style={s.waitingHint}>
+            <ActivityIndicator size="small" color={AMBER} style={{ marginRight: 10 }} />
+            <Text style={s.waitingHintText}>Checking payment status every 5 seconds…</Text>
+          </View>
+        )}
         {/* Booking info */}
         <View style={s.card}>
           <View style={s.cardHeader}>
@@ -178,7 +206,7 @@ const InCityInvoiceScreen = ({ navigation, route }) => {
           <View style={s.cardDivider} />
           <Row icon="hash"  label="Booking ID"  value={`#${bookingId || '—'}`} />
           <Row icon="tag"   label="Service"     value={subService} />
-          {persons   ? <Row icon="users"       label="Passengers"    value={`${persons}`} />         : null}
+          {/* {persons   ? <Row icon="users"       label="Passengers"    value={`${persons}`} />         : null} */}
           {paymentMode ? <Row icon="credit-card" label="Payment Mode" value={paymentMode} />          : null}
         </View>
 
@@ -236,30 +264,7 @@ const InCityInvoiceScreen = ({ navigation, route }) => {
         ) : null}
 
         {/* I Collect button — only when PAYMENT_DONE */}
-        {isPaymentDone ? (
-          <TouchableOpacity
-            style={s.collectBtn}
-            onPress={handleCollect}
-            disabled={isCollecting}
-            activeOpacity={0.85}
-          >
-            {isCollecting ? (
-              <ActivityIndicator color={WHITE} size="small" />
-            ) : (
-              <>
-                <MaterialIcon name="cash" size={22} color={WHITE} />
-                <Text style={s.collectBtnText}>
-                  I Collect {iCollect ? `₹${iCollect}` : ''}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-        ) : (
-          <View style={s.waitingHint}>
-            <ActivityIndicator size="small" color={AMBER} style={{ marginRight: 10 }} />
-            <Text style={s.waitingHintText}>Checking payment status every 5 seconds…</Text>
-          </View>
-        )}
+     
 
         <View style={{ height: 24 }} />
       </ScrollView>
