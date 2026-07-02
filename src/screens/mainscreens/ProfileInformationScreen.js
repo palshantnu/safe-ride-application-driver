@@ -84,8 +84,8 @@ const ProfileInformationScreen = ({ navigation }) => {
     // Vehicle type options
     const vehicleTypes = [
         { id: '1', label: 'Car', value: 'Car', icon: 'car' },
-        { id: '2', label: 'Bike', value: 'Bike', icon: 'bicycle' },
-        { id: '3', label: 'Auto', value: 'Auto', icon: 'motorcycle' },
+        { id: '2', label: 'Bike', value: 'Bike', icon: 'motorcycle' },
+        { id: '3', label: 'Auto', value: 'Auto', icon: 'taxi' },
         { id: '4', label: 'Traveller', value: 'Traveller', icon: 'bus' },
         { id: '5', label: 'E-rickshaw', value: 'E-rickshaw', icon: 'bolt' },
     ];

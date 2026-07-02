@@ -1268,6 +1268,20 @@ console.log('booking====>',booking)
               <View style={styles.locationTextCol}>
                 <Text style={styles.locationLabel}>Pickup</Text>
                 <Text style={styles.pickupText}>{pickupLocation}</Text>
+                {(booking.landmark || booking.pickup_landmark) ? (
+                  <Text style={[styles.pickupText, { fontSize: 12, color: '#666', marginTop: 2 }]}>
+                    📍 Landmark: {booking.landmark || booking.pickup_landmark}
+                  </Text>
+                ) : null}
+                {booking.pickup_location && booking.pickup_location.trim() !== '' ? (
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}
+                    onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${booking.pickup_location}`)}
+                  >
+                    <Icon name="navigation" size={14} color="#FF1493" />
+                    <Text style={{ fontSize: 12, color: '#FF1493', fontWeight: '600' }}>Navigate on Map</Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
             </View>
             <View style={styles.locationEntryRow}>
@@ -1335,6 +1349,20 @@ console.log('booking====>',booking)
             <View style={styles.locationTextCol}>
               <Text style={styles.locationLabel}>Pickup</Text>
               <Text style={styles.pickupText}>{pickupLocation}</Text>
+              {(booking.landmark || booking.pickup_landmark) ? (
+                <Text style={[styles.pickupText, { fontSize: 12, color: '#666', marginTop: 2 }]}>
+                  📍 Landmark: {booking.landmark || booking.pickup_landmark}
+                </Text>
+              ) : null}
+              {booking.pickup_location && booking.pickup_location.trim() !== '' ? (
+                <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}
+                  onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${booking.pickup_location}`)}
+                >
+                  <Icon name="navigation" size={14} color="#FF1493" />
+                  <Text style={{ fontSize: 12, color: '#FF1493', fontWeight: '600' }}>Navigate on Map</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           </View>
           <View style={styles.locationEntryRow}>

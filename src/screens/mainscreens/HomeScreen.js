@@ -6,7 +6,7 @@ import { NativeModules } from 'react-native';
 const { SoundHelper } = NativeModules;
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Feather';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import DriverHomeFlow from '../../components/driver/DriverHomeFlow';
 import BAHomeFlow from '../../components/ba/BAHomeFlow';
 import ParcelDriverHomeFlow from '../../components/driver/ParcelDriverHomeFlow';
@@ -18,7 +18,7 @@ import { GET_CAPTAIN_POPUPS } from '../../redux/actions/action-creator';
 const HomeScreen = ({ navigation }) => {
   const { userData } = useSelector((state) => state.auth);
   const { width } = Dimensions.get('window');
-
+const dispatch = useDispatch();
 
   const [popupVisible, setPopupVisible] = useState(false);
 const [popupData, setPopupData] = useState(null);
