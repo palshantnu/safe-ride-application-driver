@@ -248,7 +248,6 @@ const [actionBookingId, setActionBookingId] = useState(null);
   const fetchOnSpotAvailableBookings = async () => {
     if (!isOnSpotCaptain) return;
     try {
-      setOnSpotRequests([]);
       const axios = (await import('../../axios/axiosinstance')).default;
 
       const res = await axios.get('onspot/captain/available', {
@@ -1083,21 +1082,21 @@ console.log('booking====>',booking)
     ) : null}
         <View style={styles.paymentInfo}>
           <View style={styles.paymentRow}>
-            <Text style={styles.paymentLabel}>Service amount :</Text>
+            <Text style={styles.paymentLabel}>Captain amount :</Text>
             <Text style={styles.totalAmount}>₹{driver_amount}</Text>
           </View>
           <View style={styles.paymentRow}>
-            <Text style={styles.paymentLabel}>Ride amount :</Text>
+            <Text style={styles.paymentLabel}>Service amount :</Text>
             <Text style={styles.totalAmount}>₹{totalAmount}</Text>
           </View>
-          <View style={styles.paymentRow}>
+          {/* <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>Token:</Text>
             <Text style={styles.tokenAmount}>₹{tokenAmount}</Text>
           </View>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>Balance:</Text>
             <Text style={styles.balanceAmount}>₹{balanceAmount}</Text>
-          </View>
+          </View> */}
         </View>
 
         <View style={styles.rideInfo}>
@@ -1694,8 +1693,8 @@ paddingHorizontal:20}}
             <Text style={styles.requestBadgeText}>On-spot Booking</Text>
           </View>
            <View>
-                 <Text style={styles.fareAmount}>₹{booking.driver_amount}{'\n'}<Text style={{fontSize:12}}>Service amount</Text></Text>
-                          <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{booking.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
+                 <Text style={styles.fareAmount}>₹{booking.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
+                          <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{booking.total_fare}{'\n'} <Text style={{fontSize:12}}>Service amount</Text></Text>
               </View>
         </View>
 

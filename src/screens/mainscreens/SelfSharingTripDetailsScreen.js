@@ -30,45 +30,50 @@ const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
 
-  const fetchTrip = async () => {
-    if (!tripId) return;
-    setLoading(true);
-    try {
-      const res = await SelfSharingService.getTripDetails(tripId);
-      console.log('Trip details response:', res);
-      
-      // Handle the nested response structure
-      let tripData = null;
-      let bookingsData = [];
-      
-      if (res?.data?.data) {
-        // If response has data.data structure (array of bookings)
-        if (Array.isArray(res.data.data)) {
-          bookingsData = res.data.data;
-          // You might also have trip info elsewhere
-          tripData = res.data.trip || res.data;
-        } else {
-          // If data.data is the trip object
-          tripData = res.data.data;
-        }
-      } else if (res?.data) {
-        tripData = res.data;
-      } else if (res?.trip) {
-        tripData = res.trip;
-        bookingsData = res.bookings || [];
+const fetchTrip = async () => {
+  if (!tripId) return;
+  setLoading(true);
+
+  try {
+    const res = await SelfSharingService.getTripDetails(tripId);
+    console.log('Trip details response:', res);
+
+    let tripData = null;
+    let bookingsData = [];
+
+    if (res?.data?.data) {
+      if (Array.isArray(res.data.data)) {
+        // Filter out cancelled bookings
+        bookingsData = res.data.data.filter(
+          (booking) => booking.status !== "CANCELLED"
+        );
+
+        tripData = res.data.trip || res.data;
       } else {
-        tripData = res;
+        tripData = res.data.data;
       }
-      
-      setTrip(tripData);
-      setBookings(bookingsData);
-    } catch (e) {
-      Alert.alert('Error', 'Failed to load trip details');
-      console.log('fetchTrip error:', e);
-    } finally {
-      setLoading(false);
+    } else if (res?.data) {
+      tripData = res.data;
+    } else if (res?.trip) {
+      tripData = res.trip;
+
+      // Filter here as well
+      bookingsData = (res.bookings || []).filter(
+        (booking) => booking.status !== "CANCELLED"
+      );
+    } else {
+      tripData = res;
     }
-  };
+
+    setTrip(tripData);
+    setBookings(bookingsData);
+  } catch (e) {
+    Alert.alert('Error', 'Failed to load trip details');
+    console.log('fetchTrip error:', e);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchTrip();
@@ -83,7 +88,7 @@ const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
       const ok = res?.status ?? res?.success ?? true;
       if (ok || res?.data?.status || res?.data?.success) {
         Alert.alert('Success', 'Arrived submitted');
-        navigation.navigate('SelfSharingMyTrips', { refreshMyTrips: true });
+        navigation.goBack();
       } else {
         Alert.alert('Error', res?.message || 'Failed to submit arrive');
       }
@@ -101,15 +106,16 @@ const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
     try {
       const res = await SelfSharingService.startRide({ trip_id: tripId });
       const ok = res?.status ?? res?.success ?? true;
+     
       if (ok || res?.data?.status || res?.data?.success) {
         Alert.alert('Success', 'Ride started');
-        navigation.navigate('SelfSharingMyTrips', { refreshMyTrips: true });
+        navigation.goBack();
       } else {
         Alert.alert('Error', res?.message || 'Failed to start ride');
       }
     } catch (e) {
-      Alert.alert('Error', 'Failed to start ride');
-      console.log('handleStartRide error:', e);
+      Alert.alert('Error', e.response?.data.message);
+      console.log('handleStartRide error:', e.response?.data.message || e);
     } finally {
       setLoading(false);
     }
@@ -123,7 +129,7 @@ const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
       const ok = res?.status ?? res?.success ?? true;
       if (ok || res?.data?.status || res?.data?.success) {
         Alert.alert('Success', 'Ride completed');
-        navigation.navigate('SelfSharingMyTrips', { refreshMyTrips: true });
+        navigation.goBack();
       } else {
         Alert.alert('Error', res?.message || 'Failed to complete ride');
       }
@@ -143,7 +149,7 @@ const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
       const ok = res?.status ?? res?.success ?? true;
       if (ok || res?.data?.status || res?.data?.success) {
         Alert.alert('Success', 'Ride canceled');
-        navigation.navigate('SelfSharingMyTrips', { refreshMyTrips: true });
+        navigation.goBack();
       } else {
         Alert.alert('Error', res?.message || 'Failed to cancel ride');
       }
@@ -211,7 +217,7 @@ const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
     setOtpModalVisible(false);
     setSelectedBooking(null);
 
-    navigation.navigate('SelfSharingMyTrips', { refreshMyTrips: true });
+    navigation.goBack();
   } else {
     Alert.alert('Error', res?.message);
   }
@@ -287,6 +293,20 @@ const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
             <Text style={s.statusText}>{booking.status || 'PENDING'}</Text>
           </View>
         </View>
+
+        {booking.passengers && booking.passengers.length > 0 && (
+          <View style={s.passengersContainer}>
+            <Text style={s.passengersTitle}>Passenger Details:</Text>
+            {booking.passengers.map((passenger, idx) => (
+              <View key={passenger.id || idx} style={s.passengerItem}>
+                <Icon name="user" size={14} color="#FF1493" style={{ marginRight: 4 }} />
+                <Text style={s.passengerText}>
+                  {passenger.name} ({passenger.age} Yrs)
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
         
        
 
@@ -722,6 +742,31 @@ const s = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FF1493',
+  },
+  passengersContainer: {
+    marginTop: 10,
+    backgroundColor: '#FAFAFA',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+  },
+  passengersTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6B7280',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+  },
+  passengerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  passengerText: {
+    fontSize: 13,
+    color: '#374151',
+    fontWeight: '500',
   },
   statusBadge: {
     paddingHorizontal: 8,
