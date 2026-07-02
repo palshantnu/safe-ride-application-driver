@@ -94,6 +94,38 @@ const [selectedParcelId, setSelectedParcelId] =
 
 const [rejectReason, setRejectReason] =
   useState('');
+
+const [showBookingRejectModal, setShowBookingRejectModal] = useState(false);
+const [selectedBookingId, setSelectedBookingId] = useState(null);
+const [bookingRejectReason, setBookingRejectReason] = useState('');
+
+const submitBookingReject = async () => {
+  if (!bookingRejectReason.trim()) {
+    Alert.alert('Error', 'Please enter reason');
+    return;
+  }
+  setIsLoading(true);
+  try {
+    const res = await dispatch(
+      REJECT_BOOKING({
+        role: 'business_associate',
+        booking_id: selectedBookingId,
+        cancel_reason: bookingRejectReason.trim()
+      })
+    );
+    if (res?.status) {
+      setShowBookingRejectModal(false);
+      setBookingRejectReason('');
+      fetchBABookings();
+    } else {
+      Alert.alert('Error', res?.message || 'Failed to reject booking');
+    }
+  } catch (error) {
+    Alert.alert('Error', 'Something went wrong');
+  } finally {
+    setIsLoading(false);
+  }
+};
   
 
 
@@ -505,20 +537,9 @@ console.log('res====>',res)
         <TouchableOpacity
           style={styles.rejectBtn}
           onPress={() => {
-            Alert.alert('Cancel Booking', 'Are you sure you want to cancel this booking?', [
-              { text: 'No', style: 'cancel' },
-              {
-                text: 'Yes, Cancel',
-                style: 'destructive',
-                onPress: async () => {
-                  const res = await dispatch(
-                    REJECT_BOOKING({ role: 'business_associate', booking_id: booking.booking_id })
-                  );
-                  if (res?.status) fetchBABookings();
-                  else Alert.alert('Error', res?.message || 'Failed to cancel');
-                },
-              },
-            ]);
+            setSelectedBookingId(booking.booking_id);
+            setBookingRejectReason('');
+            setShowBookingRejectModal(true);
           }}
           disabled={isLoading}
         >
@@ -1175,6 +1196,72 @@ onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
             }}>
             Reject
           </Text>
+        </TouchableOpacity>
+
+      </View>
+    </View>
+  </View>
+</Modal>
+
+<Modal
+  visible={showBookingRejectModal}
+  transparent
+  animationType="slide">
+
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+
+      <Text style={styles.modalTitle}>
+        Reject Booking
+      </Text>
+
+      <TextInput
+        value={bookingRejectReason}
+        onChangeText={setBookingRejectReason}
+        placeholder="Enter reason"
+        placeholderTextColor={'#999'}
+        multiline
+        style={{
+          borderWidth: 1,
+          borderColor: '#ddd',
+          borderRadius: 10,
+          minHeight: 100,
+          padding: 10,
+          marginVertical: 15,
+          color: '#000'
+        }}
+      />
+
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+
+        <TouchableOpacity
+          style={[styles.modalBtn, styles.cancelBtn]}
+          onPress={() => {
+            setShowBookingRejectModal(false);
+            setBookingRejectReason('');
+          }}>
+          <Text style={styles.cancelBtnText}>
+            Cancel
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.modalBtn,
+            { backgroundColor: '#F44336' },
+          ]}
+          onPress={submitBookingReject}>
+          {isLoading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text
+              style={{
+                color: '#fff',
+                fontWeight: '600',
+              }}>
+              Reject
+            </Text>
+          )}
         </TouchableOpacity>
 
       </View>
