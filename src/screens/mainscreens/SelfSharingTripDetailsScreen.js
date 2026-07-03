@@ -29,6 +29,9 @@ const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+
 
 const fetchTrip = async () => {
   if (!tripId) return;
@@ -141,11 +144,23 @@ const fetchTrip = async () => {
     }
   };
 
-  const handleCancelRide = async () => {
-    if (!tripId) return;
+  const handleCancelRide = () => {
+    setCancelReason('');
+    setCancelModalVisible(true);
+  };
+
+  const submitCancelRide = async () => {
+    if (!cancelReason.trim()) {
+      Alert.alert('Error', 'Please enter reason');
+      return;
+    }
+    setCancelModalVisible(false);
     setLoading(true);
     try {
-      const res = await SelfSharingService.cancelRide({ trip_id: tripId });
+      const res = await SelfSharingService.cancelRide({
+        trip_id: tripId,
+        cancel_reason: cancelReason.trim()
+      });
       const ok = res?.status ?? res?.success ?? true;
       if (ok || res?.data?.status || res?.data?.success) {
         Alert.alert('Success', 'Ride canceled');
@@ -155,7 +170,7 @@ const fetchTrip = async () => {
       }
     } catch (e) {
       Alert.alert('Error', 'Failed to cancel ride');
-      console.log('handleCancelRide error:', e);
+      console.log('submitCancelRide error:', e);
     } finally {
       setLoading(false);
     }
@@ -238,7 +253,7 @@ const fetchTrip = async () => {
       <View key={booking.id || index} style={s.bookingCard}>
         <Text style={s.bookingTitle}>Booking #{booking.booking_id || index + 1}</Text>
         
-        {(booking.user_name || booking.user_mobile) ? (
+        {(booking.user_name || booking.user_mobile) && booking.status != 'COMPLETED'  && booking.status === 'CANCELLED'? (
           <View style={s.driverCard}>
             <View style={s.driverRow}>
               <View style={s.driverAvatar}>
@@ -310,7 +325,7 @@ const fetchTrip = async () => {
         
        
 
-        {booking.status !== 'BOARDED' && booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && booking.status !== 'STARTED' && (
+        {booking.status !== 'BOARDED' && booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && booking.status !== 'STARTED' && booking.balance_paid == 1 && (
           <TouchableOpacity
             style={[s.actionBtn, s.verifyOtpBtn]}
             onPress={() => openOtpModalForBooking(booking)}
@@ -388,7 +403,7 @@ const fetchTrip = async () => {
 
             <View style={s.divider} />
 
-            {status == 'UPCOMING' && (
+            {status == 'UPCOMING' &&  bookings.length > 0 && (
               <TouchableOpacity
                 style={[s.actionBtn, { backgroundColor: '#4CAF50', opacity: loading ? 0.7 : 1 }]}
                 onPress={handleArrive}
@@ -405,7 +420,7 @@ const fetchTrip = async () => {
               </TouchableOpacity>
             )}
 
-            {status == 'BOARDING' && (
+            {status == 'BOARDING' && bookings.every(booking => booking.balance_paid !== 0) && bookings.every(booking => booking.otp_verified !== 0) && (
               <TouchableOpacity
                 style={[s.actionBtn, { backgroundColor: '#ff1493', opacity: loading ? 0.7 : 1 }]}
                 onPress={handleStartRide}
@@ -442,7 +457,7 @@ const fetchTrip = async () => {
                
               </View>
             )}
-            {status != 'COMPLETED' && <TouchableOpacity
+            {status != 'COMPLETED' && status != 'CANCELLED' && <TouchableOpacity
                   style={[s.actionBtn, { backgroundColor: '#FFCDD2', flex: 1, opacity: loading ? 0.7 : 1 ,marginTop: 12}]}
                   onPress={handleCancelRide}
                   disabled={loading}
@@ -523,6 +538,67 @@ const fetchTrip = async () => {
                 disabled={verifyingOtp}
               >
                 {verifyingOtp ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={s.modalBtnText}>Submit</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Cancel Modal */}
+      <Modal
+        visible={cancelModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setCancelModalVisible(false);
+        }}
+      >
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <Text style={s.modalTitle}>Cancel Trip</Text>
+            <Text style={s.modalSubText}>Please enter reason for cancellation</Text>
+
+            <TextInput
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              placeholder="Enter reason"
+              placeholderTextColor="#999"
+              multiline
+              style={{
+                borderWidth: 1,
+                borderColor: '#e0e0e0',
+                borderRadius: 12,
+                padding: 12,
+                fontSize: 14,
+                marginBottom: 20,
+                backgroundColor: '#FAF9F6',
+                textAlignVertical: 'top',
+                minHeight: 80,
+                color: '#333'
+              }}
+            />
+
+            <View style={s.modalActions}>
+              <TouchableOpacity
+                style={[s.modalBtn, s.modalCancelBtn]}
+                onPress={() => {
+                  setCancelModalVisible(false);
+                }}
+                disabled={loading}
+              >
+                <Text style={s.modalBtnText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[s.modalBtn, s.modalSubmitBtn]}
+                onPress={submitCancelRide}
+                disabled={loading}
+              >
+                {loading ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
                   <Text style={s.modalBtnText}>Submit</Text>

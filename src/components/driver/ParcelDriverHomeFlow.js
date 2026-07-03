@@ -589,7 +589,7 @@ console.log('Rendering delivery card:', delivery);
           <View style={styles.infoRow}><Icon name="dollar-sign" size={16} color="#666" /><Text style={styles.infoText}>Value: ₹{delivery.parcel_value}</Text></View>
           <View style={styles.infoRow}><Icon name="archive" size={16} color="#666" /><Text style={styles.infoText}>Packaging: {delivery.packaging_material}</Text></View>
         </View>
-{console.log('delivery.pickup_date',delivery.pickup_date)}
+
         <View style={styles.locationContainer}>
           <View style={styles.locationEntryRow}>
             <View style={styles.dotCol}><View style={styles.pickupDot} /><View style={styles.locationLine} /></View>
@@ -715,14 +715,17 @@ console.log('Reject response:', response.data);
     );
   }
 };
-  // Render available request card
+
   const ParcelRequestCard = ({ parcel }) => (
     <Animated.View style={[styles.requestCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       <View style={styles.cardHeader}>
+        <View>
         <View style={styles.requestBadge}><Icon name="bell" size={16} color="#fff" /><Text style={styles.requestBadgeText}>New Parcel Request</Text></View>
+        <View style={{...styles.requestBadge,marginTop:10,backgroundColor:'green'}}><Text style={styles.requestBadgeText}>ID: {parcel.parcel_booking_id}</Text></View>
+        </View>
          <View>
         <Text style={styles.fareAmount}>₹{parcel.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
-                 <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{parcel.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
+                 <Text style={{...styles.fareAmount, color: 'red',fontSize:12}}>  ₹{parcel.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
      </View> </View>
       <View style={styles.cardHeader}>
         <View>
@@ -734,7 +737,7 @@ console.log('Reject response:', response.data);
         <View style={styles.infoRow}><Icon name="weight" size={16} color="#666" /><Text style={styles.infoText}>Weight: {parcel.parcel_weight} kg</Text></View>
         <View style={styles.infoRow}><Icon name="dollar-sign" size={16} color="#666" /><Text style={styles.infoText}>Value: ₹{parcel.parcel_value}</Text></View>
       </View>
-      {console.log('delivery.pickup_date',parcel.pickup_date)}
+
       <View style={styles.locationContainer}>
         <View style={styles.locationEntryRow}>
           <View style={styles.dotCol}><View style={styles.pickupDot} /><View style={styles.locationLine} /></View>

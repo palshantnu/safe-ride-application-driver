@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -21,10 +21,15 @@ const SelfSharingMyTripsScreen = ({ navigation }) => {
   const [hasMore, setHasMore] = useState(true);
   const [fetchingMore, setFetchingMore] = useState(false);
 
+  const stateRef = useRef({ fetchingMore, hasMore });
+  useEffect(() => {
+    stateRef.current = { fetchingMore, hasMore };
+  }, [fetchingMore, hasMore]);
+
   const fetchTrips = useCallback(
     async (nextPage = 1, { append = false } = {}) => {
       // Prevent duplicate calls
-      if (append && (fetchingMore || !hasMore)) return;
+      if (append && (stateRef.current.fetchingMore || !stateRef.current.hasMore)) return;
 
       if (append) setFetchingMore(true);
       else setLoading(true);
@@ -41,7 +46,7 @@ const SelfSharingMyTripsScreen = ({ navigation }) => {
           res?.data ??
           res ??
           [];
-
+console.log('fetchTrips response:', res);
         const normalized = Array.isArray(list) ? list : [];
         setTrips((prev) => (append ? [...prev, ...normalized] : normalized));
 
@@ -59,7 +64,7 @@ const SelfSharingMyTripsScreen = ({ navigation }) => {
         else setLoading(false);
       }
     },
-    [fetchingMore, hasMore]
+    []
   );
 
   useEffect(() => {
@@ -110,7 +115,17 @@ const SelfSharingMyTripsScreen = ({ navigation }) => {
         activeOpacity={0.7}
       >
         <View style={styles.left}>
-          <Text style={styles.title}>{tripId}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={styles.title}>{tripId}</Text>
+            <View style={[
+              styles.statusBadge,
+              status === 'TOKEN_PAID' && styles.statusTokenPaid,
+              status === 'COMPLETED' && styles.statusCompleted,
+              status === 'CANCELLED' && styles.statusCancelled,
+            ]}>
+              <Text style={styles.statusText}>{status}</Text>
+            </View>
+          </View>
           <Text style={styles.subtitle}>
             {item.from_city || item.fromCity || item.from || '—'} →{' '}
             {item.to_city || item.toCity || item.to || '—'}
@@ -146,6 +161,7 @@ const SelfSharingMyTripsScreen = ({ navigation }) => {
         </View>
       ) : trips?.length ? (
         <FlatList
+          style={{ flex: 1 }}
           data={trips}
           keyExtractor={(item, i) =>
             String(item?.trip_id || item?.id || i)
@@ -231,6 +247,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#9CA3AF',
     textAlign: 'center',
+  },
+  statusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: '#E5E7EB',
+  },
+  statusTokenPaid: {
+    backgroundColor: '#DBEAFE',
+  },
+  statusCompleted: {
+    backgroundColor: '#D1FAE5',
+  },
+  statusCancelled: {
+    backgroundColor: '#FEE2E2',
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#374151',
   },
 });
 
