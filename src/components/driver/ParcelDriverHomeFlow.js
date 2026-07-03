@@ -18,7 +18,10 @@ import {
   PermissionsAndroid,
   Platform,
   Linking,
+  Dimensions,
 } from 'react-native';
+
+const { width } = Dimensions.get('window');
 import Icon from 'react-native-vector-icons/Feather';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import { useDispatch, useSelector } from 'react-redux';
@@ -115,6 +118,11 @@ const [rejectReason, setRejectReason] =
   const [deliveryImage, setDeliveryImage] = useState('');
   const [activeParcelId, setActiveParcelId] = useState(null);
   
+  // Cancel states
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelParcelId, setCancelParcelId] = useState(null);
+  
   // Animation
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(100)).current;
@@ -159,6 +167,7 @@ const prevParcelCountRef = useRef(0);
     pickup_otp_verified: parcel.pickup_otp_verified,
     delivery_otp_verified: parcel.delivery_otp_verified,
     user_status: parcel.user_status,
+    paid: parcel.paid,
     _raw: parcel,
      total_fare: parcel.total_fare,
           driver_amount:parcel.driver_amount
@@ -496,30 +505,36 @@ useEffect(() => {
 
   // Cancel
   const handleCancel = (parcelId) => {
-    Alert.alert('Cancel Parcel', 'Cancel this delivery?', [
-      { text: 'No', style: 'cancel' },
-      {
-        text: 'Yes, Cancel',
-        style: 'destructive',
-        onPress: async () => {
-          setIsLoading(true);
-          try {
-            const response = await axios.post(
-              PARCEL_API.CANCEL,
-              { parcel_booking_id: parcelId, cancel_reason: 'Cancelled by driver' },
-              { headers: { Authorization: `Bearer ${loginToken}` } }
-            );
-            if (response.data?.status) {
-              Alert.alert('Cancelled', 'Delivery cancelled');
-              await refreshData();
-            } else {
-              Alert.alert('Error', response.data?.message || 'Failed to cancel');
-            }
-          } catch { Alert.alert('Error', 'Something went wrong'); }
-          finally { setIsLoading(false); }
-        },
-      },
-    ]);
+    setCancelParcelId(parcelId);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const submitCancel = async () => {
+    if (!cancelReason.trim()) {
+      Alert.alert('Error', 'Please enter cancel reason');
+      return;
+    }
+    setShowCancelModal(false);
+    try {
+      setIsLoading(true);
+      const response = await axios.post(
+        PARCEL_API.CANCEL,
+        { parcel_booking_id: cancelParcelId, cancel_reason: cancelReason.trim() },
+        { headers: { Authorization: `Bearer ${loginToken}` } }
+      );
+      if (response.data?.status) {
+        Alert.alert('Cancelled', 'Delivery cancelled');
+        fetchCurrentDeliveries();
+      } else {
+        Alert.alert('Error', response.data?.message || 'Failed to cancel');
+      }
+    } catch (error) {
+      console.log('Error cancelling parcel:', error);
+      Alert.alert('Error', 'Failed to cancel delivery');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Toggle online status
@@ -561,18 +576,49 @@ useEffect(() => {
       ]);
     }
   };
+  const formatPickupDateTime = (dateValue, timeValue) => {
+    if (!dateValue) return '';
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return '';
+
+    const formattedDate = date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    if (!timeValue) return formattedDate;
+
+    const [hours, minutes] = timeValue.toString().split(':');
+    const time = new Date();
+    time.setHours(parseInt(hours, 10));
+    time.setMinutes(parseInt(minutes, 10));
+    if (Number.isNaN(time.getTime())) return formattedDate;
+
+    return `${formattedDate} • ${time.toLocaleTimeString('en-IN', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })}`;
+  };
+
 
   // Render delivery card (for active deliveries)
   const renderDeliveryCard = (delivery) => {
     const status = delivery.driver_status?.toLowerCase() || 'pending';
     const parcelId = delivery.parcel_booking_id;
 console.log('Rendering delivery card:', delivery);
+ const pickupDateTime = formatPickupDateTime(delivery?.pickup_date, delivery?.pickup_time);
     return (
       <View key={delivery.id} style={styles.activeCard}>
         <View style={styles.cardHeader}>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.driver_status) }]}>
+        <View>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.driver_status),width: 90,justifyContent:'center',alignItems:'center' }]}>
             <Text style={styles.statusBadgeText}>{getStatusText(delivery.driver_status)}</Text>
-           
+           </View>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor('picked_up'),marginTop:10 }]}>
+            <Text style={styles.statusBadgeText}>ID: {delivery.parcel_booking_id}</Text>
+           </View>
           </View>
           
               <View>
@@ -580,16 +626,62 @@ console.log('Rendering delivery card:', delivery);
                  <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{delivery.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
      </View>
         </View>
-<View style={[styles.statusBadge ]}>
+{/* <View style={[styles.statusBadge ]}>
              <Text style={{...styles.statusBadgeText,color:'black',fontSize:16}}>USER STATUS : {getStatusText(delivery.user_status)}</Text>
+          </View> */}
+        <View style={styles.currentDetailsGrid}>
+         
+          
+          <View style={styles.currentDetailItem}>
+            <FontAwesome5 name="weight-hanging" size={13} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Weight</Text>
+              <Text style={styles.currentDetailValue}>
+                {delivery.parcel_weight ? `${delivery.parcel_weight} kg` : '-'}
+              </Text>
+            </View>
           </View>
-        <View style={styles.parcelInfo}>
-          <View style={styles.infoRow}><Icon name="package" size={16} color="#666" /><Text style={styles.infoText}>ID: {delivery.parcel_booking_id}</Text></View>
-          <View style={styles.infoRow}><Icon name="weight" size={16} color="#666" /><Text style={styles.infoText}>Weight: {delivery.parcel_weight} kg</Text></View>
-          <View style={styles.infoRow}><Icon name="dollar-sign" size={16} color="#666" /><Text style={styles.infoText}>Value: ₹{delivery.parcel_value}</Text></View>
-          <View style={styles.infoRow}><Icon name="archive" size={16} color="#666" /><Text style={styles.infoText}>Packaging: {delivery.packaging_material}</Text></View>
-        </View>
 
+          <View style={styles.currentDetailItem}>
+            <Icon name="dollar-sign" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Value</Text>
+              <Text style={styles.currentDetailValue}>
+                {delivery.parcel_value ? `₹${delivery.parcel_value}` : '-'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.currentDetailItem}>
+            <FontAwesome5 name="people-carry" size={13} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Loading/Unloading</Text>
+              <Text style={styles.currentDetailValue}>{delivery.loading_unloading || '-'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.currentDetailItem}>
+            <Icon name="archive" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Packaging</Text>
+              <Text style={styles.currentDetailValue}>{delivery.packaging_material || '-'}</Text>
+            </View>
+          </View>
+
+          <View style={{...styles.currentDetailItem,width:'100%'}}>
+            <Icon name="message-square" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text numberOfLines={1} style={styles.currentDetailLabel}>Remarks</Text>
+              <Text style={styles.currentDetailValue}>{delivery.remarks || '-'}</Text>
+            </View>
+          </View>
+        </View>
+     {pickupDateTime ? (
+          <View style={styles.scheduleDateRow}>
+            <Icon name="calendar" size={14} color="#FF1493" />
+            <Text style={styles.scheduleDateText}>{pickupDateTime}</Text>
+          </View>
+        ) : null}
         <View style={styles.locationContainer}>
           <View style={styles.locationEntryRow}>
             <View style={styles.dotCol}><View style={styles.pickupDot} /><View style={styles.locationLine} /></View>
@@ -597,7 +689,7 @@ console.log('Rendering delivery card:', delivery);
               <Text style={styles.locationLabel}>Pickup</Text>
               <Text style={styles.pickupText}>{delivery.pickup_address}, {delivery.pickup_city}</Text>
               {delivery.pickup_landmark ? <Text style={styles.contactText}>📍 {delivery.pickup_landmark}</Text> : null}
-              <Text style={styles.contactText}>📅 {new Date(delivery.pickup_date).toLocaleDateString()} at {delivery.pickup_time}</Text>
+              {/* <Text style={styles.contactText}>📅 {new Date(delivery.pickup_date).toLocaleDateString()} at {delivery.pickup_time}</Text> */}
               <Text style={styles.contactText}>👤 {delivery.customer_name}</Text>
             </View>
           </View>
@@ -609,7 +701,8 @@ console.log('Rendering delivery card:', delivery);
               {delivery.delivery_landmark ? <Text style={styles.contactText}>📍 {delivery.delivery_landmark}</Text> : null}
               <Text style={styles.contactText}>👤 Receiver: {delivery.receiver_name}</Text>
               {/* <Text style={styles.contactText}>📞 {delivery.receiver_phone}</Text> */}
-              {delivery.receiver_phone ? (
+             {delivery.paid == 1 && <>
+              {delivery.receiver_phone && delivery.pickup_otp_verified == 1? (
                 <View style={styles.driverCard}>
                   <View style={styles.driverRow}>
                     <View style={styles.driverAvatar}>
@@ -631,14 +724,37 @@ console.log('Rendering delivery card:', delivery);
                     ) : null}
                   </View>
                 </View>
-              ) : null}
+              ) : (<View style={styles.driverCard}>
+                  <View style={styles.driverRow}>
+                    <View style={styles.driverAvatar}>
+                      <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
+                    </View>
+                    <View style={styles.driverMeta}>
+                      <Text style={styles.driverName}>{delivery.customer_name || 'Receiver'}</Text>
+                      {delivery.customer_phone ? (
+                        <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${delivery.customer_phone}`)}>
+                          <Icon name="phone" size={14} color="#4CAF50" />
+                          <Text style={styles.driverPhone}>{delivery.customer_phone}</Text>
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
+                    {delivery.customer_phone ? (
+                      <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${delivery.customer_phone}`)}>
+                        <Icon name="phone-call" size={20} color="#fff" />
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                </View>
+              ) }
+              </>}
+             
             </View>
           </View>
         </View>
 
-        {delivery.remarks ? (
+        {/* {delivery.remarks ? (
           <View style={styles.remarksContainer}><Icon name="message-circle" size={14} color="#999" /><Text style={styles.remarksText}>Note: {delivery.remarks}</Text></View>
-        ) : null}
+        ) : null} */}
 
         {(status === 'accepted' && delivery?.user_status === 'TOKEN_PAID') && (
           <TouchableOpacity style={styles.arriveBtn} onPress={() => handleArrive(parcelId)} disabled={isLoading}>
@@ -727,15 +843,58 @@ console.log('Reject response:', response.data);
         <Text style={styles.fareAmount}>₹{parcel.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
                  <Text style={{...styles.fareAmount, color: 'red',fontSize:12}}>  ₹{parcel.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
      </View> </View>
-      <View style={styles.cardHeader}>
-        <View>
-          <Text style={{...styles.requestBadgeText,color:'black',fontSize:16}}>Loading and Unloading : {parcel.loading_unloading}</Text></View>
-        <View/>
-      </View>
-      <View style={styles.parcelInfo}>
-        <View style={styles.infoRow}><Icon name="package" size={16} color="#666" /><Text style={styles.infoText}>ID: {parcel.parcel_booking_id}</Text></View>
-        <View style={styles.infoRow}><Icon name="weight" size={16} color="#666" /><Text style={styles.infoText}>Weight: {parcel.parcel_weight} kg</Text></View>
-        <View style={styles.infoRow}><Icon name="dollar-sign" size={16} color="#666" /><Text style={styles.infoText}>Value: ₹{parcel.parcel_value}</Text></View>
+      <View style={styles.currentDetailsGrid}>
+        {/* <View style={styles.currentDetailItem}>
+          <Icon name="package" size={15} color="#666" />
+          <View style={styles.currentDetailTextWrap}>
+            <Text style={styles.currentDetailLabel}>Parcel ID</Text>
+            <Text style={styles.currentDetailValue}>{parcel.parcel_booking_id || '-'}</Text>
+          </View>
+        </View> */}
+        
+        <View style={styles.currentDetailItem}>
+          <FontAwesome5 name="weight-hanging" size={13} color="#666" />
+          <View style={styles.currentDetailTextWrap}>
+            <Text style={styles.currentDetailLabel}>Weight</Text>
+            <Text style={styles.currentDetailValue}>
+              {parcel.parcel_weight ? `${parcel.parcel_weight} kg` : '-'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.currentDetailItem}>
+          {/* <Icon name="dollar-sign" size={15} color="#666" /> */}
+          <View style={styles.currentDetailTextWrap}>
+            <Text style={styles.currentDetailLabel}>₹ Value</Text>
+            <Text style={styles.currentDetailValue}>
+              {parcel.parcel_value ? `₹${parcel.parcel_value}` : '-'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.currentDetailItem}>
+          <FontAwesome5 name="people-carry" size={13} color="#666" />
+          <View style={styles.currentDetailTextWrap}>
+            <Text style={styles.currentDetailLabel}>Loading/Unloading</Text>
+            <Text style={styles.currentDetailValue}>{parcel.loading_unloading || '-'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.currentDetailItem}>
+          <Icon name="archive" size={15} color="#666" />
+          <View style={styles.currentDetailTextWrap}>
+            <Text style={styles.currentDetailLabel}>Packaging</Text>
+            <Text style={styles.currentDetailValue}>{parcel.packaging_material || '-'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.currentDetailItem}>
+          <Icon name="message-square" size={15} color="#666" />
+          <View style={styles.currentDetailTextWrap}>
+            <Text numberOfLines={1} style={styles.currentDetailLabel}>Remarks</Text>
+            <Text style={styles.currentDetailValue}>{parcel.remarks || '-'}</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.locationContainer}>
@@ -904,6 +1063,43 @@ console.log('Reject response:', response.data);
     </View>
   </View>
 </Modal>
+      <Modal
+        visible={showCancelModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCancelModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cancel Delivery</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter cancel reason"
+              placeholderTextColor="#999"
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              multiline
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.cancelBtn]}
+                onPress={() => {
+                  setShowCancelModal(false);
+                  setCancelReason('');
+                }}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.submitBtn]}
+                onPress={submitCancel}
+              >
+                <Text style={styles.submitBtnText}>Submit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -956,6 +1152,36 @@ const styles = StyleSheet.create({
   parcelInfo: { backgroundColor: '#f9f9f9', padding: 12, borderRadius: 10, marginBottom: 15 },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   infoText: { fontSize: 14, color: '#666' },
+  currentDetailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 14,
+  },
+  currentDetailItem: {
+    width: (width - 80) / 2,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 10,
+    padding: 10,
+  },
+  currentDetailTextWrap: {
+    flex: 1,
+  },
+  currentDetailLabel: {
+    fontSize: 10,
+    color: '#999',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  currentDetailValue: {
+    fontSize: 12,
+    color: '#333',
+    fontWeight: '600',
+  },
   locationContainer: { marginBottom: 15 },
   locationEntryRow: { flexDirection: 'row', alignItems: 'flex-start' },
   dotCol: { alignItems: 'center', marginRight: 12, width: 12 },
@@ -1017,6 +1243,21 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: '#FCE4EC',
     justifyContent: 'center', alignItems: 'center',
+  },
+    scheduleDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFF0F5',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  scheduleDateText: {
+    fontSize: 18,
+    color: '#FF1493',
+    fontWeight: '600',
   },
 });
 

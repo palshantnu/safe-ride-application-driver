@@ -308,7 +308,7 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
           )}
         </>
       ))}
-
+{console.log('delivery.pickup_image',delivery.pickup_image)}
       {/* Images Section */}
       {(delivery.pickup_image || delivery.delivery_image) && (
         <View style={styles.imagesContainer}>

@@ -125901,7 +125901,6 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       var _ref3 = (0, _asyncToGenerator2.default)(function* () {
         if (!isOnSpotCaptain) return;
         try {
-          setOnSpotRequests([]);
           var axios = (yield _$$_REQUIRE(_dependencyMap[14], "/Users/shantnu/Desktop/Shantnu/shantnu/saferide_driver/node_modules/metro-runtime/src/modules/asyncRequire.js")(_dependencyMap[13], _dependencyMap.paths, "../../axios/axiosinstance")).default;
           var res = yield axios.get('onspot/captain/available', {
             headers: {
@@ -126881,28 +126880,10 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
             style: styles.paymentRow,
             children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
               style: styles.paymentLabel,
-              children: "Ride amount :"
+              children: "Service amount :"
             }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
               style: styles.totalAmount,
               children: ["\u20B9", totalAmount]
-            })]
-          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-            style: styles.paymentRow,
-            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-              style: styles.paymentLabel,
-              children: "Token:"
-            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-              style: styles.tokenAmount,
-              children: ["\u20B9", tokenAmount]
-            })]
-          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-            style: styles.paymentRow,
-            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-              style: styles.paymentLabel,
-              children: "Balance:"
-            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-              style: styles.balanceAmount,
-              children: ["\u20B9", balanceAmount]
             })]
           })]
         }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
@@ -127126,7 +127107,34 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
                 }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
                   style: styles.pickupText,
                   children: pickupLocation
-                })]
+                }), booking.landmark || booking.pickup_landmark ? /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+                  style: [styles.pickupText, {
+                    fontSize: 12,
+                    color: '#666',
+                    marginTop: 2
+                  }],
+                  children: ["\uD83D\uDCCD Landmark: ", booking.landmark || booking.pickup_landmark]
+                }) : null, booking.pickup_location && booking.pickup_location.trim() !== '' ? /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
+                  style: {
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginTop: 4,
+                    gap: 4
+                  },
+                  onPress: () => _reactNative.Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${booking.pickup_location}`),
+                  children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
+                    name: "navigation",
+                    size: 14,
+                    color: "#FF1493"
+                  }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                    style: {
+                      fontSize: 12,
+                      color: '#FF1493',
+                      fontWeight: '600'
+                    },
+                    children: "Navigate on Map"
+                  })]
+                }) : null]
               })]
             }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
               style: styles.locationEntryRow,
@@ -127252,7 +127260,34 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
               }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
                 style: styles.pickupText,
                 children: pickupLocation
-              })]
+              }), booking.landmark || booking.pickup_landmark ? /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+                style: [styles.pickupText, {
+                  fontSize: 12,
+                  color: '#666',
+                  marginTop: 2
+                }],
+                children: ["\uD83D\uDCCD Landmark: ", booking.landmark || booking.pickup_landmark]
+              }) : null, booking.pickup_location && booking.pickup_location.trim() !== '' ? /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
+                style: {
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginTop: 4,
+                  gap: 4
+                },
+                onPress: () => _reactNative.Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${booking.pickup_location}`),
+                children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
+                  name: "navigation",
+                  size: 14,
+                  color: "#FF1493"
+                }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: {
+                    fontSize: 12,
+                    color: '#FF1493',
+                    fontWeight: '600'
+                  },
+                  children: "Navigate on Map"
+                })]
+              }) : null]
             })]
           }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
             style: styles.locationEntryRow,
@@ -127801,7 +127836,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
                 style: {
                   fontSize: 12
                 },
-                children: "Ride amount"
+                children: "Service amount"
               })]
             })]
           })]
@@ -135085,8 +135120,50 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       _useState12 = (0, _slicedToArray2.default)(_useState11, 2),
       rejectReason = _useState12[0],
       setRejectReason = _useState12[1];
-    var fetchParcelRequests = /*#__PURE__*/function () {
+    var _useState13 = (0, _react.useState)(false),
+      _useState14 = (0, _slicedToArray2.default)(_useState13, 2),
+      showBookingRejectModal = _useState14[0],
+      setShowBookingRejectModal = _useState14[1];
+    var _useState15 = (0, _react.useState)(null),
+      _useState16 = (0, _slicedToArray2.default)(_useState15, 2),
+      selectedBookingId = _useState16[0],
+      setSelectedBookingId = _useState16[1];
+    var _useState17 = (0, _react.useState)(''),
+      _useState18 = (0, _slicedToArray2.default)(_useState17, 2),
+      bookingRejectReason = _useState18[0],
+      setBookingRejectReason = _useState18[1];
+    var submitBookingReject = /*#__PURE__*/function () {
       var _ref = (0, _asyncToGenerator2.default)(function* () {
+        if (!bookingRejectReason.trim()) {
+          _reactNative.Alert.alert('Error', 'Please enter reason');
+          return;
+        }
+        setIsLoading(true);
+        try {
+          var res = yield dispatch((0, _$$_REQUIRE(_dependencyMap[12], "../../redux/actions/action-creator").REJECT_BOOKING)({
+            role: 'business_associate',
+            booking_id: selectedBookingId,
+            cancel_reason: bookingRejectReason.trim()
+          }));
+          if (res?.status) {
+            setShowBookingRejectModal(false);
+            setBookingRejectReason('');
+            fetchBABookings();
+          } else {
+            _reactNative.Alert.alert('Error', res?.message || 'Failed to reject booking');
+          }
+        } catch (error) {
+          _reactNative.Alert.alert('Error', 'Something went wrong');
+        } finally {
+          setIsLoading(false);
+        }
+      });
+      return function submitBookingReject() {
+        return _ref.apply(this, arguments);
+      };
+    }();
+    var fetchParcelRequests = /*#__PURE__*/function () {
+      var _ref2 = (0, _asyncToGenerator2.default)(function* () {
         try {
           var res = yield _axios.default.get(PARCEL_API.AVAILABLE, {
             headers: {
@@ -135104,11 +135181,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
       });
       return function fetchParcelRequests() {
-        return _ref.apply(this, arguments);
+        return _ref2.apply(this, arguments);
       };
     }();
     var fetchCurrentParcels = /*#__PURE__*/function () {
-      var _ref2 = (0, _asyncToGenerator2.default)(function* () {
+      var _ref3 = (0, _asyncToGenerator2.default)(function* () {
         try {
           var res = yield _axios.default.get(PARCEL_API.CURRENT, {
             headers: {
@@ -135125,11 +135202,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
       });
       return function fetchCurrentParcels() {
-        return _ref2.apply(this, arguments);
+        return _ref3.apply(this, arguments);
       };
     }();
     var loadParcelDrivers = /*#__PURE__*/function () {
-      var _ref3 = (0, _asyncToGenerator2.default)(function* () {
+      var _ref4 = (0, _asyncToGenerator2.default)(function* () {
         try {
           var res = yield dispatch((0, _$$_REQUIRE(_dependencyMap[12], "../../redux/actions/action-creator").BA_GET_DRIVER_LIST)());
           var list = Array.isArray(res?.data) ? res.data : [];
@@ -135142,11 +135219,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
       });
       return function loadParcelDrivers() {
-        return _ref3.apply(this, arguments);
+        return _ref4.apply(this, arguments);
       };
     }();
     var handleAssignParcel = /*#__PURE__*/function () {
-      var _ref4 = (0, _asyncToGenerator2.default)(function* (driverId) {
+      var _ref5 = (0, _asyncToGenerator2.default)(function* (driverId) {
         try {
           var res = yield _axios.default.post(PARCEL_API.ACCEPT_ASSIGN, {
             parcel_booking_id: assigningBookingId,
@@ -135168,47 +135245,47 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
       });
       return function handleAssignParcel(_x) {
-        return _ref4.apply(this, arguments);
+        return _ref5.apply(this, arguments);
       };
     }();
-    var _useState13 = (0, _react.useState)(false),
-      _useState14 = (0, _slicedToArray2.default)(_useState13, 2),
-      refreshing = _useState14[0],
-      setRefreshing = _useState14[1];
-    var _useState15 = (0, _react.useState)([]),
-      _useState16 = (0, _slicedToArray2.default)(_useState15, 2),
-      baPendingBookings = _useState16[0],
-      setBaPendingBookings = _useState16[1];
-    var _useState17 = (0, _react.useState)([]),
-      _useState18 = (0, _slicedToArray2.default)(_useState17, 2),
-      bsActiveBookings = _useState18[0],
-      setBsActiveBookings = _useState18[1];
+    var _useState19 = (0, _react.useState)(false),
+      _useState20 = (0, _slicedToArray2.default)(_useState19, 2),
+      refreshing = _useState20[0],
+      setRefreshing = _useState20[1];
+    var _useState21 = (0, _react.useState)([]),
+      _useState22 = (0, _slicedToArray2.default)(_useState21, 2),
+      baPendingBookings = _useState22[0],
+      setBaPendingBookings = _useState22[1];
+    var _useState23 = (0, _react.useState)([]),
+      _useState24 = (0, _slicedToArray2.default)(_useState23, 2),
+      bsActiveBookings = _useState24[0],
+      setBsActiveBookings = _useState24[1];
 
     // Sound tracking for new SEARCHING booking
     var prevPendingBookingIdRef = (0, _react.useRef)(null);
     var prevParcelBookingIdRef = (0, _react.useRef)(null);
-    var _useState19 = (0, _react.useState)(false),
-      _useState20 = (0, _slicedToArray2.default)(_useState19, 2),
-      isLoading = _useState20[0],
-      setIsLoading = _useState20[1];
-    var _useState21 = (0, _react.useState)([]),
-      _useState22 = (0, _slicedToArray2.default)(_useState21, 2),
-      baDrivers = _useState22[0],
-      setBaDrivers = _useState22[1];
-    var _useState23 = (0, _react.useState)(false),
-      _useState24 = (0, _slicedToArray2.default)(_useState23, 2),
-      showAssignModal = _useState24[0],
-      setShowAssignModal = _useState24[1];
-    var _useState25 = (0, _react.useState)(null),
+    var _useState25 = (0, _react.useState)(false),
       _useState26 = (0, _slicedToArray2.default)(_useState25, 2),
-      assigningBookingId = _useState26[0],
-      setAssigningBookingId = _useState26[1];
-    var _useState27 = (0, _react.useState)(false),
+      isLoading = _useState26[0],
+      setIsLoading = _useState26[1];
+    var _useState27 = (0, _react.useState)([]),
       _useState28 = (0, _slicedToArray2.default)(_useState27, 2),
-      isAssigning = _useState28[0],
-      setIsAssigning = _useState28[1];
+      baDrivers = _useState28[0],
+      setBaDrivers = _useState28[1];
+    var _useState29 = (0, _react.useState)(false),
+      _useState30 = (0, _slicedToArray2.default)(_useState29, 2),
+      showAssignModal = _useState30[0],
+      setShowAssignModal = _useState30[1];
+    var _useState31 = (0, _react.useState)(null),
+      _useState32 = (0, _slicedToArray2.default)(_useState31, 2),
+      assigningBookingId = _useState32[0],
+      setAssigningBookingId = _useState32[1];
+    var _useState33 = (0, _react.useState)(false),
+      _useState34 = (0, _slicedToArray2.default)(_useState33, 2),
+      isAssigning = _useState34[0],
+      setIsAssigning = _useState34[1];
     var fetchBABookings = /*#__PURE__*/function () {
-      var _ref5 = (0, _asyncToGenerator2.default)(function* () {
+      var _ref6 = (0, _asyncToGenerator2.default)(function* () {
         try {
           var res = yield dispatch((0, _$$_REQUIRE(_dependencyMap[12], "../../redux/actions/action-creator").GET_BA_BOOKING_HISTORY)());
           if (res?.status && Array.isArray(res.data)) {
@@ -135223,11 +135300,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
       });
       return function fetchBABookings() {
-        return _ref5.apply(this, arguments);
+        return _ref6.apply(this, arguments);
       };
     }();
     var fetchCurrentRide = /*#__PURE__*/function () {
-      var _ref6 = (0, _asyncToGenerator2.default)(function* () {
+      var _ref7 = (0, _asyncToGenerator2.default)(function* () {
         try {
           var res = yield dispatch(_$$_REQUIRE(_dependencyMap[13], "../../redux/actions/action-creator").BA_GET_CURRENT_BOOKING());
           if (res?.status && res?.data) {
@@ -135241,11 +135318,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
       });
       return function fetchCurrentRide() {
-        return _ref6.apply(this, arguments);
+        return _ref7.apply(this, arguments);
       };
     }();
     var loadBADrivers = /*#__PURE__*/function () {
-      var _ref7 = (0, _asyncToGenerator2.default)(function* () {
+      var _ref8 = (0, _asyncToGenerator2.default)(function* () {
         try {
           var res = yield dispatch((0, _$$_REQUIRE(_dependencyMap[12], "../../redux/actions/action-creator").BA_GET_DRIVER_LIST)());
           if (res?.status && res?.data) {
@@ -135259,7 +135336,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
       });
       return function loadBADrivers() {
-        return _ref7.apply(this, arguments);
+        return _ref8.apply(this, arguments);
       };
     }();
     (0, _react.useEffect)(() => {
@@ -135301,12 +135378,12 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         prevParcelBookingIdRef.current = null;
       }
     }, [parcelRequests]);
-    var _useState29 = (0, _react.useState)([]),
-      _useState30 = (0, _slicedToArray2.default)(_useState29, 2),
-      baServices = _useState30[0],
-      setBaServices = _useState30[1];
+    var _useState35 = (0, _react.useState)([]),
+      _useState36 = (0, _slicedToArray2.default)(_useState35, 2),
+      baServices = _useState36[0],
+      setBaServices = _useState36[1];
     var fetchBAServices = /*#__PURE__*/function () {
-      var _ref8 = (0, _asyncToGenerator2.default)(function* () {
+      var _ref9 = (0, _asyncToGenerator2.default)(function* () {
         try {
           var res = yield dispatch(_$$_REQUIRE(_dependencyMap[13], "../../redux/actions/action-creator").BA_GET_SERVICES());
           var list = res?.data?.data ?? res?.data ?? res ?? [];
@@ -135317,7 +135394,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
       });
       return function fetchBAServices() {
-        return _ref8.apply(this, arguments);
+        return _ref9.apply(this, arguments);
       };
     }();
     (0, _react.useEffect)(() => {
@@ -135335,7 +135412,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     var parcelServiceIds = new Set([75]);
     var parcelServices = baServices.filter(s => parcelServiceIds.has(Number(s.service_id)));
     var handleRefresh = /*#__PURE__*/function () {
-      var _ref9 = (0, _asyncToGenerator2.default)(function* () {
+      var _ref0 = (0, _asyncToGenerator2.default)(function* () {
         setRefreshing(true);
         try {
           yield Promise.all([fetchBABookings(), fetchCurrentRide()]);
@@ -135344,11 +135421,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
       });
       return function handleRefresh() {
-        return _ref9.apply(this, arguments);
+        return _ref0.apply(this, arguments);
       };
     }();
     var handleBAAccept = /*#__PURE__*/function () {
-      var _ref0 = (0, _asyncToGenerator2.default)(function* (bookingId) {
+      var _ref1 = (0, _asyncToGenerator2.default)(function* (bookingId) {
         setIsLoading(true);
         try {
           var res = yield dispatch((0, _$$_REQUIRE(_dependencyMap[12], "../../redux/actions/action-creator").BA_ACCEPT_BOOKING)({
@@ -135367,11 +135444,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
       });
       return function handleBAAccept(_x2) {
-        return _ref0.apply(this, arguments);
+        return _ref1.apply(this, arguments);
       };
     }();
     var handleBAAssignDriver = /*#__PURE__*/function () {
-      var _ref1 = (0, _asyncToGenerator2.default)(function* (driverId) {
+      var _ref10 = (0, _asyncToGenerator2.default)(function* (driverId) {
         setIsAssigning(true);
         try {
           var res = yield dispatch((0, _$$_REQUIRE(_dependencyMap[12], "../../redux/actions/action-creator").BA_ASSIGN_DRIVER)({
@@ -135394,11 +135471,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
       });
       return function handleBAAssignDriver(_x3) {
-        return _ref1.apply(this, arguments);
+        return _ref10.apply(this, arguments);
       };
     }();
     var submitParcelReject = /*#__PURE__*/function () {
-      var _ref10 = (0, _asyncToGenerator2.default)(function* () {
+      var _ref11 = (0, _asyncToGenerator2.default)(function* () {
         if (!rejectReason.trim()) {
           _reactNative.Alert.alert('Validation', 'Please enter reject reason');
           return;
@@ -135428,7 +135505,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
       });
       return function submitParcelReject() {
-        return _ref10.apply(this, arguments);
+        return _ref11.apply(this, arguments);
       };
     }();
     var renderBABookingCard = booking => /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
@@ -135577,25 +135654,9 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
           style: styles.rejectBtn,
           onPress: () => {
-            _reactNative.Alert.alert('Cancel Booking', 'Are you sure you want to cancel this booking?', [{
-              text: 'No',
-              style: 'cancel'
-            }, {
-              text: 'Yes, Cancel',
-              style: 'destructive',
-              onPress: function () {
-                var _ref11 = (0, _asyncToGenerator2.default)(function* () {
-                  var res = yield dispatch((0, _$$_REQUIRE(_dependencyMap[12], "../../redux/actions/action-creator").REJECT_BOOKING)({
-                    role: 'business_associate',
-                    booking_id: booking.booking_id
-                  }));
-                  if (res?.status) fetchBABookings();else _reactNative.Alert.alert('Error', res?.message || 'Failed to cancel');
-                });
-                return function onPress() {
-                  return _ref11.apply(this, arguments);
-                };
-              }()
-            }]);
+            setSelectedBookingId(booking.booking_id);
+            setBookingRejectReason('');
+            setShowBookingRejectModal(true);
           },
           disabled: isLoading,
           children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
@@ -136381,6 +136442,66 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
             })]
           })
         })
+      }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Modal, {
+        visible: showBookingRejectModal,
+        transparent: true,
+        animationType: "slide",
+        children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+          style: styles.modalContainer,
+          children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: styles.modalContent,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.modalTitle,
+              children: "Reject Booking"
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TextInput, {
+              value: bookingRejectReason,
+              onChangeText: setBookingRejectReason,
+              placeholder: "Enter reason",
+              placeholderTextColor: '#999',
+              multiline: true,
+              style: {
+                borderWidth: 1,
+                borderColor: '#ddd',
+                borderRadius: 10,
+                minHeight: 100,
+                padding: 10,
+                marginVertical: 15,
+                color: '#000'
+              }
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: {
+                flexDirection: 'row',
+                gap: 10
+              },
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+                style: [styles.modalBtn, styles.cancelBtn],
+                onPress: () => {
+                  setShowBookingRejectModal(false);
+                  setBookingRejectReason('');
+                },
+                children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: styles.cancelBtnText,
+                  children: "Cancel"
+                })
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+                style: [styles.modalBtn, {
+                  backgroundColor: '#F44336'
+                }],
+                onPress: submitBookingReject,
+                children: isLoading ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.ActivityIndicator, {
+                  color: "#fff",
+                  size: "small"
+                }) : /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: {
+                    color: '#fff',
+                    fontWeight: '600'
+                  },
+                  children: "Reject"
+                })
+              })]
+            })]
+          })
+        })
       })]
     });
   };
@@ -136789,6 +136910,8 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   var _jsxRuntime = _$$_REQUIRE(_dependencyMap[9], "react/jsx-runtime");
   var _jsxFileName = "/Users/shantnu/Desktop/Shantnu/shantnu/saferide_driver/src/components/driver/ParcelDriverHomeFlow.js"; // ParcelDriverHomeFlow.js - Complete with current-delivery API
   function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
+  var _Dimensions$get = _reactNative.Dimensions.get('window'),
+    width = _Dimensions$get.width;
   var _require = _$$_REQUIRE(_dependencyMap[10], "react-native"),
     NativeModules = _require.NativeModules;
   var SoundHelper = NativeModules.SoundHelper;
@@ -136907,6 +137030,20 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       activeParcelId = _useState26[0],
       setActiveParcelId = _useState26[1];
 
+    // Cancel states
+    var _useState27 = (0, _react.useState)(false),
+      _useState28 = (0, _slicedToArray2.default)(_useState27, 2),
+      showCancelModal = _useState28[0],
+      setShowCancelModal = _useState28[1];
+    var _useState29 = (0, _react.useState)(''),
+      _useState30 = (0, _slicedToArray2.default)(_useState29, 2),
+      cancelReason = _useState30[0],
+      setCancelReason = _useState30[1];
+    var _useState31 = (0, _react.useState)(null),
+      _useState32 = (0, _slicedToArray2.default)(_useState31, 2),
+      cancelParcelId = _useState32[0],
+      setCancelParcelId = _useState32[1];
+
     // Animation
     var fadeAnim = (0, _react.useRef)(new _reactNative.Animated.Value(0)).current;
     var slideAnim = (0, _react.useRef)(new _reactNative.Animated.Value(100)).current;
@@ -136955,6 +137092,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       pickup_otp_verified: parcel.pickup_otp_verified,
       delivery_otp_verified: parcel.delivery_otp_verified,
       user_status: parcel.user_status,
+      paid: parcel.paid,
       _raw: parcel,
       total_fare: parcel.total_fare,
       driver_amount: parcel.driver_amount
@@ -137375,42 +137513,44 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
     // Cancel
     var handleCancel = parcelId => {
-      _reactNative.Alert.alert('Cancel Parcel', 'Cancel this delivery?', [{
-        text: 'No',
-        style: 'cancel'
-      }, {
-        text: 'Yes, Cancel',
-        style: 'destructive',
-        onPress: function () {
-          var _ref13 = (0, _asyncToGenerator2.default)(function* () {
-            setIsLoading(true);
-            try {
-              var response = yield _axios.default.post(PARCEL_API.CANCEL, {
-                parcel_booking_id: parcelId,
-                cancel_reason: 'Cancelled by driver'
-              }, {
-                headers: {
-                  Authorization: `Bearer ${loginToken}`
-                }
-              });
-              if (response.data?.status) {
-                _reactNative.Alert.alert('Cancelled', 'Delivery cancelled');
-                yield refreshData();
-              } else {
-                _reactNative.Alert.alert('Error', response.data?.message || 'Failed to cancel');
-              }
-            } catch {
-              _reactNative.Alert.alert('Error', 'Something went wrong');
-            } finally {
-              setIsLoading(false);
+      setCancelParcelId(parcelId);
+      setCancelReason('');
+      setShowCancelModal(true);
+    };
+    var submitCancel = /*#__PURE__*/function () {
+      var _ref13 = (0, _asyncToGenerator2.default)(function* () {
+        if (!cancelReason.trim()) {
+          _reactNative.Alert.alert('Error', 'Please enter cancel reason');
+          return;
+        }
+        setShowCancelModal(false);
+        try {
+          setIsLoading(true);
+          var response = yield _axios.default.post(PARCEL_API.CANCEL, {
+            parcel_booking_id: cancelParcelId,
+            cancel_reason: cancelReason.trim()
+          }, {
+            headers: {
+              Authorization: `Bearer ${loginToken}`
             }
           });
-          return function onPress() {
-            return _ref13.apply(this, arguments);
-          };
-        }()
-      }]);
-    };
+          if (response.data?.status) {
+            _reactNative.Alert.alert('Cancelled', 'Delivery cancelled');
+            fetchCurrentDeliveries();
+          } else {
+            _reactNative.Alert.alert('Error', response.data?.message || 'Failed to cancel');
+          }
+        } catch (error) {
+          console.log('Error cancelling parcel:', error);
+          _reactNative.Alert.alert('Error', 'Failed to cancel delivery');
+        } finally {
+          setIsLoading(false);
+        }
+      });
+      return function submitCancel() {
+        return _ref13.apply(this, arguments);
+      };
+    }();
 
     // Toggle online status
     var toggleOnlineStatus = value => {
@@ -137471,24 +137611,63 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }]);
       }
     };
+    var formatPickupDateTime = (dateValue, timeValue) => {
+      if (!dateValue) return '';
+      var date = new Date(dateValue);
+      if (Number.isNaN(date.getTime())) return '';
+      var formattedDate = date.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+      if (!timeValue) return formattedDate;
+      var _timeValue$toString$s = timeValue.toString().split(':'),
+        _timeValue$toString$s2 = (0, _slicedToArray2.default)(_timeValue$toString$s, 2),
+        hours = _timeValue$toString$s2[0],
+        minutes = _timeValue$toString$s2[1];
+      var time = new Date();
+      time.setHours(parseInt(hours, 10));
+      time.setMinutes(parseInt(minutes, 10));
+      if (Number.isNaN(time.getTime())) return formattedDate;
+      return `${formattedDate} • ${time.toLocaleTimeString('en-IN', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      })}`;
+    };
 
     // Render delivery card (for active deliveries)
     var renderDeliveryCard = delivery => {
       var status = delivery.driver_status?.toLowerCase() || 'pending';
       var parcelId = delivery.parcel_booking_id;
       console.log('Rendering delivery card:', delivery);
+      var pickupDateTime = formatPickupDateTime(delivery?.pickup_date, delivery?.pickup_time);
       return /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
         style: styles.activeCard,
         children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
           style: styles.cardHeader,
-          children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
-            style: [styles.statusBadge, {
-              backgroundColor: getStatusColor(delivery.driver_status)
-            }],
-            children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-              style: styles.statusBadgeText,
-              children: getStatusText(delivery.driver_status)
-            })
+          children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+              style: [styles.statusBadge, {
+                backgroundColor: getStatusColor(delivery.driver_status),
+                width: 90,
+                justifyContent: 'center',
+                alignItems: 'center'
+              }],
+              children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.statusBadgeText,
+                children: getStatusText(delivery.driver_status)
+              })
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+              style: [styles.statusBadge, {
+                backgroundColor: getStatusColor('picked_up'),
+                marginTop: 10
+              }],
+              children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+                style: styles.statusBadgeText,
+                children: ["ID: ", delivery.parcel_booking_id]
+              })
+            })]
           }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
             children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
               style: styles.fareAmount,
@@ -137512,60 +137691,104 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
               })]
             })]
           })]
-        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
-          style: [styles.statusBadge],
-          children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-            style: {
-              ...styles.statusBadgeText,
-              color: 'black',
-              fontSize: 16
-            },
-            children: ["USER STATUS : ", getStatusText(delivery.user_status)]
-          })
         }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-          style: styles.parcelInfo,
+          style: styles.currentDetailsGrid,
           children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-            style: styles.infoRow,
-            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
-              name: "package",
-              size: 16,
+            style: styles.currentDetailItem,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_FontAwesome.default, {
+              name: "weight-hanging",
+              size: 13,
               color: "#666"
-            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-              style: styles.infoText,
-              children: ["ID: ", delivery.parcel_booking_id]
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.currentDetailTextWrap,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.currentDetailLabel,
+                children: "Weight"
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.currentDetailValue,
+                children: delivery.parcel_weight ? `${delivery.parcel_weight} kg` : '-'
+              })]
             })]
           }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-            style: styles.infoRow,
-            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
-              name: "weight",
-              size: 16,
-              color: "#666"
-            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-              style: styles.infoText,
-              children: ["Weight: ", delivery.parcel_weight, " kg"]
-            })]
-          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-            style: styles.infoRow,
+            style: styles.currentDetailItem,
             children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
               name: "dollar-sign",
-              size: 16,
+              size: 15,
               color: "#666"
-            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-              style: styles.infoText,
-              children: ["Value: \u20B9", delivery.parcel_value]
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.currentDetailTextWrap,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.currentDetailLabel,
+                children: "Value"
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.currentDetailValue,
+                children: delivery.parcel_value ? `₹${delivery.parcel_value}` : '-'
+              })]
             })]
           }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-            style: styles.infoRow,
+            style: styles.currentDetailItem,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_FontAwesome.default, {
+              name: "people-carry",
+              size: 13,
+              color: "#666"
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.currentDetailTextWrap,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.currentDetailLabel,
+                children: "Loading/Unloading"
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.currentDetailValue,
+                children: delivery.loading_unloading || '-'
+              })]
+            })]
+          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: styles.currentDetailItem,
             children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
               name: "archive",
-              size: 16,
+              size: 15,
               color: "#666"
-            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-              style: styles.infoText,
-              children: ["Packaging: ", delivery.packaging_material]
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.currentDetailTextWrap,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.currentDetailLabel,
+                children: "Packaging"
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.currentDetailValue,
+                children: delivery.packaging_material || '-'
+              })]
+            })]
+          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: {
+              ...styles.currentDetailItem,
+              width: '100%'
+            },
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
+              name: "message-square",
+              size: 15,
+              color: "#666"
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.currentDetailTextWrap,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                numberOfLines: 1,
+                style: styles.currentDetailLabel,
+                children: "Remarks"
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.currentDetailValue,
+                children: delivery.remarks || '-'
+              })]
             })]
           })]
-        }), console.log('delivery.pickup_date', delivery.pickup_date), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+        }), pickupDateTime ? /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+          style: styles.scheduleDateRow,
+          children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
+            name: "calendar",
+            size: 14,
+            color: "#FF1493"
+          }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+            style: styles.scheduleDateText,
+            children: pickupDateTime
+          })]
+        }) : null, /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
           style: styles.locationContainer,
           children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
             style: styles.locationEntryRow,
@@ -137588,9 +137811,6 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
                 style: styles.contactText,
                 children: ["\uD83D\uDCCD ", delivery.pickup_landmark]
               }) : null, /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-                style: styles.contactText,
-                children: ["\uD83D\uDCC5 ", new Date(delivery.pickup_date).toLocaleDateString(), " at ", delivery.pickup_time]
-              }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
                 style: styles.contactText,
                 children: ["\uD83D\uDC64 ", delivery.customer_name]
               })]
@@ -137616,58 +137836,88 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
               }) : null, /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
                 style: styles.contactText,
                 children: ["\uD83D\uDC64 Receiver: ", delivery.receiver_name]
-              }), delivery.receiver_phone ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
-                style: styles.driverCard,
-                children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-                  style: styles.driverRow,
-                  children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
-                    style: styles.driverAvatar,
-                    children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_FontAwesome.default, {
-                      name: "user-circle",
-                      size: 36,
-                      color: "#FF1493"
-                    })
-                  }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-                    style: styles.driverMeta,
-                    children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-                      style: styles.driverName,
-                      children: delivery.receiver_name || 'Receiver'
-                    }), delivery.receiver_phone ? /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
-                      style: styles.callRow,
+              }), delivery.paid == 1 && /*#__PURE__*/(0, _jsxRuntime.jsx)(_jsxRuntime.Fragment, {
+                children: delivery.receiver_phone && delivery.pickup_otp_verified == 1 ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+                  style: styles.driverCard,
+                  children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+                    style: styles.driverRow,
+                    children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+                      style: styles.driverAvatar,
+                      children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_FontAwesome.default, {
+                        name: "user-circle",
+                        size: 36,
+                        color: "#FF1493"
+                      })
+                    }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+                      style: styles.driverMeta,
+                      children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                        style: styles.driverName,
+                        children: delivery.receiver_name || 'Receiver'
+                      }), delivery.receiver_phone ? /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
+                        style: styles.callRow,
+                        onPress: () => _reactNative.Linking.openURL(`tel:${delivery.receiver_phone}`),
+                        children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
+                          name: "phone",
+                          size: 14,
+                          color: "#4CAF50"
+                        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                          style: styles.driverPhone,
+                          children: delivery.receiver_phone
+                        })]
+                      }) : null]
+                    }), delivery.receiver_phone ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+                      style: styles.callBtn,
                       onPress: () => _reactNative.Linking.openURL(`tel:${delivery.receiver_phone}`),
-                      children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
-                        name: "phone",
-                        size: 14,
-                        color: "#4CAF50"
-                      }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-                        style: styles.driverPhone,
-                        children: delivery.receiver_phone
-                      })]
+                      children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
+                        name: "phone-call",
+                        size: 20,
+                        color: "#fff"
+                      })
                     }) : null]
-                  }), delivery.receiver_phone ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
-                    style: styles.callBtn,
-                    onPress: () => _reactNative.Linking.openURL(`tel:${delivery.receiver_phone}`),
-                    children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
-                      name: "phone-call",
-                      size: 20,
-                      color: "#fff"
-                    })
-                  }) : null]
+                  })
+                }) : /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+                  style: styles.driverCard,
+                  children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+                    style: styles.driverRow,
+                    children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+                      style: styles.driverAvatar,
+                      children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_FontAwesome.default, {
+                        name: "user-circle",
+                        size: 36,
+                        color: "#FF1493"
+                      })
+                    }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+                      style: styles.driverMeta,
+                      children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                        style: styles.driverName,
+                        children: delivery.customer_name || 'Receiver'
+                      }), delivery.customer_phone ? /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
+                        style: styles.callRow,
+                        onPress: () => _reactNative.Linking.openURL(`tel:${delivery.customer_phone}`),
+                        children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
+                          name: "phone",
+                          size: 14,
+                          color: "#4CAF50"
+                        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                          style: styles.driverPhone,
+                          children: delivery.customer_phone
+                        })]
+                      }) : null]
+                    }), delivery.customer_phone ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+                      style: styles.callBtn,
+                      onPress: () => _reactNative.Linking.openURL(`tel:${delivery.customer_phone}`),
+                      children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
+                        name: "phone-call",
+                        size: 20,
+                        color: "#fff"
+                      })
+                    }) : null]
+                  })
                 })
-              }) : null]
+              })]
             })]
           })]
-        }), delivery.remarks ? /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-          style: styles.remarksContainer,
-          children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
-            name: "message-circle",
-            size: 14,
-            color: "#999"
-          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-            style: styles.remarksText,
-            children: ["Note: ", delivery.remarks]
-          })]
-        }) : null, status === 'accepted' && delivery?.user_status === 'TOKEN_PAID' && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+        }), status === 'accepted' && delivery?.user_status === 'TOKEN_PAID' && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
           style: styles.arriveBtn,
           onPress: () => handleArrive(parcelId),
           disabled: isLoading,
@@ -137766,7 +138016,6 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         return _ref16.apply(this, arguments);
       };
     }();
-    // Render available request card
     var ParcelRequestCard = ({
       parcel
     }) => /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Animated.View, {
@@ -137779,14 +138028,26 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
         style: styles.cardHeader,
         children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-          style: styles.requestBadge,
-          children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
-            name: "bell",
-            size: 16,
-            color: "#fff"
-          }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-            style: styles.requestBadgeText,
-            children: "New Parcel Request"
+          children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: styles.requestBadge,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
+              name: "bell",
+              size: 16,
+              color: "#fff"
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.requestBadgeText,
+              children: "New Parcel Request"
+            })]
+          }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+            style: {
+              ...styles.requestBadge,
+              marginTop: 10,
+              backgroundColor: 'green'
+            },
+            children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+              style: styles.requestBadgeText,
+              children: ["ID: ", parcel.parcel_booking_id]
+            })
           })]
         }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
           children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
@@ -137800,7 +138061,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
           }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
             style: {
               ...styles.fareAmount,
-              color: '#000',
+              color: 'red',
               fontSize: 12
             },
             children: ["  \u20B9", parcel.total_fare, '\n', " ", /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
@@ -137812,51 +138073,86 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
           })]
         }), " "]
       }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-        style: styles.cardHeader,
-        children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
-          children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-            style: {
-              ...styles.requestBadgeText,
-              color: 'black',
-              fontSize: 16
-            },
-            children: ["Loading and Unloading : ", parcel.loading_unloading]
-          })
-        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {})]
-      }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-        style: styles.parcelInfo,
+        style: styles.currentDetailsGrid,
         children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-          style: styles.infoRow,
-          children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
-            name: "package",
-            size: 16,
+          style: styles.currentDetailItem,
+          children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_FontAwesome.default, {
+            name: "weight-hanging",
+            size: 13,
             color: "#666"
-          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-            style: styles.infoText,
-            children: ["ID: ", parcel.parcel_booking_id]
+          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: styles.currentDetailTextWrap,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.currentDetailLabel,
+              children: "Weight"
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.currentDetailValue,
+              children: parcel.parcel_weight ? `${parcel.parcel_weight} kg` : '-'
+            })]
+          })]
+        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+          style: styles.currentDetailItem,
+          children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: styles.currentDetailTextWrap,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.currentDetailLabel,
+              children: "\u20B9 Value"
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.currentDetailValue,
+              children: parcel.parcel_value ? `₹${parcel.parcel_value}` : '-'
+            })]
+          })
+        }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+          style: styles.currentDetailItem,
+          children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_FontAwesome.default, {
+            name: "people-carry",
+            size: 13,
+            color: "#666"
+          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: styles.currentDetailTextWrap,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.currentDetailLabel,
+              children: "Loading/Unloading"
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.currentDetailValue,
+              children: parcel.loading_unloading || '-'
+            })]
           })]
         }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-          style: styles.infoRow,
+          style: styles.currentDetailItem,
           children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
-            name: "weight",
-            size: 16,
+            name: "archive",
+            size: 15,
             color: "#666"
-          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-            style: styles.infoText,
-            children: ["Weight: ", parcel.parcel_weight, " kg"]
+          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: styles.currentDetailTextWrap,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.currentDetailLabel,
+              children: "Packaging"
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.currentDetailValue,
+              children: parcel.packaging_material || '-'
+            })]
           })]
         }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-          style: styles.infoRow,
+          style: styles.currentDetailItem,
           children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
-            name: "dollar-sign",
-            size: 16,
+            name: "message-square",
+            size: 15,
             color: "#666"
-          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
-            style: styles.infoText,
-            children: ["Value: \u20B9", parcel.parcel_value]
+          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: styles.currentDetailTextWrap,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              numberOfLines: 1,
+              style: styles.currentDetailLabel,
+              children: "Remarks"
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.currentDetailValue,
+              children: parcel.remarks || '-'
+            })]
           })]
         })]
-      }), console.log('delivery.pickup_date', parcel.pickup_date), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+      }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
         style: styles.locationContainer,
         children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
           style: styles.locationEntryRow,
@@ -138174,6 +138470,48 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
             })]
           })
         })
+      }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Modal, {
+        visible: showCancelModal,
+        transparent: true,
+        animationType: "slide",
+        onRequestClose: () => setShowCancelModal(false),
+        children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+          style: styles.modalContainer,
+          children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: styles.modalContent,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.modalTitle,
+              children: "Cancel Delivery"
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TextInput, {
+              style: styles.input,
+              placeholder: "Enter cancel reason",
+              placeholderTextColor: "#999",
+              value: cancelReason,
+              onChangeText: setCancelReason,
+              multiline: true
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.modalButtons,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+                style: [styles.modalBtn, styles.cancelBtn],
+                onPress: () => {
+                  setShowCancelModal(false);
+                  setCancelReason('');
+                },
+                children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: styles.cancelBtnText,
+                  children: "Cancel"
+                })
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+                style: [styles.modalBtn, styles.submitBtn],
+                onPress: submitCancel,
+                children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: styles.submitBtnText,
+                  children: "Submit"
+                })
+              })]
+            })]
+          })
+        })
       })]
     });
   };
@@ -138373,6 +138711,36 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     infoText: {
       fontSize: 14,
       color: '#666'
+    },
+    currentDetailsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+      marginBottom: 14
+    },
+    currentDetailItem: {
+      width: (width - 80) / 2,
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 8,
+      backgroundColor: '#F8F9FA',
+      borderRadius: 10,
+      padding: 10
+    },
+    currentDetailTextWrap: {
+      flex: 1
+    },
+    currentDetailLabel: {
+      fontSize: 10,
+      color: '#999',
+      fontWeight: '600',
+      textTransform: 'uppercase',
+      marginBottom: 2
+    },
+    currentDetailValue: {
+      fontSize: 12,
+      color: '#333',
+      fontWeight: '600'
     },
     locationContainer: {
       marginBottom: 15
@@ -138670,6 +139038,21 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       backgroundColor: '#FCE4EC',
       justifyContent: 'center',
       alignItems: 'center'
+    },
+    scheduleDateRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: '#FFF0F5',
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      marginBottom: 12
+    },
+    scheduleDateText: {
+      fontSize: 18,
+      color: '#FF1493',
+      fontWeight: '600'
     }
   });
   var _default = exports.default = ParcelDriverHomeFlow;
@@ -199397,11 +199780,21 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       _useState0 = (0, _slicedToArray2.default)(_useState9, 2),
       fetchingMore = _useState0[0],
       setFetchingMore = _useState0[1];
+    var stateRef = (0, _react.useRef)({
+      fetchingMore,
+      hasMore
+    });
+    (0, _react.useEffect)(() => {
+      stateRef.current = {
+        fetchingMore,
+        hasMore
+      };
+    }, [fetchingMore, hasMore]);
     var fetchTrips = (0, _react.useCallback)(/*#__PURE__*/(0, _asyncToGenerator2.default)(function* (nextPage = 1, {
       append = false
     } = {}) {
       // Prevent duplicate calls
-      if (append && (fetchingMore || !hasMore)) return;
+      if (append && (stateRef.current.fetchingMore || !stateRef.current.hasMore)) return;
       if (append) setFetchingMore(true);else setLoading(true);
       try {
         var res = yield _SelfSharingService.default.getMyTrips(nextPage, PAGE_LIMIT);
@@ -199411,6 +199804,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         // 2) { data: [...] }
         // 3) [...]
         var list = res?.data?.data ?? res?.data ?? res ?? [];
+        console.log('fetchTrips response:', res);
         var normalized = Array.isArray(list) ? list : [];
         setTrips(prev => append ? [...prev, ...normalized] : normalized);
 
@@ -199426,7 +199820,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       } finally {
         if (append) setFetchingMore(false);else setLoading(false);
       }
-    }), [fetchingMore, hasMore]);
+    }), []);
     (0, _react.useEffect)(() => {
       var isMounted = true;
       var doFetch = /*#__PURE__*/function () {
@@ -199476,9 +199870,22 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         activeOpacity: 0.7,
         children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
           style: styles.left,
-          children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-            style: styles.title,
-            children: tripId
+          children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: {
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8
+            },
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.title,
+              children: tripId
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+              style: [styles.statusBadge, status === 'TOKEN_PAID' && styles.statusTokenPaid, status === 'COMPLETED' && styles.statusCompleted, status === 'CANCELLED' && styles.statusCancelled],
+              children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.statusText,
+                children: status
+              })
+            })]
           }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
             style: styles.subtitle,
             children: [item.from_city || item.fromCity || item.from || '—', " \u2192", ' ', item.to_city || item.toCity || item.to || '—']
@@ -199529,6 +199936,9 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
           color: "#FF1493"
         })
       }) : trips?.length ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.FlatList, {
+        style: {
+          flex: 1
+        },
         data: trips,
         keyExtractor: (item, i) => String(item?.trip_id || item?.id || i),
         contentContainerStyle: styles.list,
@@ -199642,6 +200052,26 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       fontSize: 13,
       color: '#9CA3AF',
       textAlign: 'center'
+    },
+    statusBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+      backgroundColor: '#E5E7EB'
+    },
+    statusTokenPaid: {
+      backgroundColor: '#DBEAFE'
+    },
+    statusCompleted: {
+      backgroundColor: '#D1FAE5'
+    },
+    statusCancelled: {
+      backgroundColor: '#FEE2E2'
+    },
+    statusText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: '#374151'
     }
   });
   var _default = exports.default = SelfSharingMyTripsScreen;
@@ -200585,6 +201015,14 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       _useState12 = (0, _slicedToArray2.default)(_useState11, 2),
       verifyingOtp = _useState12[0],
       setVerifyingOtp = _useState12[1];
+    var _useState13 = (0, _react.useState)(false),
+      _useState14 = (0, _slicedToArray2.default)(_useState13, 2),
+      cancelModalVisible = _useState14[0],
+      setCancelModalVisible = _useState14[1];
+    var _useState15 = (0, _react.useState)(''),
+      _useState16 = (0, _slicedToArray2.default)(_useState15, 2),
+      cancelReason = _useState16[0],
+      setCancelReason = _useState16[1];
     var fetchTrip = /*#__PURE__*/function () {
       var _ref2 = (0, _asyncToGenerator2.default)(function* () {
         if (!tripId) return;
@@ -200592,25 +201030,23 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         try {
           var res = yield _SelfSharingService.default.getTripDetails(tripId);
           console.log('Trip details response:', res);
-
-          // Handle the nested response structure
           var tripData = null;
           var bookingsData = [];
           if (res?.data?.data) {
-            // If response has data.data structure (array of bookings)
             if (Array.isArray(res.data.data)) {
-              bookingsData = res.data.data;
-              // You might also have trip info elsewhere
+              // Filter out cancelled bookings
+              bookingsData = res.data.data.filter(booking => booking.status !== "CANCELLED");
               tripData = res.data.trip || res.data;
             } else {
-              // If data.data is the trip object
               tripData = res.data.data;
             }
           } else if (res?.data) {
             tripData = res.data;
           } else if (res?.trip) {
             tripData = res.trip;
-            bookingsData = res.bookings || [];
+
+            // Filter here as well
+            bookingsData = (res.bookings || []).filter(booking => booking.status !== "CANCELLED");
           } else {
             tripData = res;
           }
@@ -200642,9 +201078,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
           var ok = res?.status ?? res?.success ?? true;
           if (ok || res?.data?.status || res?.data?.success) {
             _reactNative.Alert.alert('Success', 'Arrived submitted');
-            navigation.navigate('SelfSharingMyTrips', {
-              refreshMyTrips: true
-            });
+            navigation.goBack();
           } else {
             _reactNative.Alert.alert('Error', res?.message || 'Failed to submit arrive');
           }
@@ -200670,15 +201104,13 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
           var ok = res?.status ?? res?.success ?? true;
           if (ok || res?.data?.status || res?.data?.success) {
             _reactNative.Alert.alert('Success', 'Ride started');
-            navigation.navigate('SelfSharingMyTrips', {
-              refreshMyTrips: true
-            });
+            navigation.goBack();
           } else {
             _reactNative.Alert.alert('Error', res?.message || 'Failed to start ride');
           }
         } catch (e) {
-          _reactNative.Alert.alert('Error', 'Failed to start ride');
-          console.log('handleStartRide error:', e);
+          _reactNative.Alert.alert('Error', e.response?.data.message);
+          console.log('handleStartRide error:', e.response?.data.message || e);
         } finally {
           setLoading(false);
         }
@@ -200698,9 +201130,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
           var ok = res?.status ?? res?.success ?? true;
           if (ok || res?.data?.status || res?.data?.success) {
             _reactNative.Alert.alert('Success', 'Ride completed');
-            navigation.navigate('SelfSharingMyTrips', {
-              refreshMyTrips: true
-            });
+            navigation.goBack();
           } else {
             _reactNative.Alert.alert('Error', res?.message || 'Failed to complete ride');
           }
@@ -200715,31 +201145,38 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         return _ref5.apply(this, arguments);
       };
     }();
-    var handleCancelRide = /*#__PURE__*/function () {
+    var handleCancelRide = () => {
+      setCancelReason('');
+      setCancelModalVisible(true);
+    };
+    var submitCancelRide = /*#__PURE__*/function () {
       var _ref6 = (0, _asyncToGenerator2.default)(function* () {
-        if (!tripId) return;
+        if (!cancelReason.trim()) {
+          _reactNative.Alert.alert('Error', 'Please enter reason');
+          return;
+        }
+        setCancelModalVisible(false);
         setLoading(true);
         try {
           var res = yield _SelfSharingService.default.cancelRide({
-            trip_id: tripId
+            trip_id: tripId,
+            cancel_reason: cancelReason.trim()
           });
           var ok = res?.status ?? res?.success ?? true;
           if (ok || res?.data?.status || res?.data?.success) {
             _reactNative.Alert.alert('Success', 'Ride canceled');
-            navigation.navigate('SelfSharingMyTrips', {
-              refreshMyTrips: true
-            });
+            navigation.goBack();
           } else {
             _reactNative.Alert.alert('Error', res?.message || 'Failed to cancel ride');
           }
         } catch (e) {
           _reactNative.Alert.alert('Error', 'Failed to cancel ride');
-          console.log('handleCancelRide error:', e);
+          console.log('submitCancelRide error:', e);
         } finally {
           setLoading(false);
         }
       });
-      return function handleCancelRide() {
+      return function submitCancelRide() {
         return _ref6.apply(this, arguments);
       };
     }();
@@ -200794,9 +201231,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
             _reactNative.Alert.alert('Success', res?.message || 'OTP verified');
             setOtpModalVisible(false);
             setSelectedBooking(null);
-            navigation.navigate('SelfSharingMyTrips', {
-              refreshMyTrips: true
-            });
+            navigation.goBack();
           } else {
             _reactNative.Alert.alert('Error', res?.message);
           }
@@ -200816,7 +201251,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
           style: s.bookingTitle,
           children: ["Booking #", booking.booking_id || index + 1]
-        }), booking.user_name || booking.user_mobile ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+        }), (booking.user_name || booking.user_mobile) && booking.status != 'COMPLETED' && booking.status === 'CANCELLED' ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
           style: s.driverCard,
           children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
             style: s.driverRow,
@@ -200902,7 +201337,26 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
               children: booking.status || 'PENDING'
             })
           })]
-        }), booking.status !== 'BOARDED' && booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && booking.status !== 'STARTED' && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+        }), booking.passengers && booking.passengers.length > 0 && /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+          style: s.passengersContainer,
+          children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+            style: s.passengersTitle,
+            children: "Passenger Details:"
+          }), booking.passengers.map((passenger, idx) => /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: s.passengerItem,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_Feather.default, {
+              name: "user",
+              size: 14,
+              color: "#FF1493",
+              style: {
+                marginRight: 4
+              }
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+              style: s.passengerText,
+              children: [passenger.name, " (", passenger.age, " Yrs)"]
+            })]
+          }, passenger.id || idx))]
+        }), booking.status !== 'BOARDED' && booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && booking.status !== 'STARTED' && booking.balance_paid == 1 && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
           style: [s.actionBtn, s.verifyOtpBtn],
           onPress: () => openOtpModalForBooking(booking),
           disabled: loading || verifyingOtp,
@@ -200990,7 +201444,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
             children: mainTitle
           }), renderRow('From', trip.from_city || trip.fromCity || trip.from), renderRow('To', trip.to_city || trip.toCity || trip.to), renderRow('Pickup Address', trip.pickup_address || trip.pickupAddress), renderRow('Departure Time', trip.departure_time || trip.departureTime), renderRow('Total Seats', trip.total_seats || trip.totalSeats), renderRow('Token Fare', trip.token_fare || trip.tokenFare), renderRow('Full Fare', trip.full_fare || trip.fullFare), renderRow('Trip Status', trip.status || trip.trip_status || trip.state), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
             style: s.divider
-          }), status == 'UPCOMING' && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+          }), status == 'UPCOMING' && bookings.length > 0 && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
             style: [s.actionBtn, {
               backgroundColor: '#4CAF50',
               opacity: loading ? 0.7 : 1
@@ -201010,7 +201464,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
                 children: "Mark as Arrived"
               })]
             })
-          }), status == 'BOARDING' && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+          }), status == 'BOARDING' && bookings.every(booking => booking.balance_paid !== 0) && bookings.every(booking => booking.otp_verified !== 0) && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
             style: [s.actionBtn, {
               backgroundColor: '#ff1493',
               opacity: loading ? 0.7 : 1
@@ -201054,7 +201508,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
                 })]
               })
             })
-          }), status != 'COMPLETED' && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+          }), status != 'COMPLETED' && status != 'CANCELLED' && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
             style: [s.actionBtn, {
               backgroundColor: '#FFCDD2',
               flex: 1,
@@ -201143,6 +201597,68 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
                 onPress: handleVerifyOtp,
                 disabled: verifyingOtp,
                 children: verifyingOtp ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.ActivityIndicator, {
+                  size: "small",
+                  color: "#fff"
+                }) : /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: s.modalBtnText,
+                  children: "Submit"
+                })
+              })]
+            })]
+          })
+        })
+      }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Modal, {
+        visible: cancelModalVisible,
+        transparent: true,
+        animationType: "fade",
+        onRequestClose: () => {
+          setCancelModalVisible(false);
+        },
+        children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+          style: s.modalOverlay,
+          children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: s.modalCard,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: s.modalTitle,
+              children: "Cancel Trip"
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: s.modalSubText,
+              children: "Please enter reason for cancellation"
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TextInput, {
+              value: cancelReason,
+              onChangeText: setCancelReason,
+              placeholder: "Enter reason",
+              placeholderTextColor: "#999",
+              multiline: true,
+              style: {
+                borderWidth: 1,
+                borderColor: '#e0e0e0',
+                borderRadius: 12,
+                padding: 12,
+                fontSize: 14,
+                marginBottom: 20,
+                backgroundColor: '#FAF9F6',
+                textAlignVertical: 'top',
+                minHeight: 80,
+                color: '#333'
+              }
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: s.modalActions,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+                style: [s.modalBtn, s.modalCancelBtn],
+                onPress: () => {
+                  setCancelModalVisible(false);
+                },
+                disabled: loading,
+                children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: s.modalBtnText,
+                  children: "Cancel"
+                })
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TouchableOpacity, {
+                style: [s.modalBtn, s.modalSubmitBtn],
+                onPress: submitCancelRide,
+                disabled: loading,
+                children: loading ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.ActivityIndicator, {
                   size: "small",
                   color: "#fff"
                 }) : /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
@@ -201428,6 +201944,31 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       fontSize: 16,
       fontWeight: 'bold',
       color: '#FF1493'
+    },
+    passengersContainer: {
+      marginTop: 10,
+      backgroundColor: '#FAFAFA',
+      padding: 10,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#EFEFEF'
+    },
+    passengersTitle: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: '#6B7280',
+      marginBottom: 6,
+      textTransform: 'uppercase'
+    },
+    passengerItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 4
+    },
+    passengerText: {
+      fontSize: 13,
+      color: '#374151',
+      fontWeight: '500'
     },
     statusBadge: {
       paddingHorizontal: 8,
@@ -224888,7 +225429,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
             children: ["Your Earnings: \u20B9", delivery.earnings?.toFixed(2) || '0.00']
           })]
         })]
-      })), (delivery.pickup_image || delivery.delivery_image) && /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+      })), console.log('delivery.pickup_image', delivery.pickup_image), (delivery.pickup_image || delivery.delivery_image) && /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
         style: styles.imagesContainer,
         children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
           style: styles.sectionTitle,
