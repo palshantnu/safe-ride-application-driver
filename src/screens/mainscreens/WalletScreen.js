@@ -184,6 +184,7 @@ const WalletScreen = () => {
       setWithdrawSubmitting(false);
     }
   };
+console.log('kndknkenkden',!userData?.ba_name ? userData?.phone : '');
 
   const handleRecharge = async () => {
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
@@ -200,7 +201,7 @@ const WalletScreen = () => {
       amount: String(Math.round(Number(amount) * 100)), // paise
       name: 'SIGIRIDE Captain',
        prefill: {
-          name: userData?.name || '',
+          name: userData?.name || userData?.full_name || '',
           contact: !userData?.ba_name ? userData?.phone : '',
           email: userData?.email || '',
         },

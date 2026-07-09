@@ -560,18 +560,18 @@ const InCityMapScreen = ({ navigation, route }) => {
               <Text style={s.chipText}>{distance} km</Text>
             </View>
           ) : null}
-          {person ? (
+          {/* {person ? (
             <View style={s.chip}>
               <Icon name="users" size={12} color={SUBTLE} />
               <Text style={s.chipText}>{person} {Number(person) === 1 ? 'Passenger' : 'Passengers'}</Text>
             </View>
-          ) : null}
-          {phone ? (
+          ) : null} */}
+          {/* {phone ? (
             <View style={s.chip}>
               <Icon name="phone" size={12} color={SUBTLE} />
               <Text style={s.chipText}>{phone}</Text>
             </View>
-          ) : null}
+          ) : null} */}
         </View>
 
         {/* Passenger row */}
@@ -901,7 +901,7 @@ const s = StyleSheet.create({
   /* Chips */
   chips:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   chip:     { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: BG, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: BORDER },
-  chipText: { fontSize: 11, color: SUBTLE, fontWeight: '500' },
+  chipText: { fontSize: 13, color: SUBTLE, fontWeight: '500' },
 
   /* Passenger */
   passengerRow: {

@@ -31,7 +31,7 @@ const KYCScreen = ({ navigation }) => {
     // Check if user is BA (Business Associate)
     const isBA = !!userData?.ba_name;
     
-    console.log('Is BA User:', isBA);
+    console.log('Is BA User:', driverKycDocumentsList);
     console.log('UserData:', userData);
 
     // BA KYC States
@@ -51,7 +51,7 @@ const KYCScreen = ({ navigation }) => {
     const [uploading, setUploading] = useState(false);
 
     // Driver KYC States (existing)
-    const [documents, setDocuments] = useState(driverKycDocuments || []);
+    const documents = driverKycDocuments || [];
     const [uploadedDocs, setUploadedDocs] = useState({});
     const [loading, setLoading] = useState(false);
     const [docUploading, setDocUploading] = useState({});

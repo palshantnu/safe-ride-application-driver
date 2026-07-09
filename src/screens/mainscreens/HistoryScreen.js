@@ -120,7 +120,7 @@ const DriverHistoryScreen = ({ navigation }) => {
   // Format OnSpot data
   const formatOnSpotData = (booking) => {
     const status = booking.status?.toLowerCase() || 'pending';
-    const earnings = parseFloat(booking.total_amount) || 0;
+    const earnings = parseFloat(booking.driver_amount) || 0;
     const tokenPaid = parseFloat(booking.token_amount) || 0;
     const balancePaid = parseFloat(booking.balance_amount) || 0;
     
@@ -238,7 +238,7 @@ const DriverHistoryScreen = ({ navigation }) => {
   // Format parcel data
   const formatParcelData = (delivery) => {
     const status = delivery.driver_status?.toLowerCase() || delivery.status?.toLowerCase() || 'pending';
-    const earnings = parseFloat(delivery.amount) || 0;
+    const earnings = parseFloat(delivery.driver_amount) || 0;
     
     return {
       id: delivery.id,
@@ -372,7 +372,8 @@ const DriverHistoryScreen = ({ navigation }) => {
     const totalTopupAmount = booking.topups?.reduce((sum, topup) =>
       sum + parseFloat(topup.topup_amount), 0) || 0;
     const totalFare = parseFloat(booking.plan_price) + totalTopupAmount;
-    const earnings = totalFare;
+    const driver_amount = parseFloat(booking.driver_amount) || 0;
+    const earnings = driver_amount;
     const rating = booking.rating || 4.5;
 
     return {
@@ -629,7 +630,7 @@ const DriverHistoryScreen = ({ navigation }) => {
         <View style={styles.priceContainer}>
           <View style={styles.priceItem}>
             <Text style={styles.priceLabel}>Total</Text>
-            <Text style={styles.totalPrice}>₹{item.total_amount?.toFixed(2)}</Text>
+            <Text style={styles.totalPrice}>₹{parseFloat(item.token_amount)+ parseFloat(item.balance_amount)}</Text>
           </View>
           <View style={styles.priceItem}>
             <Text style={styles.priceLabel}>Token Paid</Text>
@@ -946,8 +947,8 @@ const DriverHistoryScreen = ({ navigation }) => {
         </View>
         {item.is_incity ? (
           <View style={styles.statItem}>
-            <Icon name="people-outline" size={14} color="#999" />
-            <Text style={styles.statItemText}>{item.person} passenger</Text>
+            {/* <Icon name="people-outline" size={14} color="#999" />
+            <Text style={styles.statItemText}>{item.person} passenger</Text> */}
           </View>
         ) : (
           <>

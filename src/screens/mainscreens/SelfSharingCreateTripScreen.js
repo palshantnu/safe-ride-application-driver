@@ -12,6 +12,9 @@ import {
   Modal,
   StatusBar,
   FlatList,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Feather';
@@ -170,8 +173,8 @@ console.log('form===>', form);
         Alert.alert('Error', res?.message || 'Failed to create trip');
       }
     } catch (e) {
-      Alert.alert('Error', 'Failed to create trip');
-      console.log('createTrip error:', e);
+      Alert.alert('Error', e.response?.data.message||'Failed to create trip');
+      console.log('createTrip error:', e.response?.data.message || e);
     } finally {
       setLoading(false);
     }
@@ -313,7 +316,12 @@ console.log('form===>', form);
         <Text style={styles.headerTitle}>Create Trip</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
-
+ <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+  >
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.formCard}>
           {/* From City */}
@@ -510,7 +518,8 @@ console.log('form===>', form);
           </TouchableOpacity>
         </View>
       </ScrollView>
-
+      </TouchableWithoutFeedback>
+</KeyboardAvoidingView>
       {/* City Selection Modal - Kept for compatibility but not used with Dropdown */}
       <Modal
         visible={showCityModal}

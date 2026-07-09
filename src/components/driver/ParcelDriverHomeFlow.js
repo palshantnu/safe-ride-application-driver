@@ -293,19 +293,26 @@ prevParcelCountRef.current = formatted.length;
 
   // Request permissions
   const requestCameraPermission = async () => {
-    if (Platform.OS !== 'android') return true;
-    try {
-      const permissions = [PermissionsAndroid.PERMISSIONS.CAMERA];
-      if (Platform.Version >= 33) 
-        permissions.push(PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES);
-      else 
-        permissions.push(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE);
-      const results = await PermissionsAndroid.requestMultiple(permissions);
-      return Object.values(results).every((r) => r === PermissionsAndroid.RESULTS.GRANTED);
-    } catch {
-      return false;
-    }
-  };
+        if (Platform.OS === 'android') {
+            try {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.CAMERA,
+                    {
+                        title: 'Camera Permission',
+                        message: 'App needs access to your camera to take profile photo',
+                        buttonNeutral: 'Ask Me Later',
+                        buttonNegative: 'Cancel',
+                        buttonPositive: 'OK',
+                    }
+                );
+                return granted === PermissionsAndroid.RESULTS.GRANTED;
+            } catch (err) {
+                console.log('Camera permission error:', err);
+                return false;
+            }
+        }
+        return true;
+    };
 
   const pickImage = async (setImageFn) => {
     Alert.alert('Select Image', 'Choose image from', [
@@ -613,7 +620,7 @@ console.log('Rendering delivery card:', delivery);
       <View key={delivery.id} style={styles.activeCard}>
         <View style={styles.cardHeader}>
         <View>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.driver_status),width: 90,justifyContent:'center',alignItems:'center' }]}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status),width: 90,justifyContent:'center',alignItems:'center' }]}>
             <Text style={styles.statusBadgeText}>{getStatusText(delivery.driver_status)}</Text>
            </View>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor('picked_up'),marginTop:10 }]}>
@@ -623,85 +630,31 @@ console.log('Rendering delivery card:', delivery);
           
               <View>
         <Text style={styles.fareAmount}>₹{delivery.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
-                 <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{delivery.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
+                 <Text style={{...styles.fareAmount, color: 'red',fontSize:12}}>  ₹{delivery.total_fare}{'\n'} <Text style={{fontSize:12}}>Service amount</Text></Text>
      </View>
         </View>
 {/* <View style={[styles.statusBadge ]}>
              <Text style={{...styles.statusBadgeText,color:'black',fontSize:16}}>USER STATUS : {getStatusText(delivery.user_status)}</Text>
           </View> */}
-        <View style={styles.currentDetailsGrid}>
-         
-          
-          <View style={styles.currentDetailItem}>
-            <FontAwesome5 name="weight-hanging" size={13} color="#666" />
-            <View style={styles.currentDetailTextWrap}>
-              <Text style={styles.currentDetailLabel}>Weight</Text>
-              <Text style={styles.currentDetailValue}>
-                {delivery.parcel_weight ? `${delivery.parcel_weight} kg` : '-'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.currentDetailItem}>
-            <Icon name="dollar-sign" size={15} color="#666" />
-            <View style={styles.currentDetailTextWrap}>
-              <Text style={styles.currentDetailLabel}>Value</Text>
-              <Text style={styles.currentDetailValue}>
-                {delivery.parcel_value ? `₹${delivery.parcel_value}` : '-'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.currentDetailItem}>
-            <FontAwesome5 name="people-carry" size={13} color="#666" />
-            <View style={styles.currentDetailTextWrap}>
-              <Text style={styles.currentDetailLabel}>Loading/Unloading</Text>
-              <Text style={styles.currentDetailValue}>{delivery.loading_unloading || '-'}</Text>
-            </View>
-          </View>
-
-          <View style={styles.currentDetailItem}>
-            <Icon name="archive" size={15} color="#666" />
-            <View style={styles.currentDetailTextWrap}>
-              <Text style={styles.currentDetailLabel}>Packaging</Text>
-              <Text style={styles.currentDetailValue}>{delivery.packaging_material || '-'}</Text>
-            </View>
-          </View>
-
-          <View style={{...styles.currentDetailItem,width:'100%'}}>
-            <Icon name="message-square" size={15} color="#666" />
-            <View style={styles.currentDetailTextWrap}>
-              <Text numberOfLines={1} style={styles.currentDetailLabel}>Remarks</Text>
-              <Text style={styles.currentDetailValue}>{delivery.remarks || '-'}</Text>
-            </View>
-          </View>
-        </View>
-     {pickupDateTime ? (
-          <View style={styles.scheduleDateRow}>
-            <Icon name="calendar" size={14} color="#FF1493" />
-            <Text style={styles.scheduleDateText}>{pickupDateTime}</Text>
-          </View>
-        ) : null}
-        <View style={styles.locationContainer}>
-          <View style={styles.locationEntryRow}>
-            <View style={styles.dotCol}><View style={styles.pickupDot} /><View style={styles.locationLine} /></View>
-            <View style={styles.locationTextCol}>
-              <Text style={styles.locationLabel}>Pickup</Text>
-              <Text style={styles.pickupText}>{delivery.pickup_address}, {delivery.pickup_city}</Text>
-              {delivery.pickup_landmark ? <Text style={styles.contactText}>📍 {delivery.pickup_landmark}</Text> : null}
-              {/* <Text style={styles.contactText}>📅 {new Date(delivery.pickup_date).toLocaleDateString()} at {delivery.pickup_time}</Text> */}
-              <Text style={styles.contactText}>👤 {delivery.customer_name}</Text>
-            </View>
-          </View>
-          <View style={styles.locationEntryRow}>
-            <View style={styles.dotCol}><View style={styles.dropDot} /></View>
-            <View style={styles.locationTextCol}>
-              <Text style={styles.locationLabel}>Delivery</Text>
-              <Text style={styles.dropText}>{delivery.delivery_address}, {delivery.delivery_city}</Text>
-              {delivery.delivery_landmark ? <Text style={styles.contactText}>📍 {delivery.delivery_landmark}</Text> : null}
-              <Text style={styles.contactText}>👤 Receiver: {delivery.receiver_name}</Text>
-              {/* <Text style={styles.contactText}>📞 {delivery.receiver_phone}</Text> */}
-             {delivery.paid == 1 && <>
+           {(status === 'accepted' && delivery?.user_status === 'TOKEN_PAID') && (
+          <TouchableOpacity style={styles.arriveBtn} onPress={() => handleArrive(parcelId)} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <><Icon name="navigation" size={20} color="#fff" /><Text style={styles.btnText}>Arrived at Pickup</Text></>}
+          </TouchableOpacity>
+        )}
+            {status === 'arrived' && (
+          <TouchableOpacity style={styles.pickupBtn} onPress={() => handlePickupOTP(parcelId)} disabled={isLoading}>
+            <Icon name="package" size={20} color="#fff" /><Text style={styles.btnText}>Pickup Parcel (OTP)</Text>
+          </TouchableOpacity>
+        )}
+        {status === 'picked_up' && (
+          <TouchableOpacity style={styles.deliveryBtn} onPress={() => handleDeliveryOTP(parcelId)} disabled={isLoading}>
+            <Icon name="check-circle" size={20} color="#fff" /><Text style={styles.btnText}>Complete Delivery (OTP)</Text>
+          </TouchableOpacity>
+        )}
+        {status === 'delivered' && (
+          <View style={styles.completedCard}><Icon name="check-circle" size={40} color="#4CAF50" /><Text style={styles.completedTitle}>Delivery Completed</Text></View>
+        )}
+         {delivery.paid == 1 && <>
               {delivery.receiver_phone && delivery.pickup_otp_verified == 1? (
                 <View style={styles.driverCard}>
                   <View style={styles.driverRow}>
@@ -747,6 +700,79 @@ console.log('Rendering delivery card:', delivery);
                 </View>
               ) }
               </>}
+        <View style={styles.currentDetailsGrid}>
+         
+          
+          <View style={styles.currentDetailItem}>
+            <FontAwesome5 name="weight-hanging" size={13} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Weight</Text>
+              <Text style={styles.currentDetailValue}>
+                {delivery.parcel_weight ? `${delivery.parcel_weight} kg` : '-'}
+              </Text>
+            </View>
+          </View>
+
+          {/* <View style={styles.currentDetailItem}>
+            <Icon name="dollar-sign" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Value</Text>
+              <Text style={styles.currentDetailValue}>
+                {delivery.parcel_value ? `₹${delivery.parcel_value}` : '-'}
+              </Text>
+            </View>
+          </View> */}
+
+          <View style={styles.currentDetailItem}>
+            <FontAwesome5 name="people-carry" size={13} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Loading/Unloading</Text>
+              <Text style={styles.currentDetailValue}>{delivery.loading_unloading || '-'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.currentDetailItem}>
+            <Icon name="archive" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Packaging</Text>
+              <Text style={styles.currentDetailValue}>{delivery.packaging_material || '-'}</Text>
+            </View>
+          </View>
+
+          <View style={{...styles.currentDetailItem}}>
+            <Icon name="message-square" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text numberOfLines={1} style={styles.currentDetailLabel}>Remarks</Text>
+              <Text style={styles.currentDetailValue}>{delivery.remarks || '-'}</Text>
+            </View>
+          </View>
+        </View>
+     {pickupDateTime ? (
+          <View style={styles.scheduleDateRow}>
+            <Icon name="calendar" size={14} color="#FF1493" />
+            <Text style={styles.scheduleDateText}>{pickupDateTime}</Text>
+          </View>
+        ) : null}
+        <View style={styles.locationContainer}>
+          <View style={styles.locationEntryRow}>
+            <View style={styles.dotCol}><View style={styles.pickupDot} /><View style={styles.locationLine} /></View>
+            <View style={styles.locationTextCol}>
+              <Text style={styles.locationLabel}>Pickup</Text>
+              <Text style={styles.pickupText}>{delivery.pickup_address}, {delivery.pickup_city}</Text>
+              {delivery.pickup_landmark ? <Text style={styles.contactText}>📍 {delivery.pickup_landmark}</Text> : null}
+              {/* <Text style={styles.contactText}>📅 {new Date(delivery.pickup_date).toLocaleDateString()} at {delivery.pickup_time}</Text> */}
+              <Text style={styles.contactText}>👤 {delivery.customer_name}</Text>
+            </View>
+          </View>
+          <View style={styles.locationEntryRow}>
+            <View style={styles.dotCol}><View style={styles.dropDot} /></View>
+            <View style={styles.locationTextCol}>
+              <Text style={styles.locationLabel}>Delivery</Text>
+              <Text style={styles.dropText}>{delivery.delivery_address}, {delivery.delivery_city}</Text>
+              {delivery.delivery_landmark ? <Text style={styles.contactText}>📍 {delivery.delivery_landmark}</Text> : null}
+              <Text style={styles.contactText}>👤 Receiver: {delivery.receiver_name}</Text>
+              {/* <Text style={styles.contactText}>📞 {delivery.receiver_phone}</Text> */}
+            
              
             </View>
           </View>
@@ -756,24 +782,8 @@ console.log('Rendering delivery card:', delivery);
           <View style={styles.remarksContainer}><Icon name="message-circle" size={14} color="#999" /><Text style={styles.remarksText}>Note: {delivery.remarks}</Text></View>
         ) : null} */}
 
-        {(status === 'accepted' && delivery?.user_status === 'TOKEN_PAID') && (
-          <TouchableOpacity style={styles.arriveBtn} onPress={() => handleArrive(parcelId)} disabled={isLoading}>
-            {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <><Icon name="navigation" size={20} color="#fff" /><Text style={styles.btnText}>Arrived at Pickup</Text></>}
-          </TouchableOpacity>
-        )}
-        {status === 'arrived' && (
-          <TouchableOpacity style={styles.pickupBtn} onPress={() => handlePickupOTP(parcelId)} disabled={isLoading}>
-            <Icon name="package" size={20} color="#fff" /><Text style={styles.btnText}>Pickup Parcel (OTP)</Text>
-          </TouchableOpacity>
-        )}
-        {status === 'picked_up' && (
-          <TouchableOpacity style={styles.deliveryBtn} onPress={() => handleDeliveryOTP(parcelId)} disabled={isLoading}>
-            <Icon name="check-circle" size={20} color="#fff" /><Text style={styles.btnText}>Complete Delivery (OTP)</Text>
-          </TouchableOpacity>
-        )}
-        {status === 'delivered' && (
-          <View style={styles.completedCard}><Icon name="check-circle" size={40} color="#4CAF50" /><Text style={styles.completedTitle}>Delivery Completed</Text></View>
-        )}
+       
+    
         {!['delivered', 'cancelled'].includes(status) && (
           <TouchableOpacity style={styles.cancelBtn} onPress={() => handleCancel(parcelId)} disabled={isLoading}>
             <Icon name="x-circle" size={18} color="#FF5252" /><Text style={styles.cancelBtnText}>Cancel Delivery</Text>
@@ -782,21 +792,16 @@ console.log('Rendering delivery card:', delivery);
       </View>
     );
   };
-const submitParcelReject = async () => {
-  if (!rejectReason.trim()) {
-    Alert.alert(
-      'Validation',
-      'Please enter reject reason',
-    );
-    return;
-  }
+const submitParcelReject = async (parcelId, reason = 'cancel') => {
+  if (!parcelId) return;
 
   try {
+    setIsLoading(true);
     const response = await axios.post(
       PARCEL_API.REJECT,
       {
-        parcel_booking_id: selectedParcelId,
-        reject_reason: rejectReason,
+        parcel_booking_id: parcelId,
+        reject_reason: reason,
       },
       {
         headers: {
@@ -804,31 +809,24 @@ const submitParcelReject = async () => {
         },
       },
     );
-console.log('Reject response:', response.data);
+    console.log('Reject response:', response.data);
     if (response.data?.status) {
       Alert.alert(
         'Success',
-        response.data?.message ||
-          'Parcel rejected successfully',
+        'Parcel rejected successfully',
       );
-
-      setShowRejectModal(false);
-      setRejectReason('');
-      setSelectedParcelId(null);
-
-      refreshData();
+      fetchAvailableParcels();
     } else {
       Alert.alert(
         'Error',
-        response.data?.message || 'Failed',
+        response.data?.message || 'Failed to reject parcel',
       );
     }
   } catch (error) {
-    Alert.alert(
-      'Error',
-      error?.response?.data?.message ||
-        'Something went wrong',
-    );
+    console.log('Error rejecting parcel:', error);
+    Alert.alert('Error', 'Failed to reject parcel');
+  } finally {
+    setIsLoading(false);
   }
 };
 
@@ -841,7 +839,7 @@ console.log('Reject response:', response.data);
         </View>
          <View>
         <Text style={styles.fareAmount}>₹{parcel.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
-                 <Text style={{...styles.fareAmount, color: 'red',fontSize:12}}>  ₹{parcel.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
+                 <Text style={{...styles.fareAmount, color: 'red',fontSize:12}}>  ₹{parcel.total_fare}{'\n'} <Text style={{fontSize:12}}>Service amount</Text></Text>
      </View> </View>
       <View style={styles.currentDetailsGrid}>
         {/* <View style={styles.currentDetailItem}>
@@ -862,15 +860,15 @@ console.log('Reject response:', response.data);
           </View>
         </View>
 
-        <View style={styles.currentDetailItem}>
-          {/* <Icon name="dollar-sign" size={15} color="#666" /> */}
+        {/* <View style={styles.currentDetailItem}>
+         
           <View style={styles.currentDetailTextWrap}>
             <Text style={styles.currentDetailLabel}>₹ Value</Text>
             <Text style={styles.currentDetailValue}>
               {parcel.parcel_value ? `₹${parcel.parcel_value}` : '-'}
             </Text>
           </View>
-        </View>
+        </View> */}
 
         <View style={styles.currentDetailItem}>
           <FontAwesome5 name="people-carry" size={13} color="#666" />
@@ -903,7 +901,7 @@ console.log('Reject response:', response.data);
           <View style={styles.locationTextCol}>
             <Text style={styles.locationLabel}>Pickup</Text>
             <Text style={styles.pickupText}>{parcel.pickup_address}, {parcel.pickup_city}</Text>
-            <Text style={styles.contactText}>📅 {new Date(parcel.pickup_date).toLocaleDateString()}</Text>
+            <Text style={{...styles.contactText,fontSize:15}}>📅 {new Date(parcel.pickup_date).toLocaleDateString()}</Text>
           </View>
         </View>
         <View style={styles.locationEntryRow}>
@@ -917,11 +915,8 @@ console.log('Reject response:', response.data);
       </View>
       <View style={styles.buttonRow}>
         <TouchableOpacity style={styles.rejectBtn} onPress={() => {
-  setSelectedParcelId(
-    parcel.parcel_booking_id,
-  );
-  setShowRejectModal(true);
-}} disabled={isLoading}>
+          submitParcelReject(parcel.parcel_booking_id, 'cancel');
+        }} disabled={isLoading}>
           <Icon name="x" size={20} color="#fff" /><Text style={styles.btnText}>Reject</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.acceptBtn} onPress={() => handleAccept(parcel)} disabled={isLoading}>
@@ -930,6 +925,28 @@ console.log('Reject response:', response.data);
       </View>
     </Animated.View>
   );
+  const StatsCard = () => (
+    <View style={styles.statsContainer}>
+      <View style={styles.statItem}>
+        <Icon name="calendar" size={24} color="#FF1493" />
+        <Text style={styles.statValue}>0</Text>
+        <Text style={styles.statLabel}>Today's Rides</Text>
+      </View>
+      <View style={styles.statDivider} />
+      <View style={styles.statItem}>
+        <Icon name="rupee" size={24} color="#4CAF50" />
+        <Text style={styles.statValue}>₹0</Text>
+        <Text style={styles.statLabel}>Today's Earnings</Text>
+      </View>
+      <View style={styles.statDivider} />
+      <View style={styles.statItem}>
+        <Icon name="star" size={24} color="#FFD700" />
+        <Text style={styles.statValue}>4.8</Text>
+        <Text style={styles.statLabel}>Rating</Text>
+      </View>
+    </View>
+  );
+
 
   return (
     <View style={styles.outer}>
@@ -958,11 +975,14 @@ console.log('Reject response:', response.data);
             {availableParcels.map(p => <ParcelRequestCard key={p.id} parcel={p} />)}
           </>
         ) : (
+          <>
+           <StatsCard />
           <View style={styles.waitingContainer}>
             <Icon name={isOnline ? "truck" : "wifi-off"} size={60} color={isOnline ? "#FF9800" : "#ccc"} />
             <Text style={styles.waitingTitle}>{isOnline ? 'Waiting for Parcel Requests' : 'You are Offline'}</Text>
             <Text style={styles.waitingText}>{isOnline ? 'Your location is active. You will receive parcel delivery requests shortly.' : 'Please go online to start receiving parcel requests.'}</Text>
           </View>
+          </>
         )}
       </ScrollView>
 
@@ -980,7 +1000,7 @@ console.log('Reject response:', response.data);
               <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={() => { setShowPickupOtpModal(false); setEnteredOtp(''); setPickupImage(''); }}>
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalBtn, styles.submitBtn]} onPress={submitPickupOTP} disabled={isLoading}>
+              <TouchableOpacity style={[styles.modalBtn,styles.cancelBtn, {backgroundColor: '#FF9800',borderColor:'#FF9800'}]} onPress={submitPickupOTP} disabled={isLoading}>
                 {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.submitBtnText}>Verify & Pickup</Text>}
               </TouchableOpacity>
             </View>
@@ -1002,7 +1022,7 @@ console.log('Reject response:', response.data);
               <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={() => { setShowDeliveryOtpModal(false); setEnteredOtp(''); setDeliveryImage(''); }}>
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalBtn, styles.submitBtn]} onPress={submitDeliveryOTP} disabled={isLoading}>
+              <TouchableOpacity style={[styles.modalBtn,styles.cancelBtn, {backgroundColor: '#FF9800',borderColor:'#FF9800'}]} onPress={submitDeliveryOTP} disabled={isLoading}>
                 {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.submitBtnText}>Verify & Deliver</Text>}
               </TouchableOpacity>
             </View>
@@ -1148,7 +1168,7 @@ const styles = StyleSheet.create({
   requestBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600', marginLeft: 6 },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   statusBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  fareAmount: { fontSize: 24, fontWeight: 'bold', color: '#4CAF50' },
+  fareAmount: { fontSize: 25, fontWeight: 'bold', color: '#4CAF50' },
   parcelInfo: { backgroundColor: '#f9f9f9', padding: 12, borderRadius: 10, marginBottom: 15 },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   infoText: { fontSize: 14, color: '#666' },
@@ -1259,6 +1279,7 @@ const styles = StyleSheet.create({
     color: '#FF1493',
     fontWeight: '600',
   },
+  
 });
 
 export default ParcelDriverHomeFlow;

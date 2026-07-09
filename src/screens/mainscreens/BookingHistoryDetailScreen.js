@@ -171,7 +171,7 @@ const openImage = (image) => {
         {/* Trip Info */}
         <Section title="Trip Info" icon="info">
           <Row label="Schedule Date" value={formatDate(ride.schedule_date || ride.date)} />
-          <Row label="Passengers" value={ride.person ? `${ride.person} person(s)` : '—'} />
+          {/* <Row label="Passengers" value={ride.person ? `${ride.person} person(s)` : '—'} /> */}
           {ride.distance > 0 && <Row label="Distance" value={`${ride.distance} km`} />}
           {ride.duration > 0 && <Row label="Duration" value={`${ride.duration} hr(s)`} />}
         </Section>
@@ -184,7 +184,7 @@ const openImage = (image) => {
             value={ride.basePrice != null ? `₹${parseFloat(ride.basePrice).toFixed(2)}` : ride.plan_price ? `₹${parseFloat(ride.plan_price).toFixed(2)}` : '—'}
           />
         </Section>}
-
+{console.log('ride====>', ride)}
         {/* Fare Breakdown */}
         <Section title="Fare Breakdown" icon="credit-card">
           {ride.is_incity ? (
@@ -217,7 +217,7 @@ const openImage = (image) => {
             })()
           ) : (
             <>
-              <Row label="Plan Price" value={ride.plan_price ? `₹${parseFloat(ride.plan_price).toFixed(2)}` : '—'} />
+              <Row label="Plan Price" value={ride.plan_price ? `₹${parseFloat(ride.plan_price).toFixed(2)}` : ride.basePrice} />
               {totalTopup > 0 && (
                 <Row
                   label={`Topup (${ride.topups?.length || 0})`}

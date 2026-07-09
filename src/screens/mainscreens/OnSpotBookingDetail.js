@@ -117,9 +117,10 @@ const OnSpotBookingDetail = ({ navigation, route }) => {
         </Section>
 
         <Section title="Payment" icon="credit-card">
-          <Row label="Total" value={formatINR(total)} valueStyle={s.paymentTotal} />
+         
           <Row label="Token Paid" value={formatINR(token)} valueStyle={s.paymentToken} />
           <Row label="Balance" value={formatINR(balance)} valueStyle={s.paymentBalance} />
+           <Row label="Total" value={formatINR(total)} valueStyle={s.paymentTotal} />
           <Row label="Payment Mode" value={booking?.payment_mode || '—'} />
         </Section>
 
@@ -132,14 +133,14 @@ const OnSpotBookingDetail = ({ navigation, route }) => {
                 </View>
                 <View style={s.driverMeta}>
                   <Text style={s.driverName}>{booking?.customerName || booking?.userName || booking?.user_name || 'Customer'}</Text>
-                  <TouchableOpacity style={s.callRow} onPress={callCustomer}>
+                  {/* <TouchableOpacity style={s.callRow} onPress={callCustomer}>
                     <Icon name="phone" size={14} color="#4CAF50" />
                     <Text style={s.driverPhone}>{booking?.customerPhone}</Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
-                <TouchableOpacity style={s.callBtn} onPress={callCustomer}>
+                {/* <TouchableOpacity style={s.callBtn} onPress={callCustomer}>
                   <Icon name="phone-call" size={20} color="#fff" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
             </View>
           </Section>

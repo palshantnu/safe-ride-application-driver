@@ -90,6 +90,7 @@ console.log('fetchTrips response:', res);
   }, [navigation, fetchTrips]);
 
   const renderTrip = ({ item }) => {
+    console.log('renderTrip item:', item);
     const tripId = item?.trip_id || item?.id;
     if (!tripId) return null;
 
@@ -131,6 +132,8 @@ console.log('fetchTrips response:', res);
             {item.to_city || item.toCity || item.to || '—'}
           </Text>
           <Text style={styles.subtitle}>{departureDateTime}</Text>
+          <Text style={styles.subtitle}>Total Seats {item?.total_seats}</Text>
+          <Text style={styles.subtitle}>Available Seats {item?.available_seats}</Text>
         </View>
         <Icon name="chevron-right" size={18} color="#ccc" />
       </TouchableOpacity>

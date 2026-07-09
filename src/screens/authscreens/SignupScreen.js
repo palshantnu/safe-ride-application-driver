@@ -513,7 +513,7 @@ const SignupScreen = ({ navigation }) => {
             </Text>
             <Text style={styles.phoneDisplay}>+91 {phone}</Text>
             {otpNumber ? (
-                <Text style={styles.otpDescription}>OTP is {otpNumber}</Text>
+                <Text style={{...styles.otpDescription,fontSize:22}}>OTP is {otpNumber}</Text>
             ) : null}
 
             <View style={styles.inputGroup}>

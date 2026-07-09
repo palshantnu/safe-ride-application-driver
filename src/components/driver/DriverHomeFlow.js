@@ -432,7 +432,8 @@ const [actionBookingId, setActionBookingId] = useState(null);
         Alert.alert('Error', res?.message || 'Failed to accept ride');
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong');
+      console.log('error?.response?.data?.message',error?.response?.data?.message)
+      Alert.alert('Error', error?.response?.data?.message || 'Something went wrong');
     } finally {
       setIsLoading(false);
     }
@@ -440,9 +441,7 @@ const [actionBookingId, setActionBookingId] = useState(null);
 
   const handleReject = () => {
     SoundHelper?.stopNotificationSound();
-    setActionType('REJECT');
-    setCancelReason('');
-    setShowCancelModal(true);
+    submitRejectRide('cancel');
   };
 
   const submitRejectRide = async (reason) => {
@@ -495,29 +494,22 @@ const [actionBookingId, setActionBookingId] = useState(null);
     }
   };
 
-  const submitOnSpotReject = async () => {
+  const submitOnSpotReject = async (bookingNo, reason = 'cancel') => {
     SoundHelper?.stopNotificationSound();
-    if (!selectedOnSpotBookingNo) return;
-    if (!onSpotRejectReason.trim()) {
-      Alert.alert('Error', 'Please enter reject reason');
-      return;
-    }
+    if (!bookingNo) return;
 
     try {
       setIsLoading(true);
       const axios = (await import('../../axios/axiosinstance')).default;
       const res = await axios.post('onspot/captain/reject', {
-        booking_no: selectedOnSpotBookingNo,
-        cancel_reason: onSpotRejectReason.trim(),
+        booking_no: bookingNo,
+        cancel_reason: reason,
       }, {
         headers: { Authorization: `Bearer ${loginToken}` },
       });
 
       if (res?.data?.status) {
         Alert.alert('Success', 'On-spot booking rejected');
-        setShowOnSpotRejectModal(false);
-        setOnSpotRejectReason('');
-        setSelectedOnSpotBookingNo(null);
         if (isOnSpotCaptain) await fetchOnSpotAvailableBookings();
       } else {
         Alert.alert('Error', res?.data?.message || 'Failed to reject');
@@ -668,17 +660,26 @@ console.log('Cancel Booking Response:', res);
   };
 
   const requestCameraPermission = async () => {
-    if (Platform.OS !== 'android') return true;
-    try {
-      const permissions = [PermissionsAndroid.PERMISSIONS.CAMERA];
-      if (Platform.Version >= 33) permissions.push(PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES);
-      else permissions.push(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE);
-      const results = await PermissionsAndroid.requestMultiple(permissions);
-      return Object.values(results).every((r) => r === PermissionsAndroid.RESULTS.GRANTED);
-    } catch {
-      return false;
-    }
-  };
+        if (Platform.OS === 'android') {
+            try {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.CAMERA,
+                    {
+                        title: 'Camera Permission',
+                        message: 'App needs access to your camera to take profile photo',
+                        buttonNeutral: 'Ask Me Later',
+                        buttonNegative: 'Cancel',
+                        buttonPositive: 'OK',
+                    }
+                );
+                return granted === PermissionsAndroid.RESULTS.GRANTED;
+            } catch (err) {
+                console.log('Camera permission error:', err);
+                return false;
+            }
+        }
+        return true;
+    };
 
   const pickImage = () => {
     Alert.alert('Select Image', 'Choose image from', [
@@ -1018,7 +1019,7 @@ console.log('booking====>',booking)
       <Animated.View key={booking.id} style={styles.activeRideCard}>
         <View style={styles.cardHeader}>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
-            <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
+            <Text style={styles.statusBadgeText}>{getStatusText(status).replace("Driver Arrived", "Arrived")}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Icon name="map" size={14} color="#810a45" />
@@ -1057,6 +1058,64 @@ console.log('booking====>',booking)
             <Text style={styles.infoText}>{planName || 'N/A'}</Text>
           </View>
         </View>
+         {/* ASSIGNED status - Show Arrive button */}
+        
+        {status === 'TOKEN_PAID' && (
+          <TouchableOpacity
+            style={[styles.acceptBtn, { backgroundColor: '#00BCD4' }]}
+            onPress={() => handleOnSpotArrived(bookingNo)}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Icon name="navigation" size={20} color="#fff" />
+                <Text style={styles.btnText}>Arrived at Location</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+         {/* ARRIVED status - Show Start Service button (opens OTP modal) */}
+        {status === 'ARRIVED' && (
+          <TouchableOpacity
+            style={[styles.acceptBtn, { backgroundColor: '#FF9800' }]}
+            onPress={() => {
+              setActiveRideForAction(booking);
+              setAssigningBookingId(bookingNo);
+              setEnteredOtp('');
+              setShowOtpModal(true);
+            }}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Icon name="play" size={20} color="#fff" />
+                <Text style={styles.btnText}>Start Service</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {/* STARTED status - Show Complete button */}
+        {status === 'IN_PROGRESS' && (
+          <TouchableOpacity
+            style={[styles.acceptBtn, { backgroundColor: '#4CAF50' }]}
+            onPress={() => handleOnSpotComplete(bookingNo)}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Icon name="check-circle" size={20} color="#fff" />
+                <Text style={styles.btnText}>Complete Service</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
     {userMobile ? (
       <View style={styles.driverCard}>
         <View style={styles.driverRow}>
@@ -1121,65 +1180,9 @@ console.log('booking====>',booking)
           </View>
         </View>
 
-        {/* ASSIGNED status - Show Arrive button */}
-        
-        {status === 'TOKEN_PAID' && (
-          <TouchableOpacity
-            style={[styles.acceptBtn, { backgroundColor: '#00BCD4' }]}
-            onPress={() => handleOnSpotArrived(bookingNo)}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <>
-                <Icon name="navigation" size={20} color="#fff" />
-                <Text style={styles.btnText}>Arrived at Location</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        )}
+       
 
-        {/* ARRIVED status - Show Start Service button (opens OTP modal) */}
-        {status === 'ARRIVED' && (
-          <TouchableOpacity
-            style={[styles.acceptBtn, { backgroundColor: '#FF9800' }]}
-            onPress={() => {
-              setActiveRideForAction(booking);
-              setAssigningBookingId(bookingNo);
-              setEnteredOtp('');
-              setShowOtpModal(true);
-            }}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <>
-                <Icon name="play" size={20} color="#fff" />
-                <Text style={styles.btnText}>Start Service</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        )}
-
-        {/* STARTED status - Show Complete button */}
-        {status === 'IN_PROGRESS' && (
-          <TouchableOpacity
-            style={[styles.acceptBtn, { backgroundColor: '#4CAF50' }]}
-            onPress={() => handleOnSpotComplete(bookingNo)}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <>
-                <Icon name="check-circle" size={20} color="#fff" />
-                <Text style={styles.btnText}>Complete Service</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        )}
+       
 
         {/* COMPLETED status - Show completion message */}
         {status === 'COMPLETED' && (
@@ -1249,7 +1252,7 @@ console.log('booking====>',booking)
                   {'\n'}
                   <Text style={{fontSize:12}}>Captain amount</Text>
                 </Text>
-         <Text style={styles.fareAmount}>₹{booking.total_fare}{'\n'}<Text style={{fontSize:12}}>Ride amount</Text></Text>
+         <Text style={{...styles.fareAmount,color:'red'}}>₹{booking.total_fare}{'\n'}<Text style={{fontSize:12}}>Ride amount</Text></Text>
               </View>
               {/* <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Icon name="map" size={14} color="#FF1493" />
@@ -1335,10 +1338,89 @@ console.log('booking====>',booking)
           </View>
            <View>
           <Text style={styles.fareAmount}>₹{booking.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
-          <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{booking.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
+          <Text style={{...styles.fareAmount, color: 'red',fontSize:12}}>  ₹{booking.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
         </View>
         </View>
+ {(status === 'TOKEN_PAID' || status === 'ASSIGN') && (
+          <TouchableOpacity style={styles.acceptBtn} onPress={() => handleArrived(bookingId)} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color="#fff" size="small" /> : (
+              <>
+                <Icon name="navigation" size={20} color="#fff" />
+                <Text style={styles.btnText}>Arrived at Pickup</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
 
+        {status === 'BALANCE_PAID' && (
+          <TouchableOpacity style={styles.acceptBtn} onPress={() => handleStartRide(booking)} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color="#fff" size="small" /> : (
+              <>
+                <Icon name="play" size={20} color="#fff" />
+                <Text style={styles.btnText}>Start Ride</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {status === 'STARTED' && (
+          <View style={styles.buttonRow}>
+            {!isDriverServiceRide(booking) && (
+              <TouchableOpacity
+                style={[styles.acceptBtn, { backgroundColor: '#FF9800', flex: 1 }]}
+                onPress={() => handleRequestTopup(booking)}
+                disabled={isLoading}
+              >
+                <Icon name="plus-circle" size={20} color="#fff" />
+                <Text style={styles.btnText}>Request Topup</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={[styles.acceptBtn, { backgroundColor: '#4CAF50', flex: 1 }]}
+              onPress={() => handleCompleteRide(booking)}
+              disabled={isLoading}
+            >
+              <Icon name="check-circle" size={20} color="#fff" />
+              <Text style={styles.btnText}>Complete Ride</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+ {status === 'TOPUP_PENDING' && latestTopup?.status === 'PAID' && (
+          <TouchableOpacity
+            style={[styles.acceptBtn, { backgroundColor: '#2196F3' }]}
+            onPress={() => {
+              setSelectedTopupId(latestTopup.id);
+              setShowTopupOtpModal(true);
+            }}
+          >
+            <Icon name="shield" size={20} color="#fff" />
+            <Text style={styles.btnText}>Verify Topup</Text>
+          </TouchableOpacity>
+        )}
+        {booking.token_paid == 1 ? (
+          <View style={styles.driverCard}>
+            <View style={styles.driverRow}>
+              <View style={styles.driverAvatar}>
+                <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
+              </View>
+              <View style={styles.driverMeta}>
+                <Text style={styles.driverName}>{booking.user_name || 'Passenger'}</Text>
+                {booking.user_mobile ? (
+                  <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)}>
+                    <Icon name="phone" size={14} color="#4CAF50" />
+                    <Text style={styles.driverPhone}>{booking.user_mobile}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              {booking.user_mobile ? (
+                <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)}>
+                  <Icon name="phone-call" size={20} color="#fff" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
         <View style={styles.locationContainer}>
           <View style={styles.locationEntryRow}>
             <View style={styles.dotCol}>
@@ -1424,29 +1506,7 @@ console.log('booking====>',booking)
             <Text style={styles.infoText}>{booking.plan_km} km</Text>
           </View>
         </View>
-        {booking.token_paid == 1 ? (
-          <View style={styles.driverCard}>
-            <View style={styles.driverRow}>
-              <View style={styles.driverAvatar}>
-                <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
-              </View>
-              <View style={styles.driverMeta}>
-                <Text style={styles.driverName}>{booking.user_name || 'Passenger'}</Text>
-                {booking.user_mobile ? (
-                  <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)}>
-                    <Icon name="phone" size={14} color="#4CAF50" />
-                    <Text style={styles.driverPhone}>{booking.user_mobile}</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-              {booking.user_mobile ? (
-                <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)}>
-                  <Icon name="phone-call" size={20} color="#fff" />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          </View>
-        ) : null}
+        
   {/* {booking.token_paid == 1 &&    <View style={{...styles.customerInfo,justifyContent:'space-between',width:'100%'}}>
   <View style={styles.customerDetail}>
     <Icon name="phone" size={14} color="#999" />
@@ -1473,51 +1533,7 @@ paddingHorizontal:20}}
   </View>
 </View>} */}
 
-        {(status === 'TOKEN_PAID' || status === 'ASSIGN') && (
-          <TouchableOpacity style={styles.acceptBtn} onPress={() => handleArrived(bookingId)} disabled={isLoading}>
-            {isLoading ? <ActivityIndicator color="#fff" size="small" /> : (
-              <>
-                <Icon name="navigation" size={20} color="#fff" />
-                <Text style={styles.btnText}>Arrived at Pickup</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        )}
-
-        {status === 'BALANCE_PAID' && (
-          <TouchableOpacity style={styles.acceptBtn} onPress={() => handleStartRide(booking)} disabled={isLoading}>
-            {isLoading ? <ActivityIndicator color="#fff" size="small" /> : (
-              <>
-                <Icon name="play" size={20} color="#fff" />
-                <Text style={styles.btnText}>Start Ride</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        )}
-
-        {status === 'STARTED' && (
-          <View style={styles.buttonRow}>
-            {!isDriverServiceRide(booking) && (
-              <TouchableOpacity
-                style={[styles.acceptBtn, { backgroundColor: '#FF9800', flex: 1 }]}
-                onPress={() => handleRequestTopup(booking)}
-                disabled={isLoading}
-              >
-                <Icon name="plus-circle" size={20} color="#fff" />
-                <Text style={styles.btnText}>Request Topup</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={[styles.acceptBtn, { backgroundColor: '#4CAF50', flex: 1 }]}
-              onPress={() => handleCompleteRide(booking)}
-              disabled={isLoading}
-            >
-              <Icon name="check-circle" size={20} color="#fff" />
-              <Text style={styles.btnText}>Complete Ride</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+       
 
         {['SEARCHING', 'ASSIGN', 'TOKEN_PAID', 'ARRIVED', 'ACCEPTED'].includes(status) && (
           <TouchableOpacity style={styles.cancelRideBtn} onPress={() => handleCancelRide(bookingId)} disabled={isLoading}>
@@ -1534,18 +1550,7 @@ paddingHorizontal:20}}
           </View>
         )}
 
-        {status === 'TOPUP_PENDING' && latestTopup?.status === 'PAID' && (
-          <TouchableOpacity
-            style={[styles.acceptBtn, { backgroundColor: '#2196F3' }]}
-            onPress={() => {
-              setSelectedTopupId(latestTopup.id);
-              setShowTopupOtpModal(true);
-            }}
-          >
-            <Icon name="shield" size={20} color="#fff" />
-            <Text style={styles.btnText}>Verify Topup</Text>
-          </TouchableOpacity>
-        )}
+       
 
         {status === 'COMPLETED' && (
           <View style={styles.waitingCard}>
@@ -1568,25 +1573,25 @@ paddingHorizontal:20}}
         </View>
        {rideRequest?.service_name === 'In City' ? 
         <View>  
-        <Text style={styles.fareAmount}>
+        <Text style={{...styles.fareAmount,fontSize:28}}>
           ₹{(() => {
             const calculatedAccessFee = getAccessFeeValue(rideRequest.total_fare, rideRequest.access_fee, rideRequest.access_fee_type);
             const captainAmount = parseFloat(rideRequest.total_fare || 0) - parseFloat(rideRequest.platform_fee || 0) - calculatedAccessFee;
             return parseFloat(captainAmount.toFixed(2));
           })()}{' '}
           {'\n'}
-          <Text style={{fontSize:12}}>Captain amount</Text>
+          <Text style={{fontSize:16}}>Your amount</Text>
         </Text>
-         <Text style={styles.fareAmount}>₹{rideRequest.total_fare}{'\n'}<Text style={{fontSize:12}}>Ride amount</Text></Text>
+         <Text style={{...styles.fareAmount,color:'red'}}>₹{rideRequest.total_fare}{'\n'}<Text style={{fontSize:12}}>Ride amount</Text></Text>
         </View>
         : 
         <View>
          <Text style={styles.fareAmount}>₹{rideRequest.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
-          <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{rideRequest.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
+          <Text style={{...styles.fareAmount, color: 'red',fontSize:12}}>  ₹{rideRequest.total_fare}{'\n'} <Text style={{fontSize:12}}>Ride amount</Text></Text>
         </View>}
         
       </View>
-      <View style={{...styles.requestBadge,marginTop:-10,marginBottom:15,alignSelf:'flex-start'}}>
+      <View style={{...styles.requestBadge,marginTop:-10,marginBottom:15,alignSelf:'flex-start',backgroundColor:'#2196F3'}}>
       <Icon name="bell" size={16} color="#fff" />
       <Text style={styles.requestBadgeText}>{rideRequest.service_name}</Text>
       </View>
@@ -1694,7 +1699,7 @@ paddingHorizontal:20}}
           </View>
            <View>
                  <Text style={styles.fareAmount}>₹{booking.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
-                          <Text style={{...styles.fareAmount, color: '#000',fontSize:12}}>  ₹{booking.total_fare}{'\n'} <Text style={{fontSize:12}}>Service amount</Text></Text>
+                          <Text style={{...styles.fareAmount, color: 'red',fontSize:12}}>  ₹{booking.total_fare}{'\n'} <Text style={{fontSize:12}}>Service amount</Text></Text>
               </View>
         </View>
 
@@ -1739,9 +1744,7 @@ paddingHorizontal:20}}
           <TouchableOpacity
             style={styles.rejectBtn}
             onPress={() => {
-              setSelectedOnSpotBookingNo(bookingNo || booking?.id);
-              setOnSpotRejectReason('');
-              setShowOnSpotRejectModal(true);
+              submitOnSpotReject(bookingNo || booking?.id, 'cancel');
             }}
             disabled={isLoading}
           >

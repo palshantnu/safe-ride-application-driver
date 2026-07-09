@@ -244,7 +244,7 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
           {renderInfoRow('Pickup Date', formatDate(delivery.pickup_date), 'calendar-outline')}
           {renderInfoRow('Pickup Time', formatTime(delivery.pickup_time), 'time-outline')}
           {renderInfoRow('Customer Name', delivery.customerName, 'person-outline')}
-          {renderInfoRow('Customer Phone', delivery.customerPhone, 'call-outline')}
+          {/* {renderInfoRow('Customer Phone', delivery.customerPhone, 'call-outline')} */}
           {delivery.pickup_otp_verified === 1 && (
             <View style={styles.verifiedBadge}>
               <Icon name="checkmark-circle" size={14} color="#4CAF50" />
@@ -269,7 +269,7 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
           </View>
           <View style={styles.divider} />
           {renderInfoRow('Receiver Name', delivery.receiver_name, 'person-outline')}
-          {renderInfoRow('Receiver Phone', delivery.receiver_mobile, 'call-outline')}
+          {/* {renderInfoRow('Receiver Phone', delivery.receiver_mobile, 'call-outline')} */}
           {delivery.delivery_otp_verified === 1 && (
             <View style={styles.verifiedBadge}>
               <Icon name="checkmark-circle" size={14} color="#4CAF50" />
@@ -297,9 +297,10 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
       {/* Payment Details */}
       {renderInfoCard('Payment Details', 'card-outline', (
         <>
-          {renderInfoRow('Your amount ', `₹${delivery.amount?.toFixed(2) || '0.00'}`, 'cash-outline')}
+         
           {renderInfoRow('Token Amount', `₹${delivery.token_amount?.toFixed(2) || '0.00'}`, 'key-outline')}
           {renderInfoRow('Balance Amount', `₹${delivery.balance_amount?.toFixed(2) || '0.00'}`, 'cash-outline')}
+           {renderInfoRow('Total amount ', `₹${delivery.amount?.toFixed(2) || '0.00'}`, 'cash-outline')}
           {delivery.earnings && (
             <View style={styles.earningsContainer}>
               <Icon name="trophy-outline" size={14} color="#4CAF50" />
@@ -320,7 +321,7 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
                 onPress={() => handleViewImage(delivery.pickup_image)}
               >
                 <Image 
-                  source={{ uri: delivery.pickup_image }} 
+                  source={{ uri: `https://sigiride.com/uploads/parcel_images/${delivery.pickup_image}` }} 
                   style={styles.image}
                   resizeMode="cover"
                 />
@@ -333,7 +334,7 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
                 onPress={() => handleViewImage(delivery.delivery_image)}
               >
                 <Image 
-                  source={{ uri: delivery.delivery_image }} 
+                  source={{ uri: `https://sigiride.com/uploads/parcel_images/${delivery.delivery_image}` }} 
                   style={styles.image}
                   resizeMode="cover"
                 />
@@ -375,7 +376,7 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
           </TouchableOpacity>
           {selectedImage && (
             <Image 
-              source={{ uri: selectedImage }} 
+              source={{ uri: `https://sigiride.com/uploads/parcel_images/${selectedImage}` }} 
               style={styles.modalImage}
               resizeMode="contain"
             />
