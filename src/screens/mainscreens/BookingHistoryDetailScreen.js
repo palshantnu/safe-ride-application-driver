@@ -296,6 +296,7 @@ const openImage = (image) => {
         {/* Meter Images */}
    {ride.meter_images && ride.meter_images.length > 0 && (
   <Section title={`Meter Images (${ride.meter_images.length})`} icon="camera">
+    <Text style={s.expiryNotice}>Image will be expired after 15 days.</Text>
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -481,6 +482,12 @@ const s = StyleSheet.create({
   topupReason: { fontSize: 13, color: '#6B7280' },
   topupMeta: { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
 
+  expiryNotice: {
+    fontSize: 12,
+    color: '#FF3B30',
+    marginBottom: 6,
+    fontWeight: '500',
+  },
   imageScroll: { marginVertical: 8 },
   meterImage: { width: 120, height: 90, borderRadius: 10, marginRight: 10 },
 

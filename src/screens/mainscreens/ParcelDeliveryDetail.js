@@ -314,6 +314,7 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
       {(delivery.pickup_image || delivery.delivery_image) && (
         <View style={styles.imagesContainer}>
           <Text style={styles.sectionTitle}>Proof Images</Text>
+          <Text style={styles.expiryNotice}>Image will be expired after 15 days.</Text>
           <View style={styles.imagesRow}>
             {delivery.pickup_image && (
               <TouchableOpacity 
@@ -592,6 +593,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 12,
+  },
+  expiryNotice: {
+    fontSize: 12,
+    color: '#FF3B30',
+    marginBottom: 10,
+    fontWeight: '500',
   },
   imagesRow: {
     flexDirection: 'row',

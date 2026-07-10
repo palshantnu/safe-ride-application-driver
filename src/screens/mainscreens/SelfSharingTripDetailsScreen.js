@@ -316,7 +316,7 @@ const fetchTrip = async () => {
               <View key={passenger.id || idx} style={s.passengerItem}>
                 <Icon name="user" size={14} color="#FF1493" style={{ marginRight: 4 }} />
                 <Text style={s.passengerText}>
-                  {passenger.name} ({passenger.age} Yrs)
+                  {passenger.name} ({passenger.age} Yrs, {passenger.gender || 'N/A'})
                 </Text>
               </View>
             ))}
