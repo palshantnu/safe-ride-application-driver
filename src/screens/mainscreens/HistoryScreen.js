@@ -322,6 +322,8 @@ const DriverHistoryScreen = ({ navigation }) => {
         if (res?.pagination) {
           setHasMore(pageNum < res.pagination.total_pages);
           setTotalCount(res.pagination.total);
+        }else{
+           setTotalCount(res.total);
         }
         
         calculateStats(formattedHistory);

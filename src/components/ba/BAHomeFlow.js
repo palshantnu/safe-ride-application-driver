@@ -415,21 +415,15 @@ const parcelServices = baServices.filter((s) =>
       setIsAssigning(false);
     }
   };
-const submitParcelReject = async () => {
-  if (!rejectReason.trim()) {
-    Alert.alert(
-      'Validation',
-      'Please enter reject reason'
-    );
-    return;
-  }
-console.log('Submitting reject for parcel ID:', selectedParcelId, 'with reason:', rejectReason);
+const submitParcelReject = async (parcelId) => {
+  
+// console.log('Submitting reject for parcel ID:', selectedParcelId, 'with reason:', rejectReason);
   try {
     const res = await axios.post(
       PARCEL_API.REJECT,
       {
-        parcel_booking_id: selectedParcelId,
-        reject_reason: rejectReason,
+        parcel_booking_id: parcelId,
+        reject_reason: 'reject',
       },
       {
         headers: {
@@ -676,7 +670,8 @@ const renderParcelRequestCard = (parcel) => (
   setSelectedParcelId(
     parcel.parcel_booking_id,
   );
-  setShowRejectModal(true);
+  submitParcelReject(parcel.parcel_booking_id);
+  
 }}>
         <Icon name="x" size={20} color="#fff" />
         <Text style={styles.btnText}>Reject</Text>
