@@ -48,6 +48,9 @@ import {
   UPDATE_BA_PROFILE_REQUEST,
   UPDATE_BA_PROFILE_SUCCESS,
   UPDATE_BA_PROFILE_FAILURE,
+  GET_NOTIFICATIONS_REQUEST,
+  GET_NOTIFICATIONS_SUCCESS,
+  GET_NOTIFICATIONS_FAILURE,
 } from './action-types';
 
 import EndPoints from '../../services/EndPoints';
@@ -795,4 +798,29 @@ export const GET_CAPTAIN_POPUPS = () => async () => {
 // Logout
 export const LOGOUT = () => (dispatch) => {
   dispatch({ type: LOGOUT_SUCCESS });
+};
+
+// Get Notifications
+export const GET_NOTIFICATIONS = () => async (dispatch) => {
+  dispatch({ type: GET_NOTIFICATIONS_REQUEST });
+
+  try {
+    const response = await axiosinstance.get(EndPoints.captainNotifications);
+    console.log('GET_NOTIFICATIONS Response:', response.data);
+
+    if (response.data?.status) {
+      dispatch({
+        type: GET_NOTIFICATIONS_SUCCESS,
+        payload: response.data,
+      });
+    } else {
+      dispatch({ type: GET_NOTIFICATIONS_FAILURE });
+    }
+
+    return response.data;
+  } catch (error) {
+    console.log('GET_NOTIFICATIONS Error:', error);
+    dispatch({ type: GET_NOTIFICATIONS_FAILURE });
+    return { status: false, message: error.response?.data?.message || 'Network error', data: [] };
+  }
 };

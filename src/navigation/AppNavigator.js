@@ -31,6 +31,7 @@ import SelfSharingTripDetailsScreen from '../screens/mainscreens/SelfSharingTrip
 import SelfSharingCreateTripScreen from '../screens/mainscreens/SelfSharingCreateTripScreen';
 import ParcelDeliveryDetail from '../screens/mainscreens/ParcelDeliveryDetail';
 import BAParcelHistoryScreen from '../components/ba/BAParcelHistoryScreen';
+import NotificationScreen from '../screens/mainscreens/NotificationScreen';
 
 
 
@@ -298,6 +299,11 @@ const AppNavigator = () => {
 <Stack.Screen 
   name="OnSpotBookingDetail" 
   component={OnSpotBookingDetail} 
+  options={{ headerShown: false }}
+/>
+<Stack.Screen 
+  name="Notifications" 
+  component={NotificationScreen} 
   options={{ headerShown: false }}
 />
           </>

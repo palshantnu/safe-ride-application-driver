@@ -89,11 +89,11 @@ fetchPopup();
               </>
             ) : null}
 
-            <TouchableOpacity style={styles.notificationBtn}>
+            <TouchableOpacity style={styles.notificationBtn} onPress={() => navigation.navigate('Notifications')}>
               <Icon name="bell" size={22} color="#fff" />
-              <View style={styles.notificationBadge}>
-                <Text style={styles.notificationCount}>3</Text>
-              </View>
+              {/* <View style={styles.notificationBadge}>
+                <Text style={styles.notificationCount}>0</Text>
+              </View> */}
             </TouchableOpacity>
           </View>
         </View>

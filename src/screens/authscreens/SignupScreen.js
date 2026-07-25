@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+    import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -168,6 +168,16 @@ const SignupScreen = ({ navigation }) => {
     };
 
     const validateBusinessFields = () => {
+        if (!pinCode) {
+            Alert.alert('Error', 'Please enter PIN code');
+            return false;
+        }
+
+        if (!validatePinCode(pinCode)) {
+            Alert.alert('Error', 'Please enter a valid 6-digit PIN code');
+            return false;
+        }
+
         if (selectedServices.length === 0) {
             Alert.alert('Error', 'Please select at least one service');
             return false;
@@ -281,6 +291,7 @@ const SignupScreen = ({ navigation }) => {
                 ba_mobile: parseInt(phone),
                 otp: parseInt(otp),
                 ba_name: fullName,
+                pincode: pinCode,
                 services: selectedServices,
             };
 
@@ -477,9 +488,27 @@ const SignupScreen = ({ navigation }) => {
         </>
     );
 
-    const renderBusinessFields = () => (
+const renderBusinessFields = () => (
         <>
-            <Text style={[styles.sectionTitle, { marginTop: 8 }]}>Select Services</Text>
+            <Text style={[styles.sectionTitle, { marginTop: 8 }]}>Location Details</Text>
+
+            <View style={styles.inputGroup}>
+                <Text style={styles.label}>PIN Code <Text style={styles.required}>*</Text></Text>
+                <View style={styles.inputWrapper}>
+                    <Icon name="map-pin" size={20} color="#FF1493" style={styles.inputIcon} />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter 6-digit PIN code"
+                        placeholderTextColor="#000"
+                        value={pinCode}
+                        onChangeText={(text) => setPinCode(formatPinCode(text))}
+                        keyboardType="numeric"
+                        maxLength={6}
+                    />
+                </View>
+            </View>
+
+            <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Select Services</Text>
             <Text style={styles.hintText}>You can select multiple services</Text>
             <View style={styles.servicesContainer}>
                 {serviceTypes?.map((service) => (

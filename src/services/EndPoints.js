@@ -40,6 +40,9 @@ const EndPoints = {
   // BA profile
   baProfile: '/ba/profile',
   baUpdateProfile: '/ba/update',
+
+  // Notifications
+  captainNotifications: 'notifications/captain',
 };
 export default EndPoints;
 
