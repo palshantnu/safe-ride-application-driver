@@ -99,18 +99,18 @@ const [showBookingRejectModal, setShowBookingRejectModal] = useState(false);
 const [selectedBookingId, setSelectedBookingId] = useState(null);
 const [bookingRejectReason, setBookingRejectReason] = useState('');
 
-const submitBookingReject = async () => {
-  if (!bookingRejectReason.trim()) {
-    Alert.alert('Error', 'Please enter reason');
-    return;
-  }
+const submitBookingReject = async (id) => {
+  // if (!bookingRejectReason.trim()) {
+  //   Alert.alert('Error', 'Please enter reason');
+  //   return;
+  // }
   setIsLoading(true);
   try {
     const res = await dispatch(
       REJECT_BOOKING({
         role: 'business_associate',
-        booking_id: selectedBookingId,
-        cancel_reason: bookingRejectReason.trim()
+        booking_id: id,
+        cancel_reason: 'reject'
       })
     );
     if (res?.status) {
@@ -462,6 +462,7 @@ console.log('res====>',res)
 };
   const renderBABookingCard = (booking) => (
     <View key={booking.booking_id} style={styles.activeRideCard}>
+      {console.log('Rendering booking card for booking:', booking)}
       <View style={styles.cardHeader}>
         <View>
         <View style={styles.requestBadge}>
@@ -487,6 +488,17 @@ console.log('res====>',res)
           </View>
         </View>
 
+    {booking?.to_city &&    <View style={styles.locationEntryRow}>
+           <View style={styles.dotCol}>
+            <View style={styles.pickupDot} />
+            <View style={styles.locationLine} />
+          </View>
+       
+   <View style={styles.locationTextCol}>
+            <Text style={styles.locationLabel}>To City</Text>
+            <Text style={styles.dropText}>{booking.to_city}</Text>
+          </View>
+        </View>}
         <View style={styles.locationEntryRow}>
           <View style={styles.dotCol}>
             <View style={styles.dropDot} />
@@ -513,7 +525,7 @@ console.log('res====>',res)
         </View>
       </View>
 
-      {booking.user_mobile ? (
+      {/* {booking.user_mobile ? (
         <View style={styles.driverCard}>
           <View style={styles.driverRow}>
             <View style={styles.driverAvatar}>
@@ -531,16 +543,12 @@ console.log('res====>',res)
             </TouchableOpacity>
           </View>
         </View>
-      ) : null}
+      ) : null} */}
 
       <View style={styles.buttonRow}>
         <TouchableOpacity
           style={styles.rejectBtn}
-          onPress={() => {
-            setSelectedBookingId(booking.booking_id);
-            setBookingRejectReason('');
-            setShowBookingRejectModal(true);
-          }}
+          onPress={() => submitBookingReject(booking.booking_id)}
           disabled={isLoading}
         >
           <Icon name="x" size={20} color="#fff" />
