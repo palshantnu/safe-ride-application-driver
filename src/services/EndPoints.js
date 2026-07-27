@@ -19,6 +19,7 @@ const EndPoints = {
   driverprofile: '/driver-profile-get',
   getOnlineStatus: '/driver/online-status',
   updateOnlineStatus: '/driver/online-update-status',
+  baBookingHistory: '/ba/my-bookings',
   baBookings: '/ba/bookings',
   driverBookingHistory: '/driver/getdriverbookinghistory',
   baCreateDriver: '/ba/create/driver',

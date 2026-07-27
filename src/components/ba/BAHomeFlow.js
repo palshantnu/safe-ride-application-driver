@@ -23,6 +23,7 @@ import {
   BA_ASSIGN_DRIVER,
   BA_GET_DRIVER_LIST,
   GET_BA_BOOKING_HISTORY,
+  GET_BA_NEW_BOOKINGS,
   REJECT_BOOKING,
   CANCEL_BOOKING,
   COMPLETE_RIDE,
@@ -224,6 +225,8 @@ setShowParcelAssignModal(false);
 
   const [baPendingBookings, setBaPendingBookings] = useState([]);
   const [bsActiveBookings, setBsActiveBookings] = useState([]);
+  const [baNewBookings, setBaNewBookings] = useState([]);
+  const [baBookingHistory, setBaBookingHistory] = useState([]);
 
   // Sound tracking for new SEARCHING booking
   const prevPendingBookingIdRef = useRef(null);
@@ -239,16 +242,33 @@ const prevParcelBookingIdRef = useRef(null);
 
   const fetchBABookings = async () => {
     try {
-      const res = await dispatch(GET_BA_BOOKING_HISTORY());
+      const res = await dispatch(GET_BA_NEW_BOOKINGS());
       if (res?.status && Array.isArray(res.data)) {
         const searching = res.data.filter((b) => b.status === 'SEARCHING');
         setBaPendingBookings(searching);
+        setBaNewBookings(res.data);
       } else {
         setBaPendingBookings([]);
+        setBaNewBookings([]);
       }
     } catch (e) {
       console.log('fetchBABookings error:', e);
       setBaPendingBookings([]);
+      setBaNewBookings([]);
+    }
+  };
+
+  const fetchBAHistory = async () => {
+    try {
+      const res = await dispatch(GET_BA_BOOKING_HISTORY());
+      if (res?.status && Array.isArray(res.data)) {
+        setBaBookingHistory(res.data);
+      } else {
+        setBaBookingHistory([]);
+      }
+    } catch (e) {
+      console.log('fetchBAHistory error:', e);
+      setBaBookingHistory([]);
     }
   };
 
@@ -283,12 +303,14 @@ const prevParcelBookingIdRef = useRef(null);
   useEffect(() => {
     if (!userData?.ba_name) return;
     fetchBABookings();
+    fetchBAHistory();
     fetchCurrentRide();
     loadBADrivers();
 fetchParcelRequests();
 fetchCurrentParcels();
     const interval = setInterval(() => {
       fetchBABookings();
+      fetchBAHistory();
       fetchCurrentRide();
          fetchParcelRequests();
     fetchCurrentParcels();
@@ -467,7 +489,7 @@ console.log('res====>',res)
           <Text style={styles.requestBadgeText}>{booking.service_name}</Text>
         </View>
         </View>
-        <Text style={styles.fareAmount}>₹{booking.plan_price}</Text>
+        <Text style={styles.fareAmount}>₹{booking.total_fare}</Text>
       </View>
 
       <View style={styles.locationContainer}>
@@ -829,7 +851,7 @@ const renderCurrentParcelCard = parcel => (
             <Text style={styles.statusBadgeText}>{driverstatus === 'REASSIGN' ? getStatusText(driverstatus) : getStatusText(status)}</Text>
           </View>
          
-          <Text style={styles.fareAmount}>₹{booking?.plan_price}</Text>
+          <Text style={styles.fareAmount}>₹{booking?.total_fare}</Text>
         </View>
 {service_name && <View style={{backgroundColor: '#2196F3', alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 10,marginTop:-10}}>
             <Text style={styles.statusBadgeText}>{service_name}</Text>
@@ -916,27 +938,48 @@ const renderCurrentParcelCard = parcel => (
     );
   };
 
-  const StatsCard = () => (
-    <View style={styles.statsContainer}>
-      <View style={styles.statItem}>
-        <Icon name="calendar" size={24} color="#FF1493" />
-        <Text style={styles.statValue}>0</Text>
-        <Text style={styles.statLabel}>Today's Rides</Text>
+  const StatsCard = () => {
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0];
+
+    const todaysBookings = (baBookingHistory || []).filter((booking) => {
+      const bookingDate = booking?.schedule_date || booking?.created_at;
+      if (!bookingDate) return false;
+      return bookingDate.split('T')[0] === todayString;
+    });
+
+    const todaysEarnings = todaysBookings.reduce((sum, booking) => {
+      const price = Number(booking?.total_fare || booking?.plan_price || 0);
+      return sum + (Number.isFinite(price) ? price : 0);
+    }, 0);
+
+    const ratedBookings = todaysBookings.filter((booking) => Number(booking?.user_rated) > 0);
+    const averageRating = ratedBookings.length > 0
+      ? ratedBookings.reduce((sum, booking) => sum + Number(booking.user_rated || 0), 0) / ratedBookings.length
+      : 0;
+
+    return (
+      <View style={styles.statsContainer}>
+        <View style={styles.statItem}>
+          <Icon name="calendar" size={24} color="#FF1493" />
+          <Text style={styles.statValue}>{todaysBookings.length}</Text>
+          <Text style={styles.statLabel}>Today's Rides</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Icon name="rupee" size={24} color="#4CAF50" />
+          <Text style={styles.statValue}>₹{todaysEarnings}</Text>
+          <Text style={styles.statLabel}>Today's Earnings</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Icon name="star" size={24} color="#FFD700" />
+          <Text style={styles.statValue}>{averageRating.toFixed(1)}</Text>
+          <Text style={styles.statLabel}>Rating</Text>
+        </View>
       </View>
-      <View style={styles.statDivider} />
-      <View style={styles.statItem}>
-        <Icon name="rupee" size={24} color="#4CAF50" />
-        <Text style={styles.statValue}>₹0</Text>
-        <Text style={styles.statLabel}>Today's Earnings</Text>
-      </View>
-      <View style={styles.statDivider} />
-      <View style={styles.statItem}>
-        <Icon name="star" size={24} color="#FFD700" />
-        <Text style={styles.statValue}>4.8</Text>
-        <Text style={styles.statLabel}>Rating</Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.outer}>
@@ -1049,7 +1092,64 @@ onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
           </>
         ) : null}
 
-       
+        {/* Recent Bookings Section - last 2 bookings from history */}
+        {baBookingHistory.length > 0 ? (
+          <>
+            <Text style={[styles.sectionTitle, { marginHorizontal: 16, marginTop: 8 }]}>Recent Bookings</Text>
+            {baBookingHistory.slice(0, 2).map((booking) => (
+              <TouchableOpacity
+                key={booking.booking_id || booking.id}
+                style={styles.recentBookingCard}
+                onPress={() => navigation.navigate('BookingHistoryDetail', { ride: {
+                  ...booking,
+                  id: booking.booking_id || booking.id,
+                  booking_id: booking.booking_id,
+                  pickup: booking.pickup_address || booking.pickup_city,
+                  destination: booking.drop_address || booking.drop_city,
+                  price: booking.total_fare,
+                  date: booking.schedule_date,
+                  status: booking.status?.toLowerCase(),
+                  riderName: booking.user_name || 'Customer',
+                  userMobile: booking.user_mobile,
+                  earnings: booking.driver_amount || 0,
+                  distance: booking.plan_km || 0,
+                  duration: booking.plan_hour || 0,
+                  person: booking.person,
+                  created_at: booking.created_at,
+                  service_name: booking.service_name,
+                  to_city: booking.to_city,
+                }})}
+              >
+                <View style={styles.recentBookingHeader}>
+                  <View style={[styles.statusDot, { backgroundColor: getStatusColor(booking.status) }]} />
+                  <Text style={styles.recentBookingStatus}>{getStatusText(booking.status)}</Text>
+                  <Text style={styles.recentBookingFare}>₹{booking.total_fare}</Text>
+                </View>
+                <View style={styles.recentBookingLocRow}>
+                  <Icon name="map-pin" size={12} color="#4CAF50" />
+                  <Text style={styles.recentBookingLocText} numberOfLines={1}>{booking.pickup_address || booking.pickup_city}</Text>
+                </View>
+                <View style={styles.recentBookingLocRow}>
+                  <Icon name="flag" size={12} color="#FF5252" />
+                  <Text style={styles.recentBookingLocText} numberOfLines={1}>{booking.drop_address || booking.drop_city}</Text>
+                </View>
+                <View style={styles.recentBookingFooter}>
+                  <Text style={styles.recentBookingService}>{booking.service_name}</Text>
+                  <Text style={styles.recentBookingDate}>
+                    {booking.schedule_date ? new Date(booking.schedule_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : ''}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={styles.viewAllBtn}
+              onPress={() => navigation.navigate('History')}
+            >
+              <Text style={styles.viewAllBtnText}>View All Bookings</Text>
+              <Icon name="chevron-right" size={18} color="#FF1493" />
+            </TouchableOpacity>
+          </>
+        ) : null}
 
         {/* Divider */}
         <View style={{ height: 30 }} />
@@ -1402,6 +1502,89 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
     fontWeight: '800',
+  },
+
+  // Recent Bookings Styles
+  recentBookingCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    marginHorizontal: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  recentBookingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 6,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  recentBookingStatus: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#555',
+    flex: 1,
+  },
+  recentBookingFare: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  recentBookingLocRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  recentBookingLocText: {
+    fontSize: 13,
+    color: '#666',
+    flex: 1,
+  },
+  recentBookingFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  recentBookingService: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2196F3',
+  },
+  recentBookingDate: {
+    fontSize: 11,
+    color: '#999',
+  },
+  viewAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+    marginBottom: 10,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#FF1493',
+    backgroundColor: '#FFF0F7',
+    gap: 6,
+  },
+  viewAllBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FF1493',
   },
 
 });

@@ -26,6 +26,8 @@ import LinearGradient from 'react-native-linear-gradient';
 const ProfileInformationScreen = ({ navigation }) => {
     const { userData, driverProfileData } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
+    const serviceId = Number(userData?.service_id);
+    const shouldShowVehicleFields = ![71, 75, 77].includes(serviceId);
 
     useEffect(() => {
         fetchProfile();
@@ -226,37 +228,41 @@ const requestStoragePermission = async () => {
     };
 
     const handleSubmit = async () => {
-        // Validation for all mandatory profile details
-        if (!vehicleType.trim()) {
-            Alert.alert('Error', 'Please select vehicle type');
-            return;
-        }
-        if (!vehicleMake.trim()) {
-            Alert.alert('Error', 'Please enter vehicle make');
-            return;
-        }
-        if (!vehicleModel.trim()) {
-            Alert.alert('Error', 'Please enter vehicle model');
-            return;
-        }
-        if (!vehicleYear.trim()) {
-            Alert.alert('Error', 'Please enter vehicle year');
-            return;
-        }
-        if (!vehicleColor.trim()) {
-            Alert.alert('Error', 'Please enter vehicle color');
-            return;
-        }
-        if (!vehicleNumber.trim()) {
-            Alert.alert('Error', 'Please enter vehicle number');
-            return;
-        }
-        if (!seatCapacity.trim()) {
-            Alert.alert('Error', 'Please enter seat capacity');
-            return;
-        }
-        if (!fuelType.trim()) {
-            Alert.alert('Error', 'Please select fuel type');
+        if (shouldShowVehicleFields) {
+            if (!vehicleType.trim()) {
+                Alert.alert('Error', 'Please select vehicle type');
+                return;
+            }
+            if (!vehicleMake.trim()) {
+                Alert.alert('Error', 'Please enter vehicle make');
+                return;
+            }
+            if (!vehicleModel.trim()) {
+                Alert.alert('Error', 'Please enter vehicle model');
+                return;
+            }
+            if (!vehicleYear.trim()) {
+                Alert.alert('Error', 'Please enter vehicle year');
+                return;
+            }
+            if (!vehicleColor.trim()) {
+                Alert.alert('Error', 'Please enter vehicle color');
+                return;
+            }
+            if (!vehicleNumber.trim()) {
+                Alert.alert('Error', 'Please enter vehicle number');
+                return;
+            }
+            if (!seatCapacity.trim()) {
+                Alert.alert('Error', 'Please enter seat capacity');
+                return;
+            }
+            if (!fuelType.trim()) {
+                Alert.alert('Error', 'Please select fuel type');
+                return;
+            }
+        } else if (!newProfileImageFile) {
+            Alert.alert('Error', 'Please choose a profile photo to upload');
             return;
         }
 
@@ -268,15 +274,16 @@ const requestStoragePermission = async () => {
             // Add driver_id
             formData.append('driver_id', userData?.id);
 
-            // Add vehicle information fields
-            formData.append('vehicle_type', vehicleType);
-            formData.append('vehicle_make', vehicleMake);
-            formData.append('vehicle_model', vehicleModel);
-            formData.append('vehicle_year', vehicleYear);
-            formData.append('vehicle_color', vehicleColor);
-            formData.append('vehicle_number', vehicleNumber);
-            formData.append('seat_capacity', seatCapacity);
-            formData.append('fuel_type', fuelType);
+            if (shouldShowVehicleFields) {
+                formData.append('vehicle_type', vehicleType);
+                formData.append('vehicle_make', vehicleMake);
+                formData.append('vehicle_model', vehicleModel);
+                formData.append('vehicle_year', vehicleYear);
+                formData.append('vehicle_color', vehicleColor);
+                formData.append('vehicle_number', vehicleNumber);
+                formData.append('seat_capacity', seatCapacity);
+                formData.append('fuel_type', fuelType);
+            }
 
             // Add profile image if a new one was selected
             if (newProfileImageFile) {
@@ -454,17 +461,23 @@ const BackHeader = ({ title, navigation }) => {
 
             {/* Vehicle Information Section */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Vehicle Information</Text>
-                <View style={styles.sectionContent}>
-                    {renderPickerField('Vehicle Type', vehicleType, () => setShowVehicleTypeSheet(true), true)}
-                    {renderInputField('Vehicle Make', vehicleMake, setVehicleMake, 'e.g., Maruti, Hyundai, Honda', 'default', true)}
-                    {renderInputField('Vehicle Model', vehicleModel, setVehicleModel, 'e.g., Swift, i10, City', 'default', true)}
-                    {renderInputField('Vehicle Year', vehicleYear, setVehicleYear, 'e.g., 2022', 'numeric', true)}
-                    {renderInputField('Vehicle Color', vehicleColor, setVehicleColor, 'e.g., White, Black, Red', 'default', true)}
-                    {renderInputField('Vehicle Number', vehicleNumber, setVehicleNumber, 'e.g., MP07AB1234', 'default', true)}
-                    {renderInputField('Seat Capacity', seatCapacity, setSeatCapacity, 'Number of seats', 'numeric', true)}
-                    {renderPickerField('Fuel Type', fuelType, () => setShowFuelTypeSheet(true), true)}
-                </View>
+                <Text style={styles.sectionTitle}>{shouldShowVehicleFields ? 'Vehicle Information' : 'Profile Photo Update'}</Text>
+                {shouldShowVehicleFields ? (
+                    <View style={styles.sectionContent}>
+                        {renderPickerField('Vehicle Type', vehicleType, () => setShowVehicleTypeSheet(true), true)}
+                        {renderInputField('Vehicle Make', vehicleMake, setVehicleMake, 'e.g., Maruti, Hyundai, Honda', 'default', true)}
+                        {renderInputField('Vehicle Model', vehicleModel, setVehicleModel, 'e.g., Swift, i10, City', 'default', true)}
+                        {renderInputField('Vehicle Year', vehicleYear, setVehicleYear, 'e.g., 2022', 'numeric', true)}
+                        {renderInputField('Vehicle Color', vehicleColor, setVehicleColor, 'e.g., White, Black, Red', 'default', true)}
+                        {renderInputField('Vehicle Number', vehicleNumber, setVehicleNumber, 'e.g., MP07AB1234', 'default', true)}
+                        {renderInputField('Seat Capacity', seatCapacity, setSeatCapacity, 'Number of seats', 'numeric', true)}
+                        {renderPickerField('Fuel Type', fuelType, () => setShowFuelTypeSheet(true), true)}
+                    </View>
+                ) : (
+                    <View style={styles.sectionContent}>
+                        <Text style={styles.infoText}>Only the profile photo can be updated for this service.</Text>
+                    </View>
+                )}
             </View>
 
             {/* Submit Button */}
@@ -478,7 +491,7 @@ const BackHeader = ({ title, navigation }) => {
                 ) : (
                     <>
                         <Icon name="save" size={20} color="#fff" />
-                        <Text style={styles.submitButtonText}>Save Changes</Text>
+                        <Text style={styles.submitButtonText}>{shouldShowVehicleFields ? 'Save Changes' : 'Save Photo'}</Text>
                     </>
                 )}
             </TouchableOpacity>
@@ -583,6 +596,11 @@ const styles = StyleSheet.create({
         marginLeft: 16,
         marginBottom: 8,
         textTransform: 'uppercase',
+    },
+    infoText: {
+        fontSize: 14,
+        color: '#666',
+        lineHeight: 20,
     },
     sectionContent: {
         backgroundColor: '#fff',

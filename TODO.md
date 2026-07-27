@@ -1,10 +1,9 @@
-# Notification Screen Implementation - ✅ COMPLETE
+# BA Home Recent Bookings - ✅ COMPLETE
 
 ## Steps
-- [x] 1. Add notification endpoint in `EndPoints.js`
-- [x] 2. Add action types in `action-types.js`
-- [x] 3. Add action creator in `action-creator.js`
-- [x] 4. Create `NotificationScreen.js`
-- [x] 5. Register screen in `AppNavigator.js`
-- [x] 6. Update `HomeScreen.js` bell icon navigation
+- [x] Add `baAllBookings` state to store all booking history data
+- [x] Update `fetchBABookings` to populate `baAllBookings` 
+- [x] Add "Recent Bookings" section showing last 2 bookings at bottom of BA Home page
+- [x] Add "View All Bookings" button that navigates to History screen
+- [x] Add styles for recent booking cards and view all button
 

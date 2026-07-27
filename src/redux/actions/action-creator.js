@@ -695,11 +695,22 @@ export const GET_DRIVER_BOOKING_HISTORY = () => async (dispatch) => {
 
 export const GET_BA_BOOKING_HISTORY = () => async (_dispatch) => {
   try {
-    const response = await axiosinstance.get(EndPoints.baBookings);
+    const response = await axiosinstance.get(EndPoints.baBookingHistory);
     console.log('GET_BA_BOOKING_HISTORY Response:', response.data);
     return response.data;
   } catch (error) {
     console.log('Error in GET_BA_BOOKING_HISTORY:', error);
+    return { status: false, message: error.response?.data?.message || 'Network error', data: [] };
+  }
+};
+
+export const GET_BA_NEW_BOOKINGS = () => async (_dispatch) => {
+  try {
+    const response = await axiosinstance.get(EndPoints.baBookings);
+    console.log('GET_BA_NEW_BOOKINGS Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.log('Error in GET_BA_NEW_BOOKINGS:', error);
     return { status: false, message: error.response?.data?.message || 'Network error', data: [] };
   }
 };
