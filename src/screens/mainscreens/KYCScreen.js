@@ -448,6 +448,14 @@ const KYCScreen = ({ navigation }) => {
     const getDocumentTypeKey = (documentType) => {
         const normalized = String(documentType || '').toLowerCase().trim();
 
+        if (normalized.includes('vehicle_number') || normalized.includes('vehicle number')) {
+            return 'vehicle_number';
+        }
+
+        if (normalized.includes('rc_book') || normalized.includes('rc book') || normalized.includes('rc')) {
+            return 'rc_book';
+        }
+
         if (['adhar_front', 'adhar_back', 'pan_card', 'vehicle_number', 'license', 'rc_book', 'insurance'].includes(normalized)) {
             return normalized;
         }
@@ -456,19 +464,30 @@ const KYCScreen = ({ navigation }) => {
         return String(matchedDoc?.document_type || normalized).toLowerCase();
     };
 
+    const requiresDocumentNumber = (documentType) => {
+        const type = getDocumentTypeKey(documentType);
+        return !['adhar_back'].includes(type);
+    };
+
     const requiresExpiryDate = (documentType) => {
         const type = getDocumentTypeKey(documentType);
-        return !['adhar_front', 'adhar_back', 'pan_card', 'vehicle_number'].includes(type);
+        return !['adhar_front', 'adhar_back', 'pan_card', 'vehicle_number', 'rc_book'].includes(type);
     };
 
     const showImagePickerOptions = (documentId, documentType) => {
         const details = documentDetails[documentId];
-        const hasRequiredExpiry = requiresExpiryDate(documentType) ? !!details?.expiry_date : true;
+        const needsDocumentNumber = requiresDocumentNumber(documentType);
+        const needsExpiryDate = requiresExpiryDate(documentType);
 
-        if (!details || !details.document_number || !hasRequiredExpiry) {
-            const message = requiresExpiryDate(documentType)
+        const missingDocumentNumber = needsDocumentNumber && !details?.document_number;
+        const missingExpiryDate = needsExpiryDate && !details?.expiry_date;
+
+        if (missingDocumentNumber || missingExpiryDate) {
+            const message = needsDocumentNumber && needsExpiryDate
                 ? 'Please fill document number and expiry date before uploading'
-                : 'Please fill document number before uploading';
+                : needsDocumentNumber
+                    ? 'Please fill document number before uploading'
+                    : 'Please fill expiry date before uploading';
 
             Alert.alert(
                 'Fill Document Details',
@@ -577,7 +596,7 @@ const KYCScreen = ({ navigation }) => {
     };
 
     const saveDocumentDetails = () => {
-        if (!documentNumber.trim()) {
+        if (requiresDocumentNumber(selectedDoc?.type) && !documentNumber.trim()) {
             Alert.alert('Error', 'Please enter document number');
             return;
         }
@@ -642,9 +661,14 @@ const KYCScreen = ({ navigation }) => {
 
     const isDocumentDetailsFilled = (docId) => {
         const details = documentDetails[docId];
-        const docType = getDocumentTypeKey(details?.document_type || documents.find(doc => String(doc.id) === String(docId))?.id);
 
-        if (!details || !details.document_number) {
+        if (!details) {
+            return false;
+        }
+
+        const docType = getDocumentTypeKey(details?.document_type || documents.find(doc => String(doc.id) === String(docId))?.document_type || docId);
+
+        if (requiresDocumentNumber(docType) && !details.document_number) {
             return false;
         }
 
@@ -665,6 +689,8 @@ const KYCScreen = ({ navigation }) => {
         const detailsFilled = isDocumentDetailsFilled(doc.id);
         const isComplete = isDocumentComplete(doc.id);
         const details = documentDetails[doc.id];
+        const shouldShowDocumentNumber = requiresDocumentNumber(details?.document_type || doc.document_type);
+        const shouldShowExpiryDate = requiresExpiryDate(details?.document_type || doc.document_type);
 
         return (
             <View key={doc.id} style={[styles.documentCard, isComplete && styles.completeCard]}>
@@ -688,11 +714,13 @@ const KYCScreen = ({ navigation }) => {
 
                 {detailsFilled && (
                     <View style={styles.detailsPreview}>
-                        <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Document No:</Text>
-                            <Text style={styles.detailValue}>{details.document_number}</Text>
-                        </View>
-                        {requiresExpiryDate(details.document_type) && (
+                        {shouldShowDocumentNumber && (
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Document No:</Text>
+                                <Text style={styles.detailValue}>{details.document_number}</Text>
+                            </View>
+                        )}
+                        {shouldShowExpiryDate && (
                             <View style={styles.detailRow}>
                                 <Text style={styles.detailLabel}>Expiry Date:</Text>
                                 <Text style={styles.detailValue}>{details.expiry_date || 'Not required'}</Text>
@@ -1102,15 +1130,18 @@ const KYCScreen = ({ navigation }) => {
                             </View>
 
                             <View style={styles.modalBody}>
-                                <Text style={styles.inputLabel}>Document Number *</Text>
-                                <TextInput
-                                    style={styles.textInput}
-                                    placeholder="Enter document number"
-                                    placeholderTextColor="#999"
-                                    value={documentNumber}
-                                    onChangeText={setDocumentNumber}
-                                />
-                                {console.log('Selected Doc:', selectedDoc)}
+                                {requiresDocumentNumber(selectedDoc?.type) && (
+                                    <>
+                                        <Text style={styles.inputLabel}>Document Number *</Text>
+                                        <TextInput
+                                            style={styles.textInput}
+                                            placeholder="Enter document number"
+                                            placeholderTextColor="#999"
+                                            value={documentNumber}
+                                            onChangeText={setDocumentNumber}
+                                        />
+                                    </>
+                                )}
 
                                 {requiresExpiryDate(selectedDoc?.type) && (
                                     <>
