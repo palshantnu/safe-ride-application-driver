@@ -40,6 +40,7 @@ const { SoundHelper } = NativeModules;
 // API endpoints for parcel
 const PARCEL_API = {
   GET_AVAILABLE: 'https://sigiride.com/api/parcel/driver/available',
+  GET_HISTORY: 'https://sigiride.com/api/parcel/driver/my-deliveries',
   GET_CURRENT: 'https://sigiride.com/api/parcel/driver/current-delivery',
   ACCEPT: 'https://sigiride.com/api/parcel/driver/accept',
   ARRIVE: 'https://sigiride.com/api/parcel/driver/arrive',
@@ -109,6 +110,7 @@ const [rejectReason, setRejectReason] =
   // Parcel state
   const [availableParcels, setAvailableParcels] = useState([]);
   const [currentDeliveries, setCurrentDeliveries] = useState([]);
+  const [parcelHistory, setParcelHistory] = useState([]);
   
   // Modal states
   const [showPickupOtpModal, setShowPickupOtpModal] = useState(false);
@@ -237,12 +239,32 @@ prevParcelCountRef.current = formatted.length;
     }
   };
 
+  const fetchParcelHistory = async () => {
+    if (!loginToken) return;
+    try {
+      const response = await axios.get(PARCEL_API.GET_HISTORY, {
+        headers: { Authorization: `Bearer ${loginToken}` },
+        params: { page: 1, limit: 10 },
+      });
+
+      if (response?.data?.status && Array.isArray(response?.data?.data)) {
+        setParcelHistory(response.data.data);
+      } else {
+        setParcelHistory([]);
+      }
+    } catch (error) {
+      console.log('Error fetching parcel history:', error);
+      setParcelHistory([]);
+    }
+  };
+
   // Combined refresh
   const refreshData = async () => {
     await fetchCurrentDeliveries();
     if (currentDeliveries.length === 0) {
       await fetchAvailableParcels();
     }
+    await fetchParcelHistory();
   };
 
   // Polling
@@ -277,6 +299,7 @@ prevParcelCountRef.current = formatted.length;
 
   useEffect(() => {
     fetchOnlineStatus();
+    fetchParcelHistory();
   }, []);
 
   useEffect(() => {
@@ -620,8 +643,8 @@ console.log('Rendering delivery card:', delivery);
       <View key={delivery.id} style={styles.activeCard}>
         <View style={styles.cardHeader}>
         <View>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status),width: 90,justifyContent:'center',alignItems:'center' }]}>
-            <Text style={styles.statusBadgeText}>{getStatusText(delivery.driver_status)}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(delivery.status),width: '100%',justifyContent:'center',alignItems:'center' }]}>
+            <Text style={styles.statusBadgeText}>{(delivery.driver_status === 'ACCEPTED' && delivery.paid === 1 )?getStatusText('token_paid'):getStatusText(delivery.driver_status)}</Text>
            </View>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor('picked_up'),marginTop:10 }]}>
             <Text style={styles.statusBadgeText}>ID: {delivery.parcel_booking_id}</Text>
@@ -925,27 +948,45 @@ const submitParcelReject = async (parcelId, reason = 'cancel') => {
       </View>
     </Animated.View>
   );
-  const StatsCard = () => (
-    <View style={styles.statsContainer}>
-      <View style={styles.statItem}>
-        <Icon name="calendar" size={24} color="#FF1493" />
-        <Text style={styles.statValue}>0</Text>
-        <Text style={styles.statLabel}>Today's Rides</Text>
+  const StatsCard = () => {
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0];
+
+    const todaysDeliveries = (parcelHistory || []).filter((delivery) => {
+      const bookingDate = delivery?.pickup_date || delivery?.created_at || delivery?.updated_at;
+      if (!bookingDate) return false;
+      return bookingDate.split('T')[0] === todayString;
+    });
+
+    const todaysEarnings = todaysDeliveries.reduce((sum, delivery) => {
+      const price = Number(delivery?.driver_amount || delivery?.amount || delivery?.total_fare || 0);
+      return sum + (Number.isFinite(price) ? price : 0);
+    }, 0);
+
+    const averageRating = 4.5;
+
+    return (
+      <View style={styles.statsContainer}>
+        <View style={styles.statItem}>
+          <Icon name="calendar" size={24} color="#FF1493" />
+          <Text style={styles.statValue}>{todaysDeliveries.length}</Text>
+          <Text style={styles.statLabel}>Today's Rides</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Icon name="rupee" size={24} color="#4CAF50" />
+          <Text style={styles.statValue}>₹{todaysEarnings}</Text>
+          <Text style={styles.statLabel}>Today's Earnings</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Icon name="star" size={24} color="#FFD700" />
+          <Text style={styles.statValue}>{averageRating.toFixed(1)}</Text>
+          <Text style={styles.statLabel}>Rating</Text>
+        </View>
       </View>
-      <View style={styles.statDivider} />
-      <View style={styles.statItem}>
-        <Icon name="rupee" size={24} color="#4CAF50" />
-        <Text style={styles.statValue}>₹0</Text>
-        <Text style={styles.statLabel}>Today's Earnings</Text>
-      </View>
-      <View style={styles.statDivider} />
-      <View style={styles.statItem}>
-        <Icon name="star" size={24} color="#FFD700" />
-        <Text style={styles.statValue}>4.8</Text>
-        <Text style={styles.statLabel}>Rating</Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
 
   return (
@@ -964,6 +1005,8 @@ const submitParcelReject = async (parcelId, reason = 'cancel') => {
       </View>
 
       <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#FF9800']} tintColor="#FF9800" />}>
+       
+
         {currentDeliveries.length > 0 ? (
           <>
             <Text style={styles.sectionTitle}>Active Deliveries ({currentDeliveries.length})</Text>
@@ -984,6 +1027,57 @@ const submitParcelReject = async (parcelId, reason = 'cancel') => {
           </View>
           </>
         )}
+         {parcelHistory.length > 0 ? (
+          <>
+            <Text style={[styles.sectionTitle, { marginHorizontal: 16, marginTop: 8 }]}>Recent Deliveries</Text>
+            {parcelHistory.slice(0, 2).map((delivery) => (
+              <TouchableOpacity
+                key={delivery.id || delivery.parcel_booking_id}
+                style={styles.recentBookingCard}
+                onPress={() => navigation.navigate('ParcelDeliveryDetail', { delivery: {
+                  ...delivery,
+                  id: delivery.id,
+                  booking_id: delivery.parcel_booking_id,
+                  pickup: delivery.pickup_address || delivery.pickup_city,
+                  delivery_address: delivery.drop_address || delivery.drop_city,
+                  amount: delivery.amount || delivery.driver_amount || 0,
+                  created_at: delivery.created_at,
+                  status: delivery.driver_status?.toLowerCase() || delivery.status?.toLowerCase(),
+                  customerName: delivery.user_name || 'Customer',
+                  customerPhone: delivery.user_mobile,
+                  earnings: delivery.driver_amount || 0,
+                }})}
+              >
+                <View style={styles.recentBookingHeader}>
+                  <View style={[styles.statusDot, { backgroundColor: getStatusColor(delivery.driver_status || delivery.status) }]} />
+                  <Text style={styles.recentBookingStatus}>{getStatusText(delivery.driver_status || delivery.status)}</Text>
+                  <Text style={styles.recentBookingFare}>₹{delivery.driver_amount || delivery.amount || 0}</Text>
+                </View>
+                <View style={styles.recentBookingLocRow}>
+                  <Icon name="map-pin" size={12} color="#4CAF50" />
+                  <Text style={styles.recentBookingLocText} numberOfLines={1}>{delivery.pickup_address || delivery.pickup_city}</Text>
+                </View>
+                <View style={styles.recentBookingLocRow}>
+                  <Icon name="flag" size={12} color="#FF5252" />
+                  <Text style={styles.recentBookingLocText} numberOfLines={1}>{delivery.drop_address || delivery.drop_city}</Text>
+                </View>
+                <View style={styles.recentBookingFooter}>
+                  <Text style={styles.recentBookingService}>Parcel Delivery</Text>
+                  <Text style={styles.recentBookingDate}>
+                    {delivery.pickup_date ? new Date(delivery.pickup_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : ''}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={styles.viewAllBtn}
+              onPress={() => navigation.navigate('History')}
+            >
+              <Text style={styles.viewAllBtnText}>View All Bookings</Text>
+              <Icon name="chevron-right" size={18} color="#FF1493" />
+            </TouchableOpacity>
+          </>
+        ) : null}
       </ScrollView>
 
       {/* Pickup OTP Modal */}
@@ -1279,7 +1373,89 @@ const styles = StyleSheet.create({
     color: '#FF1493',
     fontWeight: '600',
   },
-  
+    // Recent Bookings Styles
+  recentBookingCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    marginHorizontal: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  recentBookingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 6,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  recentBookingStatus: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#555',
+    flex: 1,
+  },
+  recentBookingFare: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  recentBookingLocRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  recentBookingLocText: {
+    fontSize: 13,
+    color: '#666',
+    flex: 1,
+  },
+  recentBookingFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  recentBookingService: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2196F3',
+  },
+  recentBookingDate: {
+    fontSize: 11,
+    color: '#999',
+  },
+  viewAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+    marginBottom: 30,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#FF1493',
+    backgroundColor: '#FFF0F7',
+    gap: 6,
+  },
+  viewAllBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FF1493',
+  },
+
 });
 
 export default ParcelDriverHomeFlow;

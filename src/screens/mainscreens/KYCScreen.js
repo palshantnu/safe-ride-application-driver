@@ -1110,6 +1110,7 @@ const KYCScreen = ({ navigation }) => {
                                     value={documentNumber}
                                     onChangeText={setDocumentNumber}
                                 />
+                                {console.log('Selected Doc:', selectedDoc)}
 
                                 {requiresExpiryDate(selectedDoc?.type) && (
                                     <>

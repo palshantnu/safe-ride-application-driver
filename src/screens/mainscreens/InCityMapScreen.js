@@ -154,17 +154,47 @@ const InCityMapScreen = ({ navigation, route }) => {
     );
   };
 
-  const fetchCurrentRide = async () => {
-    try {
-      const res = await dispatch(GET_CURRENT_BOOKING());
-      if (res?.status && res?.data) {
-        setCurrentRide(res.data[0]);
-        if (res.data[0].status === 'COMPLETED' || res.data[0].status === 'CANCELLED') {
-          clearInterval(intervalRef.current);
-        }
+const fetchCurrentRide = async () => {
+  try {
+    const res = await dispatch(GET_CURRENT_BOOKING());
+
+    if (
+      res?.status &&
+      Array.isArray(res.data) &&
+      res.data.length > 0
+    ) {
+      const booking = res.data[0];
+
+      setCurrentRide(booking);
+
+      if (
+        booking.status === 'COMPLETED' ||
+        booking.status === 'CANCELLED'
+      ) {
+        clearInterval(intervalRef.current);
       }
-    } catch (e) { console.log('fetchCurrentRide error:', e); }
-  };
+    } else {
+      // No current booking found
+      clearInterval(intervalRef.current);
+
+      if (watchIdRef.current != null) {
+        Geolocation.clearWatch(watchIdRef.current);
+      }
+
+      navigation.goBack();
+    }
+  } catch (e) {
+    console.log('fetchCurrentRide error:', e);
+
+    clearInterval(intervalRef.current);
+
+    if (watchIdRef.current != null) {
+      Geolocation.clearWatch(watchIdRef.current);
+    }
+
+    navigation.goBack();
+  }
+};
 
   const fitMap = (origin, coords) => {
     if (!mapRef.current || !coords.length) return;

@@ -172,7 +172,7 @@ const openImage = (image) => {
         <Section title="Trip Info" icon="info">
           <Row label="Schedule Date" value={formatDate(ride.schedule_date || ride.date)} />
           {/* <Row label="Passengers" value={ride.person ? `${ride.person} person(s)` : '—'} /> */}
-          {ride.distance > 0 && <Row label="Distance" value={`${ride.distance} km`} />}
+          {ride.distance > 0 && <Row label="Distance" value={`${Math.ceil(ride.distance)} km`} />}
           {ride.duration > 0 && <Row label="Duration" value={`${ride.duration} hr(s)`} />}
         </Section>
 

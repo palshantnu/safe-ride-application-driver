@@ -248,7 +248,7 @@ const InCityInvoiceScreen = ({ navigation, route }) => {
             <View style={s.distanceChip}>
               <Icon name="map" size={13} color={BRAND} />
               <Text style={s.distanceText}>
-                Actual distance: <Text style={{ fontWeight: '700', color: TEXT }}>{actualDist} km</Text>
+                Actual distance: <Text style={{ fontWeight: '700', color: TEXT }}>{Math.ceil(actualDist)} km</Text>
               </Text>
             </View>
           ) : null}

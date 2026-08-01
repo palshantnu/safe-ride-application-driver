@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import axios from 'axios';
 import {
   View,
   Text,
@@ -24,6 +25,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import {
   ACCEPT_BOOKING,
   GET_BOOKING_REQUESTS,
+  GET_DRIVER_BOOKING_HISTORY,
   GET_ONLINE_STATUS,
   UPDATE_ONLINE_STATUS,
   DRIVER_ARRIVED,
@@ -44,7 +46,7 @@ const { SoundHelper } = NativeModules;
 
 const STATUS_COLORS = {
   ACCEPTED: '#4CAF50',
-  TOKEN_PAID: '#FFC107',
+  TOKEN_PAID: '#00BCD4',
   ARRIVED: '#00BCD4',
   STARTED: '#FF5722',
   TOPUP_PENDING: '#FF9800',
@@ -54,6 +56,8 @@ const STATUS_COLORS = {
   ASSIGNED: '#FF9800',
   PENDING: '#FFC107',
 };
+
+const ONSPOT_HISTORY_API = 'https://sigiride.com/api/onspot/captain/mybooking';
 
 const STATUS_TEXT = {
   ACCEPTED: 'Ride Accepted',
@@ -113,6 +117,7 @@ const DriverHomeFlow = ({ navigation }) => {
   const [isOnline, setIsOnline] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  const [driverBookingHistory, setDriverBookingHistory] = useState([]);
   const [rideRequest, setRideRequest] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentRides, setCurrentRides] = useState([]);
@@ -203,6 +208,35 @@ const [actionBookingId, setActionBookingId] = useState(null);
   useEffect(() => {
     return () => SoundHelper?.stopNotificationSound();
   }, []);
+
+  const fetchDriverBookingHistory = async () => {
+    try {
+      if (isOnSpotCaptain) {
+        const response = await axios.get(ONSPOT_HISTORY_API, {
+          headers: { Authorization: `Bearer ${loginToken}` },
+          params: { page: 1, limit: 10 },
+        });
+
+        if (response?.data?.status && Array.isArray(response?.data?.data)) {
+          setDriverBookingHistory(response.data.data);
+          return;
+        }
+
+        setDriverBookingHistory([]);
+        return;
+      }
+
+      const res = await dispatch(GET_DRIVER_BOOKING_HISTORY());
+      if (res?.status && Array.isArray(res?.data)) {
+        setDriverBookingHistory(res.data);
+      } else {
+        setDriverBookingHistory([]);
+      }
+    } catch (error) {
+      console.log('Error fetching driver booking history:', error);
+      setDriverBookingHistory([]);
+    }
+  };
 
   const fetchOnSpotCurrentBookings = async () => {
     if (!isOnSpotCaptain) return;
@@ -349,12 +383,14 @@ const [actionBookingId, setActionBookingId] = useState(null);
 
   useEffect(() => {
     fetchOnlineStatus();
+    fetchDriverBookingHistory();
   }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
       await fetchCurrentRide();
+      await fetchDriverBookingHistory();
       if (!hasSpecialService) await fetchBookingRequests();
     } finally {
       setRefreshing(false);
@@ -1034,9 +1070,9 @@ console.log('booking====>',booking)
             </View>
             <View style={styles.locationTextCol}>
               <Text style={styles.locationLabel}>Location</Text>
-              <Text style={styles.pickupText}>{fullAddress || 'N/A'}</Text>
+              <Text style={styles.pickupText}>{fullAddress || 'N/A'}, {booking.city}</Text>
               {landmark ? (
-                <Text style={[styles.dropText, { marginTop: 4 }]}>📍 {landmark}</Text>
+                <Text style={[styles.dropText, { marginTop: 4 }]}>Landmark: 📍 {landmark}</Text>
               ) : null}
             </View>
           </View>
@@ -1077,7 +1113,7 @@ console.log('booking====>',booking)
           </TouchableOpacity>
         )}
          {/* ARRIVED status - Show Start Service button (opens OTP modal) */}
-        {status === 'ARRIVED' && (
+        {(status === 'ARRIVED' && booking.balance_paid == 1) && (
           <TouchableOpacity
             style={[styles.acceptBtn, { backgroundColor: '#FF9800' }]}
             onPress={() => {
@@ -1116,7 +1152,7 @@ console.log('booking====>',booking)
             )}
           </TouchableOpacity>
         )}
-    {userMobile ? (
+    {(userMobile && booking.token_paid === 1) ? (
       <View style={styles.driverCard}>
         <View style={styles.driverRow}>
           <View style={styles.driverAvatar}>
@@ -1567,10 +1603,16 @@ paddingHorizontal:20}}
     <Animated.View style={[styles.requestCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       {console.log('rideRequest',rideRequest)}
       <View style={styles.cardHeader}>
+        <View>
         <View style={styles.requestBadge}>
           <Icon name="bell" size={16} color="#fff" />
           <Text style={styles.requestBadgeText}>New Ride Request</Text>
         </View>
+           <View style={{...styles.requestBadge,marginTop:-10,marginBottom:15,alignSelf:'flex-start',backgroundColor:'#2196F3',marginTop:10}}>
+      <Icon name="bell" size={16} color="#fff" />
+      <Text style={styles.requestBadgeText}>{rideRequest.service_name}</Text>
+      </View>
+      </View>
        {rideRequest?.service_name === 'In City' ? 
         <View>  
         <Text style={{...styles.fareAmount,fontSize:28}}>
@@ -1591,10 +1633,7 @@ paddingHorizontal:20}}
         </View>}
         
       </View>
-      <View style={{...styles.requestBadge,marginTop:-10,marginBottom:15,alignSelf:'flex-start',backgroundColor:'#2196F3'}}>
-      <Icon name="bell" size={16} color="#fff" />
-      <Text style={styles.requestBadgeText}>{rideRequest.service_name}</Text>
-      </View>
+   
       <View style={styles.locationContainer}>
         <View style={styles.locationEntryRow}>
           <View style={styles.dotCol}>
@@ -1642,7 +1681,7 @@ paddingHorizontal:20}}
             </Text>
           </View>
         )}
-      <View style={styles.rideInfo}>
+     {rideRequest?.service_name !== 'In City' ? <View style={styles.rideInfo}>
         <View style={styles.infoItem}>
           <Icon name="user" size={16} color="#666" />
           <Text style={styles.infoText}>{rideRequest.person} Passenger</Text>
@@ -1655,11 +1694,18 @@ paddingHorizontal:20}}
           <Icon name="map-pin" size={16} color="#666" />
           <Text style={styles.infoText}>{rideRequest.distance} km</Text>
         </View>
-      </View>
+      </View>:
+      <View style={styles.rideInfo}>
+
+        <View style={styles.infoItem}>
+          <Icon name="map-pin" size={16} color="#df1111" />
+          <Text style={styles.infoText}>{Math.ceil(rideRequest.distance)} km</Text>
+        </View>
+      </View>}
 
       <View style={styles.customerInfo}>
         <View style={styles.customerDetail}>
-          <Icon name="phone" size={14} color="#999" />
+          <Icon name="phone" size={14} color="#0f840b" />
           <Text style={styles.customerText}>{rideRequest.customer.phone}</Text>
         </View>
       </View>
@@ -1771,27 +1817,50 @@ paddingHorizontal:20}}
     );
   };
 
-  const StatsCard = () => (
-    <View style={styles.statsContainer}>
-      <View style={styles.statItem}>
-        <Icon name="calendar" size={24} color="#FF1493" />
-        <Text style={styles.statValue}>0</Text>
-        <Text style={styles.statLabel}>Today's Rides</Text>
+  const StatsCard = () => {
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0];
+
+    const todaysBookings = (driverBookingHistory || []).filter((booking) => {
+      const bookingDate = booking?.schedule_date || booking?.created_at || booking?.date || booking?.schedule_datetime || booking?.completed_at;
+      if (!bookingDate) return false;
+      return bookingDate.split('T')[0] === todayString;
+    });
+
+    const todaysEarnings = todaysBookings.reduce((sum, booking) => {
+      const price = Number(
+        booking?.total_fare || booking?.plan_price || booking?.driver_amount || booking?.final_fare || booking?.actual_fare || booking?.amount || 0
+      );
+      return sum + (Number.isFinite(price) ? price : 0);
+    }, 0);
+
+    const ratedBookings = todaysBookings.filter((booking) => Number(booking?.user_rated || booking?.rating) > 0);
+    const averageRating = ratedBookings.length > 0
+      ? ratedBookings.reduce((sum, booking) => sum + Number(booking?.user_rated || booking?.rating || 0), 0) / ratedBookings.length
+      : 4.5;
+
+    return (
+      <View style={styles.statsContainer}>
+        <View style={styles.statItem}>
+          <Icon name="calendar" size={24} color="#FF1493" />
+          <Text style={styles.statValue}>{todaysBookings.length}</Text>
+          <Text style={styles.statLabel}>Today's Rides</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Icon name="rupee" size={24} color="#4CAF50" />
+          <Text style={styles.statValue}>₹{todaysEarnings}</Text>
+          <Text style={styles.statLabel}>Today's Earnings</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Icon name="star" size={24} color="#FFD700" />
+          <Text style={styles.statValue}>{averageRating.toFixed(1)}</Text>
+          <Text style={styles.statLabel}>Rating</Text>
+        </View>
       </View>
-      <View style={styles.statDivider} />
-      <View style={styles.statItem}>
-        <Icon name="rupee" size={24} color="#4CAF50" />
-        <Text style={styles.statValue}>₹0</Text>
-        <Text style={styles.statLabel}>Today's Earnings</Text>
-      </View>
-      <View style={styles.statDivider} />
-      <View style={styles.statItem}>
-        <Icon name="star" size={24} color="#FFD700" />
-        <Text style={styles.statValue}>4.8</Text>
-        <Text style={styles.statLabel}>Rating</Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
   const isDriverFlow = userData?.service_id === 71 ? true : false;
 
@@ -1847,6 +1916,8 @@ paddingHorizontal:20}}
       >
       {currentRides.length === 0 && !rideRequest && (!isOnSpotCaptain || onSpotRequests.length === 0) && <StatsCard />}
 
+     
+
         {currentRides.length > 0 ? (
 
           <>
@@ -1883,6 +1954,63 @@ paddingHorizontal:20}}
             </Animated.View>
           </View>
         )}
+           {driverBookingHistory.length > 0 ? (
+          <>
+            <Text style={[styles.sectionTitle, { marginHorizontal: 16, marginTop: 8 }]}>Recent Bookings</Text>
+            {driverBookingHistory.slice(0, 1).map((booking) => (
+              <TouchableOpacity
+                key={booking.booking_id || booking.id}
+                style={styles.recentBookingCard}
+                onPress={() => navigation.navigate('BookingHistoryDetail', { ride: {
+                  ...booking,
+                  id: booking.booking_id || booking.id,
+                  booking_id: booking.booking_id,
+                  pickup: booking.pickup_address || booking.pickup_city,
+                  destination: booking.drop_address || booking.drop_city,
+                  price: booking.total_fare || booking.plan_price || booking.driver_amount || 0,
+                  date: booking.schedule_date || booking.created_at,
+                  status: booking.status?.toLowerCase(),
+                  riderName: booking.user_name || 'Customer',
+                  userMobile: booking.user_mobile,
+                  earnings: booking.driver_amount || booking.total_fare || 0,
+                  distance: booking.plan_km || 0,
+                  duration: booking.plan_hour || 0,
+                  person: booking.person,
+                  created_at: booking.created_at,
+                  service_name: booking.service_name,
+                  to_city: booking.to_city,
+                }})}
+              >
+                <View style={styles.recentBookingHeader}>
+                  <View style={[styles.statusDot, { backgroundColor: getStatusColor(booking.status) }]} />
+                  <Text style={styles.recentBookingStatus}>{getStatusText(booking.status)}</Text>
+                  <Text style={styles.recentBookingFare}>₹{booking.total_fare || booking.plan_price || booking.driver_amount || 0}</Text>
+                </View>
+                <View style={styles.recentBookingLocRow}>
+                  <Icon name="map-pin" size={12} color="#4CAF50" />
+                  <Text style={styles.recentBookingLocText} numberOfLines={1}>{booking.pickup_address || booking.pickup_city}</Text>
+                </View>
+                <View style={styles.recentBookingLocRow}>
+                  <Icon name="flag" size={12} color="#FF5252" />
+                  <Text style={styles.recentBookingLocText} numberOfLines={1}>{booking.drop_address || booking.drop_city || booking.to_city}</Text>
+                </View>
+                <View style={styles.recentBookingFooter}>
+                  <Text style={styles.recentBookingService}>{booking.service_name || 'Ride'}</Text>
+                  <Text style={styles.recentBookingDate}>
+                    {booking.schedule_date ? new Date(booking.schedule_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : ''}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={styles.viewAllBtn}
+              onPress={() => navigation.navigate('History')}
+            >
+              <Text style={styles.viewAllBtnText}>View All Bookings</Text>
+              <Icon name="chevron-right" size={18} color="#FF1493" />
+            </TouchableOpacity>
+          </>
+        ) : null}
       </ScrollView>
 
       {/* OTP Modal - For OnSpot start service */}
@@ -2377,7 +2505,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   scheduleDateText: {
-    fontSize: 13,
+    fontSize: 20,
     color: '#FF1493',
     fontWeight: '600',
   },
@@ -2398,6 +2526,88 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: '#FCE4EC',
     justifyContent: 'center', alignItems: 'center',
+  },
+  // Recent Bookings Styles
+  recentBookingCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    marginHorizontal: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  recentBookingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 6,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  recentBookingStatus: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#555',
+    flex: 1,
+  },
+  recentBookingFare: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  recentBookingLocRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  recentBookingLocText: {
+    fontSize: 13,
+    color: '#666',
+    flex: 1,
+  },
+  recentBookingFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  recentBookingService: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2196F3',
+  },
+  recentBookingDate: {
+    fontSize: 11,
+    color: '#999',
+  },
+  viewAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+    marginBottom: 30,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#FF1493',
+    backgroundColor: '#FFF0F7',
+    gap: 6,
+  },
+  viewAllBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FF1493',
   },
 
 });
