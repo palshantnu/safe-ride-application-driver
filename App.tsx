@@ -5,11 +5,13 @@ import { store, persistor } from './src/redux/store';
 import AppNavigator from './src/navigation/AppNavigator';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar, PermissionsAndroid, Platform } from 'react-native';
+import { request as requestPermission, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { promptForEnableLocationIfNeeded } from 'react-native-android-location-enabler';
 
 const App = () => {
   useEffect(() => {
     requestLocationPermission();
+    requestNotificationPermission();
   }, []);
 
 const requestLocationPermission = async () => {
@@ -45,6 +47,37 @@ const requestLocationPermission = async () => {
     } catch (err) {
       console.warn(err);
     }
+  }
+};
+
+const requestNotificationPermission = async () => {
+  try {
+    if (Platform.OS === 'android') {
+      if (Platform.Version >= 33) {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+          {
+            title: 'Enable Notifications',
+            message: 'Allow notifications so you stay updated on KYC and ride updates.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      }
+      return true;
+    }
+
+    if (Platform.OS === 'ios') {
+      const result = await requestPermission(PERMISSIONS.IOS.NOTIFICATIONS);
+      return result === RESULTS.GRANTED;
+    }
+
+    return true;
+  } catch (err) {
+    console.warn(err);
+    return false;
   }
 };
 
