@@ -292,7 +292,7 @@ const InCityInvoiceScreen = ({ navigation, route }) => {
             {iCollect ? (
               <View style={s.totalRow}>
                 <Text style={s.totalLabel}>Amount to Collect</Text>
-                <Text style={s.totalValue}>₹{iCollect}</Text>
+                <Text style={s.totalValue}>₹{actualFare}</Text>
               </View>
             ) : null}
           </View>
