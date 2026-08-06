@@ -20,13 +20,35 @@ import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { PermissionsAndroid, Platform } from 'react-native';
 
 const ParcelDeliveryDetail = ({ navigation, route }) => {
-  const { delivery } = route.params;
+  const { delivery } = route.params || {};
   const dispatch = useDispatch();
   const loginToken = useSelector((state) => state?.auth?.loginToken);
   
   const [isLoading, setIsLoading] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+
+  if (!delivery) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['#FF9800', '#FF9800', '#F57C00']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Delivery Details</Text>
+          <View style={{ width: 40 }} />
+        </LinearGradient>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>Delivery details not available.</Text>
+        </View>
+      </View>
+    );
+  }
 
   const getStatusColor = (status) => {
     const statusMap = {
@@ -298,13 +320,13 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
       {renderInfoCard('Payment Details', 'card-outline', (
         <>
          
-          {renderInfoRow('Token Amount', `₹${delivery.token_amount?.toFixed(2) || '0.00'}`, 'key-outline')}
-          {renderInfoRow('Balance Amount', `₹${delivery.balance_amount?.toFixed(2) || '0.00'}`, 'cash-outline')}
-           {renderInfoRow('Total amount ', `₹${delivery.amount?.toFixed(2) || '0.00'}`, 'cash-outline')}
+          {renderInfoRow('Token Amount', `₹${(parseFloat(delivery.token_amount) || 0).toFixed(2)}`, 'key-outline')}
+          {renderInfoRow('Balance Amount', `₹${(parseFloat(delivery.balance_amount) || 0).toFixed(2)}`, 'cash-outline')}
+           {renderInfoRow('Total amount ', `₹${(parseFloat(delivery.amount) || 0).toFixed(2)}`, 'cash-outline')}
           {delivery.earnings && (
             <View style={styles.earningsContainer}>
               <Icon name="trophy-outline" size={14} color="#4CAF50" />
-              <Text style={styles.earningsText}>Your Earnings: ₹{delivery.earnings?.toFixed(2) || '0.00'}</Text>
+              <Text style={styles.earningsText}>Your Earnings: ₹{(parseFloat(delivery.earnings) || 0).toFixed(2)}</Text>
             </View>
           )}
         </>
@@ -714,6 +736,16 @@ const styles = StyleSheet.create({
   modalImage: {
     width: '100%',
     height: '80%',
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#666',
   },
 });
 

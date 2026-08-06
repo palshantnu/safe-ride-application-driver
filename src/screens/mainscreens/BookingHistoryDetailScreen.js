@@ -58,8 +58,31 @@ const getAccessFeeValue = (totalFare, accessFee, accessFeeType) => {
 };
 
 const BookingHistoryDetailScreen = ({ navigation, route }) => {
-  const { ride } = route.params;
+  const { ride } = route.params || {};
 console.log('ride', ride);
+
+  if (!ride) {
+    return (
+      <View style={s.container}>
+        <LinearGradient
+          colors={['#ff7f50', '#ff7f50', '#e20f7a']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={s.header}
+        >
+          <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
+            <Icon name="arrow-left" size={22} color="#fff" />
+          </TouchableOpacity>
+          <Text style={s.headerTitle}>Ride Details</Text>
+          <View style={{ width: 40 }} />
+        </LinearGradient>
+        <View style={s.emptyState}>
+          <Text style={s.emptyStateText}>Booking details not available.</Text>
+        </View>
+      </View>
+    );
+  }
+
   const statusCfg = getStatusCfg(ride.status);
   const totalTopup = ride.topups?.reduce((sum, t) => sum + parseFloat(t.topup_amount || 0), 0) || 0;
 
@@ -494,6 +517,8 @@ const s = StyleSheet.create({
   meterImage: { width: 120, height: 90, borderRadius: 10, marginRight: 10 },
 
   footer: { height: 30 },
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  emptyStateText: { fontSize: 14, color: '#6B7280' },
    modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.95)",

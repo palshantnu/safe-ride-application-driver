@@ -170,6 +170,7 @@ const prevParcelCountRef = useRef(0);
     delivery_otp_verified: parcel.delivery_otp_verified,
     user_status: parcel.user_status,
     paid: parcel.paid,
+    weight_type: parcel.weight_type,
     _raw: parcel,
      total_fare: parcel.total_fare,
           driver_amount:parcel.driver_amount
@@ -731,7 +732,8 @@ console.log('Rendering delivery card:', delivery);
             <View style={styles.currentDetailTextWrap}>
               <Text style={styles.currentDetailLabel}>Weight</Text>
               <Text style={styles.currentDetailValue}>
-                {delivery.parcel_weight ? `${delivery.parcel_weight} kg` : '-'}
+                {delivery.parcel_weight ? `${delivery.parcel_weight}` : '-'}{' '}
+                {delivery.weight_type ? `${delivery.weight_type}` : '-'}
               </Text>
             </View>
           </View>
@@ -872,13 +874,14 @@ const submitParcelReject = async (parcelId, reason = 'cancel') => {
             <Text style={styles.currentDetailValue}>{parcel.parcel_booking_id || '-'}</Text>
           </View>
         </View> */}
-        
+        {console.log('parcel',parcel)}
         <View style={styles.currentDetailItem}>
           <FontAwesome5 name="weight-hanging" size={13} color="#666" />
           <View style={styles.currentDetailTextWrap}>
             <Text style={styles.currentDetailLabel}>Weight</Text>
             <Text style={styles.currentDetailValue}>
-              {parcel.parcel_weight ? `${parcel.parcel_weight} kg` : '-'}
+              {parcel.parcel_weight ? `${parcel.parcel_weight}` : '-'}{' '}
+              {parcel.weight_type ? `${parcel.weight_type}` : '-'}
             </Text>
           </View>
         </View>
@@ -1040,12 +1043,18 @@ const submitParcelReject = async (parcelId, reason = 'cancel') => {
                   booking_id: delivery.parcel_booking_id,
                   pickup: delivery.pickup_address || delivery.pickup_city,
                   delivery_address: delivery.drop_address || delivery.drop_city,
-                  amount: delivery.amount || delivery.driver_amount || 0,
+                  delivery_city: delivery.drop_city,
+                  delivery_landmark: delivery.drop_landmark,
+                  parcel_weight: delivery.approx_weight,
+                  packaging_material: delivery.packaging_material_type,
+                  amount: parseFloat(delivery.amount) || parseFloat(delivery.driver_amount) || 0,
+                  token_amount: parseFloat(delivery.token_amount) || 0,
+                  balance_amount: parseFloat(delivery.balance_amount) || 0,
                   created_at: delivery.created_at,
                   status: delivery.driver_status?.toLowerCase() || delivery.status?.toLowerCase(),
                   customerName: delivery.user_name || 'Customer',
                   customerPhone: delivery.user_mobile,
-                  earnings: delivery.driver_amount || 0,
+                  earnings: parseFloat(delivery.driver_amount) || 0,
                 }})}
               >
                 <View style={styles.recentBookingHeader}>
@@ -1205,7 +1214,7 @@ const submitParcelReject = async (parcelId, reason = 'cancel') => {
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalBtn, styles.submitBtn]}
+                style={[styles.modalBtn, styles.cancelBtn, { backgroundColor: '#FF9800', borderColor: '#FF9800' }]}
                 onPress={submitCancel}
               >
                 <Text style={styles.submitBtnText}>Submit</Text>
