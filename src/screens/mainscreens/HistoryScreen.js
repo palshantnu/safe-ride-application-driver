@@ -373,7 +373,8 @@ const DriverHistoryScreen = ({ navigation }) => {
 
     const totalTopupAmount = booking.topups?.reduce((sum, topup) =>
       sum + parseFloat(topup.topup_amount), 0) || 0;
-    const totalFare = parseFloat(booking.plan_price) + totalTopupAmount;
+    const totalFare = parseFloat(booking.plan_price) + totalTopupAmount + parseFloat(booking.
+access_fee || 0) + parseFloat(booking.platform_fee || 0);
     const driver_amount = parseFloat(booking.driver_amount) || 0;
     const earnings = driver_amount;
     const rating = booking.rating || 4.5;
@@ -405,6 +406,8 @@ const DriverHistoryScreen = ({ navigation }) => {
       topups: booking.topups || [],
       person: booking.person,
       created_at: booking.created_at,
+      platform_fee: parseFloat(booking.platform_fee || 0),
+      access_fee: parseFloat(booking.access_fee || 0),
     };
   };
 

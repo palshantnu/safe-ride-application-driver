@@ -1649,7 +1649,7 @@ paddingHorizontal:20}}
         <View style={styles.locationEntryRow}>
           <View style={styles.dotCol}>
             <View style={styles.dropDot} />
-            {rideRequest.service_name?.includes('Rental') && rideRequest.to_city ? <View style={styles.locationLine} /> : null}
+            {(rideRequest.service_name?.includes('Rental') || rideRequest.service_name?.includes('Driver')) && rideRequest.to_city ? <View style={styles.locationLine} /> : null}
           </View>
           <View style={styles.locationTextCol}>
             <Text style={styles.locationLabel}>Drop</Text>
@@ -1657,7 +1657,7 @@ paddingHorizontal:20}}
           </View>
         </View>
 
-        {rideRequest.service_name?.includes('Rental') && rideRequest.to_city ? (
+        {(rideRequest.service_name?.includes('Rental') || rideRequest.service_name?.includes('Driver')) && rideRequest.to_city ? (
           <View style={styles.locationEntryRow}>
             <View style={styles.dotCol}>
               <View style={styles.toCityDot} />

@@ -218,6 +218,8 @@ const openImage = (image) => {
           ) : (
             <>
               <Row label="Plan Price" value={ride.plan_price ? `₹${parseFloat(ride.plan_price).toFixed(2)}` : ride.basePrice} />
+              <Row label="Platform fees" value={ride.platform_fee ? `₹${parseFloat(ride.platform_fee).toFixed(2)}` : ''} />
+              <Row label="Access fees" value={ride.platform_fee ? `₹${parseFloat(ride.access_fee).toFixed(2)}` : ''} />
               {totalTopup > 0 && (
                 <Row
                   label={`Topup (${ride.topups?.length || 0})`}
