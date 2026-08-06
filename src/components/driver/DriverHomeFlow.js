@@ -1819,6 +1819,7 @@ paddingHorizontal:20}}
 
   const StatsCard = () => {
     const today = new Date();
+    // today.setDate(today.getDate() - 1);
     const todayString = today.toISOString().split('T')[0];
 
     const todaysBookings = (driverBookingHistory || []).filter((booking) => {
@@ -1829,7 +1830,7 @@ paddingHorizontal:20}}
 
     const todaysEarnings = todaysBookings.reduce((sum, booking) => {
       const price = Number(
-        booking?.total_fare || booking?.plan_price || booking?.driver_amount || booking?.final_fare || booking?.actual_fare || booking?.amount || 0
+        booking?.driver_amount || booking?.plan_price || booking?.driver_amount || booking?.final_fare || booking?.actual_fare || booking?.amount || 0
       );
       return sum + (Number.isFinite(price) ? price : 0);
     }, 0);

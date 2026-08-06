@@ -31,7 +31,7 @@ const KYCScreen = ({ navigation }) => {
     // Check if user is BA (Business Associate)
     const isBA = !!userData?.ba_name;
     
-    console.log('Is BA User:', driverKycDocumentsList);
+    console.log('Is BA User:', driverKycDocuments);
     console.log('UserData:', userData);
 
     // BA KYC States
@@ -640,7 +640,7 @@ const KYCScreen = ({ navigation }) => {
             'pan_card': 'PAN Card',
             'rc_book': 'RC Book',
             'insurance': 'Insurance Document',
-            'vehicle_number': 'Vehicle Number',
+            'vehicle_number': 'Vehicle Number Pic',
         };
         return titles[type] || type.replace('_', ' ').toUpperCase();
     };

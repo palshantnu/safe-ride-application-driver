@@ -191,7 +191,7 @@ const openImage = (image) => {
             (() => {
               const rideFare = parseFloat(ride.price || 0);
               const calculatedAccessFee = getAccessFeeValue(rideFare, ride.access_fee, ride.access_fee_type);
-              const platformFee = parseFloat(ride.platform_fee) || 0;
+              const platformFee = ride.status === 'cancelled'?0: parseFloat(ride.platform_fee) || 0;
               const captainAmount = rideFare - platformFee - calculatedAccessFee;
 
               return (

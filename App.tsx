@@ -7,11 +7,36 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar, PermissionsAndroid, Platform } from 'react-native';
 import { request as requestPermission, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { promptForEnableLocationIfNeeded } from 'react-native-android-location-enabler';
+import messaging from '@react-native-firebase/messaging';
 
 const App = () => {
   useEffect(() => {
     requestLocationPermission();
     requestNotificationPermission();
+
+    // Foreground notifications
+    const unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
+      console.log('FCM Notification (foreground):', remoteMessage);
+    });
+
+    // App opened from background by tapping a notification
+    const unsubscribeOnOpen = messaging().onNotificationOpenedApp(remoteMessage => {
+      console.log('FCM Notification (opened from background):', remoteMessage);
+    });
+
+    // App opened from quit state by tapping a notification
+    messaging()
+      .getInitialNotification()
+      .then(remoteMessage => {
+        if (remoteMessage) {
+          console.log('FCM Notification (opened from quit state):', remoteMessage);
+        }
+      });
+
+    return () => {
+      unsubscribeOnMessage();
+      unsubscribeOnOpen();
+    };
   }, []);
 
 const requestLocationPermission = async () => {
