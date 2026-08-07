@@ -345,6 +345,7 @@ const DriverHistoryScreen = ({ navigation }) => {
   };
 
   const formatRideData = (booking) => {
+    console.log('booking====>',booking)
     if (booking.is_incity) {
       const price = parseFloat(booking.final_fare) || parseFloat(booking.actual_fare) || parseFloat(booking.total_fare) || 0;
       return {
@@ -799,7 +800,7 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
           <Icon name="person-outline" size={16} color="#666" />
           <Text style={styles.infoText}>{item.customerName}</Text>
         </View>
-        <Text style={styles.priceText}>₹{item.amount?.toFixed(2)}</Text>
+        <Text style={styles.priceText}>₹{Math.ceil(item.amount)}</Text>
       </View>
 
       <View style={styles.rideStats}>

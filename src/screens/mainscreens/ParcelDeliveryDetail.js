@@ -321,8 +321,8 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
         <>
          
           {renderInfoRow('Token Amount', `₹${(parseFloat(delivery.token_amount) || 0).toFixed(2)}`, 'key-outline')}
-          {renderInfoRow('Balance Amount', `₹${(parseFloat(delivery.balance_amount) || 0).toFixed(2)}`, 'cash-outline')}
-           {renderInfoRow('Total amount ', `₹${(parseFloat(delivery.amount) || 0).toFixed(2)}`, 'cash-outline')}
+          {renderInfoRow('Balance Amount', `₹${(Math.ceil(delivery.balance_amount) || 0).toFixed(2)}`, 'cash-outline')}
+           {renderInfoRow('Total amount ', `₹${(Math.ceil(delivery.amount) || 0).toFixed(2)}`, 'cash-outline')}
           {delivery.earnings && (
             <View style={styles.earningsContainer}>
               <Icon name="trophy-outline" size={14} color="#4CAF50" />

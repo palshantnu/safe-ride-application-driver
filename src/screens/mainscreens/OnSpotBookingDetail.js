@@ -55,7 +55,7 @@ const OnSpotBookingDetail = ({ navigation, route }) => {
   const createdAt = formatDateTime(booking?.created_at);
   const scheduleAt = formatDateTime(booking?.schedule_datetime);
 
-  const total = booking?.total_amount != null ? Number(booking.total_amount) : null;
+  const total = booking?.total_amount != null ? Number(booking.token_amount) + Number(booking.balance_amount) : null;
   const token = booking?.token_amount != null ? Number(booking.token_amount) : null;
   const balance = booking?.balance_amount != null ? Number(booking.balance_amount) : null;
 
