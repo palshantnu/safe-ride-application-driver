@@ -35,8 +35,8 @@ const DEFAULT_PAYLOAD = {
   pickup_address: '',
   departure_time: '2026-06-08 08:00:00',
   total_seats: 4,
-  token_fare: 0,
-  full_fare: 0,
+  token_fare: '',
+  full_fare: '',
 };
 
 const SelfSharingCreateTripScreen = ({ navigation, route }) => {
@@ -482,7 +482,7 @@ console.log('form===>', form);
                 editable={false}
                 style={styles.input}
                 keyboardType="numeric"
-                value={String(form.token_fare)}
+                value={String(form.token_fare || '')}
               />
             </View>
 
@@ -492,7 +492,7 @@ console.log('form===>', form);
                 style={styles.input}
                 keyboardType="numeric"
                 placeholder="Full amount"
-                value={String(form.full_fare)}
+               value={String(form.full_fare || '')}
                 onChangeText={(t) => {
                   const fullFare = Number(t) || 0;
                   update('full_fare', t);
