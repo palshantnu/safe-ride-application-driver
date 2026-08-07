@@ -237,7 +237,7 @@ const DriverHistoryScreen = ({ navigation }) => {
 
   // Format parcel data
   const formatParcelData = (delivery) => {
-    const status = delivery.driver_status?.toLowerCase() || delivery.status?.toLowerCase() || 'pending';
+    const status = delivery.status?.toLowerCase() || delivery.status?.toLowerCase() || 'pending';
     const earnings = parseFloat(delivery.driver_amount) || 0;
     
     return {
