@@ -294,7 +294,7 @@ const fetchTrip = async () => {
         
         <View style={s.bookingRow}>
           <Text style={s.bookingLabel}>Balance:</Text>
-          <Text style={s.bookingValue}>₹{booking.balance_amount || 0}</Text>
+          <Text style={s.bookingValue}>₹{parseFloat(booking.balance_amount) || 0}</Text>
         </View>
         
         <View style={s.bookingRow}>

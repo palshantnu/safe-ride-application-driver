@@ -37,6 +37,7 @@ const DEFAULT_PAYLOAD = {
   total_seats: 4,
   token_fare: '',
   full_fare: '',
+  role: 'driver',
 };
 
 const SelfSharingCreateTripScreen = ({ navigation, route }) => {
