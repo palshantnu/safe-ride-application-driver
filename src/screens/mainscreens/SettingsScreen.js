@@ -222,7 +222,7 @@ console.log('baProfile?.data?.profile_pic', baProfile?.data?.profile_pic);
                 <Text style={styles.sectionTitle}>Support</Text>
                 <View style={styles.sectionContent}>
                     {renderMenuItem('help-circle', 'Help Center', () => Alert.alert('Coming Soon', 'Help center will be available soon'))}
-                    {renderMenuItem('message-circle', 'Contact Us', () => Alert.alert('Coming Soon', 'Contact support feature will be available soon'))}
+                    {renderMenuItem('message-circle', 'Chat Support', () => navigation.navigate('ChatSupport'))}
                     {loadingPages ? (
                         <Text style={styles.pageStatus}>Loading pages...</Text>
                     ) : pagesError ? (

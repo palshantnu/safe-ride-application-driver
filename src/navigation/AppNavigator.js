@@ -19,6 +19,7 @@ import BAProfileInformationScreen from '../screens/mainscreens/BAProfileInformat
 import AddDriverScreen from '../screens/mainscreens/AddDriverScreen';
 import BADriverListScreen from '../screens/mainscreens/BADriverListScreen';
 import InfoPageScreen from '../screens/mainscreens/InfoPageScreen';
+import ChatSupportScreen from '../screens/mainscreens/ChatSupportScreen';
 import InCityMapScreen from '../screens/mainscreens/InCityMapScreen';
 import InCityInvoiceScreen from '../screens/mainscreens/InCityInvoiceScreen';
 import WalletScreen from '../screens/mainscreens/WalletScreen';
@@ -248,6 +249,11 @@ const AppNavigator = () => {
               name="InfoPage"
 
               component={InfoPageScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="ChatSupport"
+              component={ChatSupportScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen

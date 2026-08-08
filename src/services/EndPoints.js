@@ -44,6 +44,10 @@ const EndPoints = {
 
   // Notifications
   captainNotifications: 'notifications/captain',
+
+  // Chat Support
+  supportConversation: 'support/conversation',
+  supportSend: 'support/send',
 };
 export default EndPoints;
 
