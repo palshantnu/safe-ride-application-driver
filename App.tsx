@@ -3,6 +3,7 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './src/redux/store';
 import AppNavigator from './src/navigation/AppNavigator';
+import ForceUpdateGate from './src/components/ForceUpdateGate';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar, PermissionsAndroid, Platform } from 'react-native';
 import { request as requestPermission, PERMISSIONS, RESULTS } from 'react-native-permissions';
@@ -116,7 +117,9 @@ const requestNotificationPermission = async () => {
             translucent
           />
           <SafeAreaView style={{ flex: 1, backgroundColor: '#ff7f50' }}>
-            <AppNavigator />
+            <ForceUpdateGate>
+              <AppNavigator />
+            </ForceUpdateGate>
           </SafeAreaView>
         </SafeAreaProvider>
       </PersistGate>

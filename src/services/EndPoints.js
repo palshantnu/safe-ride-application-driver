@@ -48,6 +48,8 @@ const EndPoints = {
   // Chat Support
   supportConversation: 'support/conversation',
   supportSend: 'support/send',
+
+  appVersion: 'app-version',
 };
 export default EndPoints;
 
