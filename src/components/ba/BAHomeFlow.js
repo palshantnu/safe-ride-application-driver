@@ -30,6 +30,7 @@ import {
   START_RIDE,
 } from '../../redux/actions/action-creator';
 import axios from 'axios';
+import BAForegroundService from '../../services/BAForegroundService';
 
 const { NativeModules } = require('react-native');
 const { SoundHelper } = NativeModules;
@@ -278,6 +279,7 @@ const prevParcelBookingIdRef = useRef(null);
       const res = await dispatch(require('../../redux/actions/action-creator').BA_GET_CURRENT_BOOKING());
       if (res?.status && res?.data) {
         const bookings = Array.isArray(res.data) ? res.data : [res.data];
+        console.log('Current bookings:', bookings);
         setBsActiveBookings(bookings);
       } else {
         setBsActiveBookings([]);
@@ -303,6 +305,7 @@ const prevParcelBookingIdRef = useRef(null);
 
   useEffect(() => {
     if (!userData?.ba_name) return;
+    BAForegroundService.start();
     fetchBABookings();
     fetchBAHistory();
     fetchCurrentRide();
@@ -317,7 +320,10 @@ fetchCurrentParcels();
     fetchCurrentParcels();
     }, 5000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      BAForegroundService.stop();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData?.ba_name]);
 
@@ -539,6 +545,15 @@ console.log('res====>',res)
           </View>
         </View>
       </View>
+         <View style={styles.scheduleDateRow}>
+                  <Icon name="calendar" size={14} color="#FF1493" />
+                  <Text style={styles.scheduleDateText}>
+                    {new Date(booking.schedule_date).toLocaleString('en-IN', {
+                      day: '2-digit', month: 'short', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit', hour12: true,
+                    })}
+                  </Text>
+                </View>
 
       <View style={styles.rideInfo}>
         <View style={styles.infoItem}>
@@ -918,7 +933,15 @@ const renderCurrentParcelCard = parcel => (
           </View>
     
         </View>
-
+  <View style={styles.scheduleDateRow}>
+                  <Icon name="calendar" size={14} color="#FF1493" />
+                  <Text style={styles.scheduleDateText}>
+                    {new Date(booking.schedule_date).toLocaleString('en-IN', {
+                      day: '2-digit', month: 'short', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit', hour12: true,
+                    })}
+                  </Text>
+                </View>
         <View style={styles.rideInfo}>
           <View style={styles.infoItem}>
             <Icon name="user" size={16} color="#666" />
@@ -1615,7 +1638,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FF1493',
   },
-
+   scheduleDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFF0F5',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  scheduleDateText: {
+    fontSize: 20,
+    color: '#FF1493',
+    fontWeight: '600',
+  },
 });
 
 export default BAHomeFlow;
