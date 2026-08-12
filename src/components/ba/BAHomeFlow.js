@@ -245,6 +245,7 @@ const prevParcelBookingIdRef = useRef(null);
       const res = await dispatch(GET_BA_NEW_BOOKINGS());
       if (res?.status && Array.isArray(res.data)) {
         const searching = res.data.filter((b) => b.status === 'SEARCHING');
+        console.log('searching',searching)
         setBaPendingBookings(searching);
         setBaNewBookings(res.data);
       } else {
@@ -489,7 +490,20 @@ console.log('res====>',res)
           <Text style={styles.requestBadgeText}>{booking.service_name}</Text>
         </View>
         </View>
-        <Text style={styles.fareAmount}>₹{booking.total_fare}</Text>
+        <View style={{marginBottom:10}}>
+                        {/* <Text style={styles.fareAmount}>₹{booking.total_fare}{'\n'}</Text> */}
+                        <Text style={styles.fareAmount}>
+                          ₹{(() => {
+                            
+                            const captainAmount = parseFloat(booking.total_fare || 0) - parseFloat(booking.platform_fee || 0) - parseFloat(booking.access_fee || 0);
+                            return parseFloat(captainAmount.toFixed(2));
+                          })()}{' '}
+                          {'\n'}
+                          <Text style={{fontSize:12}}>Captain amount</Text>
+                        </Text>
+                 <Text style={{...styles.fareAmount,color:'red'}}>₹{booking.total_fare}{'\n'}<Text style={{fontSize:12}}>Ride amount</Text></Text>
+                      </View>
+        {/* <Text style={styles.fareAmount}>₹{booking.total_fare}</Text> */}
       </View>
 
       <View style={styles.locationContainer}>
@@ -851,7 +865,22 @@ const renderCurrentParcelCard = parcel => (
             <Text style={styles.statusBadgeText}>{driverstatus === 'REASSIGN' ? getStatusText(driverstatus) : getStatusText(status)}</Text>
           </View>
          
-          <Text style={styles.fareAmount}>₹{booking?.total_fare}</Text>
+          {/* <Text style={styles.fareAmount}>₹{booking?.total_fare}</Text> */}
+           <View style={{marginBottom:10}}>
+                        {/* <Text style={styles.fareAmount}>₹{booking.total_fare}{'\n'}</Text> */}
+                        <Text style={styles.fareAmount}>
+                          ₹{(() => {
+                            
+                            const captainAmount = parseFloat(booking.total_fare || 0) - parseFloat(booking.platform_fee || 0) - parseFloat(booking.access_fee || 0);
+                            return parseFloat(captainAmount.toFixed(2));
+                          })()}{' '}
+                          {'\n'}
+                          <Text style={{fontSize:12}}>Captain amount</Text>
+                        </Text>
+                 <Text style={{...styles.fareAmount,color:'red'}}>₹{booking.total_fare}{'\n'}<Text style={{fontSize:12}}>Ride amount</Text></Text>
+                      </View>
+        {/* <Text style={styles.fareAmount}>₹{booking.total_fare}</Text> */}
+
         </View>
 {service_name && <View style={{backgroundColor: '#2196F3', alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 10,marginTop:-10}}>
             <Text style={styles.statusBadgeText}>{service_name}</Text>
