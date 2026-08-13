@@ -933,6 +933,29 @@ const renderCurrentParcelCard = parcel => (
           </View>
     
         </View>
+         {booking.token_paid == 1 ? (
+                  <View style={styles.driverCard}>
+                    <View style={styles.driverRow}>
+                      <View style={styles.driverAvatar}>
+                        <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
+                      </View>
+                      <View style={styles.driverMeta}>
+                        <Text style={styles.driverName}>{booking.user_name || 'Passenger'}</Text>
+                        {booking.user_mobile ? (
+                          <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)}>
+                            <Icon name="phone" size={14} color="#4CAF50" />
+                            <Text style={styles.driverPhone}>{booking.user_mobile}</Text>
+                          </TouchableOpacity>
+                        ) : null}
+                      </View>
+                      {booking.user_mobile ? (
+                        <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${booking.user_mobile}`)}>
+                          <Icon name="phone-call" size={20} color="#fff" />
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
+                  </View>
+                ) : null}
   <View style={styles.scheduleDateRow}>
                   <Icon name="calendar" size={14} color="#FF1493" />
                   <Text style={styles.scheduleDateText}>
