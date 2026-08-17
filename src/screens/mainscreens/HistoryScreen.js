@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,14 +20,27 @@ const ONSPOT_HISTORY_API = 'https://sigiride.com/api/onspot/captain/mybooking';
 const LIMIT = 10;
 
 const DriverHistoryScreen = ({ navigation }) => {
-  const [rideHistory, setRideHistory] = useState([]);
+  // Each source (onspot / parcel / regular rides) keeps its own paginated cache;
+  // they are merged + sorted by date below so a driver sees history across all
+  // services they've ever been assigned to, not just their current service_id.
+  const [onspotHistory, setOnspotHistory] = useState([]);
+  const [onspotPage, setOnspotPage] = useState(1);
+  const [onspotHasMore, setOnspotHasMore] = useState(true);
+  const [onspotTotal, setOnspotTotal] = useState(0);
+
+  const [parcelHistory, setParcelHistory] = useState([]);
+  const [parcelPage, setParcelPage] = useState(1);
+  const [parcelHasMore, setParcelHasMore] = useState(true);
+  const [parcelTotal, setParcelTotal] = useState(0);
+
+  const [regularHistory, setRegularHistory] = useState([]);
+  const [regularPage, setRegularPage] = useState(1);
+  const [regularHasMore, setRegularHasMore] = useState(true);
+  const [regularTotal, setRegularTotal] = useState(0);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const [stats, setStats] = useState({
     totalRides: 0,
     totalEarnings: 0,
@@ -38,23 +51,40 @@ const DriverHistoryScreen = ({ navigation }) => {
   const loginToken = useSelector((state) => state?.auth?.loginToken);
   const { userData } = useSelector((state) => state.auth);
   const isBA = !!userData?.ba_name;
-  
-  // Check if driver is parcel delivery driver
-  const isParcelDriver = userData?.service_id === 75;
-  // Check if driver is OnSpot captain
-  const isOnSpotCaptain = userData?.service_id === 77;
+
+  const hasMore = onspotHasMore || parcelHasMore || regularHasMore;
+
+  const combinedHistory = useMemo(() => {
+    return [...onspotHistory, ...parcelHistory, ...regularHistory].sort((a, b) => {
+      const dateA = new Date(a.created_at || a.date).getTime() || 0;
+      const dateB = new Date(b.created_at || b.date).getTime() || 0;
+      return dateB - dateA;
+    });
+  }, [onspotHistory, parcelHistory, regularHistory]);
+
+  // Recompute combined stats whenever any source's history changes
+  useEffect(() => {
+    const completed = combinedHistory.filter(
+      item => item.status === 'completed' || item.status === 'delivered'
+    );
+    const totalEarnings = completed.reduce((sum, item) => sum + (item.earnings || 0), 0);
+    const ratedRides = completed.filter(item => !item.is_onspot && !item.is_parcel && item.rating > 0);
+    const avgRating = ratedRides.length > 0
+      ? (ratedRides.reduce((sum, item) => sum + item.rating, 0) / ratedRides.length).toFixed(1)
+      : 0;
+
+    setStats({
+      totalRides: completed.length,
+      totalEarnings,
+      avgRating,
+    });
+  }, [combinedHistory]);
 
   // Fetch OnSpot history with pagination
   const fetchOnSpotHistory = async (pageNum = 1, shouldAppend = false) => {
     if (!loginToken) return;
-    
+
     try {
-      if (pageNum === 1) {
-        setIsLoading(true);
-      } else {
-        setIsLoadingMore(true);
-      }
-      
       const response = await axios.get(ONSPOT_HISTORY_API, {
         headers: {
           Authorization: `Bearer ${loginToken}`,
@@ -64,14 +94,14 @@ const DriverHistoryScreen = ({ navigation }) => {
           limit: LIMIT,
         },
       });
-      
+
       console.log('OnSpot history response:', response.data);
 
       if (response.data?.status && Array.isArray(response.data?.data)) {
         const formattedHistory = response.data.data.map(booking => formatOnSpotData(booking));
-        
+
         if (shouldAppend) {
-          setRideHistory(prev => {
+          setOnspotHistory(prev => {
   const merged = [...prev, ...formattedHistory];
 
   const unique = merged.filter(
@@ -82,38 +112,25 @@ const DriverHistoryScreen = ({ navigation }) => {
   return unique;
 });
         } else {
-          setRideHistory(formattedHistory);
+          setOnspotHistory(formattedHistory);
         }
-        
+
         // Handle pagination
         if (response.data?.pagination) {
-          setTotalCount(response.data.pagination.total);
-          setTotalPages(response.data.pagination.total_pages);
-          setHasMore(pageNum < response.data.pagination.total_pages);
-        }
-        
-        // Calculate stats from all data (if pagination info available)
-        if (!shouldAppend) {
-          calculateOnSpotStats(formattedHistory);
+          setOnspotTotal(response.data.pagination.total);
+          setOnspotHasMore(pageNum < response.data.pagination.total_pages);
         } else {
-          // Recalculate stats with all data
-          const allHistory = [...rideHistory, ...formattedHistory];
-          calculateOnSpotStats(allHistory);
+          setOnspotHasMore(false);
         }
       } else {
         if (!shouldAppend) {
-          setRideHistory([]);
+          setOnspotHistory([]);
         }
-        setHasMore(false);
+        setOnspotHasMore(false);
       }
     } catch (error) {
       console.log('Error fetching OnSpot history:', error);
-    } finally {
-      if (pageNum === 1) {
-        setIsLoading(false);
-      } else {
-        setIsLoadingMore(false);
-      }
+      setOnspotHasMore(false);
     }
   };
 
@@ -156,31 +173,11 @@ const DriverHistoryScreen = ({ navigation }) => {
     };
   };
 
-  // Calculate OnSpot stats
-  const calculateOnSpotStats = (bookings) => {
-    const completedBookings = bookings.filter(b => b.status === 'completed');
-    const totalRides = completedBookings.length;
-    const totalEarnings = completedBookings.reduce((sum, b) => sum + b.earnings, 0);
-    const avgRating = 4.5;
-
-    setStats({
-      totalRides,
-      totalEarnings,
-      avgRating,
-    });
-  };
-
   // Fetch parcel delivery history with pagination
   const fetchParcelHistory = async (pageNum = 1, shouldAppend = false) => {
     if (!loginToken) return;
-    
+
     try {
-      if (pageNum === 1) {
-        setIsLoading(true);
-      } else {
-        setIsLoadingMore(true);
-      }
-      
       const response = await axios.get(PARCEL_HISTORY_API, {
         headers: {
           Authorization: `Bearer ${loginToken}`,
@@ -190,14 +187,14 @@ const DriverHistoryScreen = ({ navigation }) => {
           limit: LIMIT,
         },
       });
-      
+
       console.log('Parcel history response:', response.data);
 
       if (response.data?.status && response.data?.data) {
         const formattedHistory = response.data.data.map(delivery => formatParcelData(delivery));
-        
+
         if (shouldAppend) {
-          setRideHistory(prev => {
+          setParcelHistory(prev => {
   const merged = [...prev, ...formattedHistory];
 
   const unique = merged.filter(
@@ -208,30 +205,24 @@ const DriverHistoryScreen = ({ navigation }) => {
   return unique;
 });
         } else {
-          setRideHistory(formattedHistory);
-          // Calculate stats from all data (if pagination info available)
-          if (response.data?.pagination) {
-            setTotalCount(response.data.pagination.total);
-            setHasMore(pageNum < response.data.pagination.total_pages);
-          }
+          setParcelHistory(formattedHistory);
         }
-        
-        // Calculate stats from current data (for display)
-        calculateParcelStats(formattedHistory);
+
+        if (response.data?.pagination) {
+          setParcelTotal(response.data.pagination.total);
+          setParcelHasMore(pageNum < response.data.pagination.total_pages);
+        } else {
+          setParcelHasMore(false);
+        }
       } else {
         if (!shouldAppend) {
-          setRideHistory([]);
+          setParcelHistory([]);
         }
-        setHasMore(false);
+        setParcelHasMore(false);
       }
     } catch (error) {
       console.log('Error fetching parcel history:', error);
-    } finally {
-      if (pageNum === 1) {
-        setIsLoading(false);
-      } else {
-        setIsLoadingMore(false);
-      }
+      setParcelHasMore(false);
     }
   };
 
@@ -274,38 +265,18 @@ const DriverHistoryScreen = ({ navigation }) => {
     };
   };
 
-  // Calculate parcel stats from current page
-  const calculateParcelStats = (deliveries) => {
-    const completedDeliveries = deliveries.filter(d => d.status === 'delivered');
-    const totalRides = completedDeliveries.length;
-    const totalEarnings = completedDeliveries.reduce((sum, d) => sum + d.earnings, 0);
-    const avgRating = 4.5;
-
-    setStats({
-      totalRides,
-      totalEarnings,
-      avgRating,
-    });
-  };
-
   // Fetch booking history (regular rides) with pagination
   const fetchBookingHistory = async (pageNum = 1, shouldAppend = false) => {
     try {
-      if (pageNum === 1) {
-        setIsLoading(true);
-      } else {
-        setIsLoadingMore(true);
-      }
-      
       const getHistory = isBA ? GET_BA_BOOKING_HISTORY : GET_DRIVER_BOOKING_HISTORY;
       const res = await dispatch(getHistory(pageNum, LIMIT));
       console.log('Booking history response:', res);
 
       if (res?.status && res?.data) {
         const formattedHistory = res.data.map(booking => formatRideData(booking));
-        
+
         if (shouldAppend) {
-          setRideHistory(prev => {
+          setRegularHistory(prev => {
   const merged = [...prev, ...formattedHistory];
 
   const unique = merged.filter(
@@ -316,31 +287,25 @@ const DriverHistoryScreen = ({ navigation }) => {
   return unique;
 });
         } else {
-          setRideHistory(formattedHistory);
+          setRegularHistory(formattedHistory);
         }
-        
+
         if (res?.pagination) {
-          setHasMore(pageNum < res.pagination.total_pages);
-          setTotalCount(res.pagination.total);
-        }else{
-           setTotalCount(res.total);
+          setRegularHasMore(pageNum < res.pagination.total_pages);
+          setRegularTotal(res.pagination.total);
+        } else {
+          setRegularTotal(res.total || formattedHistory.length);
+          setRegularHasMore(false);
         }
-        
-        calculateStats(formattedHistory);
       } else {
         if (!shouldAppend) {
-          setRideHistory([]);
+          setRegularHistory([]);
         }
-        setHasMore(false);
+        setRegularHasMore(false);
       }
     } catch (error) {
       console.log('Error fetching booking history:', error);
-    } finally {
-      if (pageNum === 1) {
-        setIsLoading(false);
-      } else {
-        setIsLoadingMore(false);
-      }
+      setRegularHasMore(false);
     }
   };
 
@@ -412,60 +377,65 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
     };
   };
 
-  const calculateStats = (rides) => {
-    const completedRides = rides.filter(ride => ride.status === 'completed');
-    const totalRides = completedRides.length;
-    const totalEarnings = completedRides.reduce((sum, ride) => sum + ride.earnings, 0);
-    const avgRating = completedRides.length > 0 
-      ? (completedRides.reduce((sum, ride) => sum + ride.rating, 0) / completedRides.length)?.toFixed(1)
-      : 0;
-
-    setStats({
-      totalRides,
-      totalEarnings,
-      avgRating,
-    });
-  };
-
-  // Load more items when reaching end
-  const loadMore = () => {
+  // Load more items when reaching end — advances only the sources that still have pages left
+  const loadMore = async () => {
     if (!hasMore || isLoadingMore || isLoading) return;
-    const nextPage = page + 1;
-    setPage(nextPage);
-    if (isOnSpotCaptain) {
-      fetchOnSpotHistory(nextPage, true);
-    } else if (isParcelDriver) {
-      fetchParcelHistory(nextPage, true);
-    } else {
-      fetchBookingHistory(nextPage, true);
+    setIsLoadingMore(true);
+    const tasks = [];
+    if (onspotHasMore) {
+      const nextPage = onspotPage + 1;
+      setOnspotPage(nextPage);
+      tasks.push(fetchOnSpotHistory(nextPage, true));
     }
+    if (parcelHasMore) {
+      const nextPage = parcelPage + 1;
+      setParcelPage(nextPage);
+      tasks.push(fetchParcelHistory(nextPage, true));
+    }
+    if (regularHasMore) {
+      const nextPage = regularPage + 1;
+      setRegularPage(nextPage);
+      tasks.push(fetchBookingHistory(nextPage, true));
+    }
+    await Promise.all(tasks);
+    setIsLoadingMore(false);
   };
 
-  // Initial load
+  // Initial load — always fetches every service's history and merges it, regardless of the
+  // driver's current service_id, so past work on any service shows up here.
   useEffect(() => {
-    setPage(1);
-    setHasMore(true);
-    setRideHistory([]);
-    if (isOnSpotCaptain) {
-      fetchOnSpotHistory(1, false);
-    } else if (isParcelDriver) {
-      fetchParcelHistory(1, false);
-    } else {
-      fetchBookingHistory(1, false);
-    }
-  }, [isOnSpotCaptain, isParcelDriver]);
+    const loadAll = async () => {
+      setIsLoading(true);
+      setOnspotPage(1);
+      setOnspotHasMore(true);
+      setParcelPage(1);
+      setParcelHasMore(true);
+      setRegularPage(1);
+      setRegularHasMore(true);
+      await Promise.all([
+        fetchOnSpotHistory(1, false),
+        fetchParcelHistory(1, false),
+        fetchBookingHistory(1, false),
+      ]);
+      setIsLoading(false);
+    };
+    loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loginToken, isBA]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    setPage(1);
-    setHasMore(true);
-    if (isOnSpotCaptain) {
-      await fetchOnSpotHistory(1, false);
-    } else if (isParcelDriver) {
-      await fetchParcelHistory(1, false);
-    } else {
-      await fetchBookingHistory(1, false);
-    }
+    setOnspotPage(1);
+    setOnspotHasMore(true);
+    setParcelPage(1);
+    setParcelHasMore(true);
+    setRegularPage(1);
+    setRegularHasMore(true);
+    await Promise.all([
+      fetchOnSpotHistory(1, false),
+      fetchParcelHistory(1, false),
+      fetchBookingHistory(1, false),
+    ]);
     setRefreshing(false);
   };
 
@@ -635,7 +605,7 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
         {/* Price Breakdown */}
         <View style={styles.priceContainer}>
           <View style={styles.priceItem}>
-            <Text style={styles.priceLabel}>Total</Text>
+            <Text style={styles.priceLabel}>Total Paid</Text>
             <Text style={styles.totalPrice}>₹{parseFloat(item.token_amount)+ parseFloat(item.balance_amount)}</Text>
           </View>
           <View style={styles.priceItem}>
@@ -997,45 +967,29 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
     </TouchableOpacity>
   );
 
-  // Get header gradient colors based on service type
-  const getHeaderColors = () => {
-    if (isOnSpotCaptain) return ['#FF9800', '#FF9800', '#e20f7a'];
-    if (isParcelDriver) return ['#FF9800', '#FF9800', '#F57C00'];
-    return ['#ff7f50', '#ff7f50', '#e20f7a'];
-  };
-
-  // Get header title based on service type
-  const getHeaderTitle = () => {
-    if (isOnSpotCaptain) return 'OnSpot History';
-    if (isParcelDriver) return 'Delivery History';
-    return 'Ride History';
-  };
-
-  // Get primary color based on service type
-  const getPrimaryColor = () => {
-    if (isOnSpotCaptain) return '#810a45';
-    if (isParcelDriver) return '#FF9800';
-    return '#FF1493';
-  };
+  // Header/list is now generic — a single driver's history can span any mix of
+  // regular rides, parcel deliveries and OnSpot bookings, merged and date-sorted.
+  const headerColors = ['#ff7f50', '#ff7f50', '#e20f7a'];
+  const headerTitle = 'History';
+  const primaryColor = '#FF1493';
+  const combinedTotalCount = onspotTotal + parcelTotal + regularTotal || stats.totalRides;
 
   const renderHeader = () => (
     <>
       <LinearGradient
-        colors={getHeaderColors()}
+        colors={headerColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
+        <Text style={styles.headerTitle}>{headerTitle}</Text>
       </LinearGradient>
       <View style={styles.statsHeader}>
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Icon name={isOnSpotCaptain ? "flash-outline" : (isParcelDriver ? "cube-outline" : "car-outline")} size={24} color={getPrimaryColor()} />
-            <Text style={styles.statNumber}>{totalCount || stats.totalRides}</Text>
-            <Text style={styles.statLabel}>
-              {isOnSpotCaptain ? 'Total Bookings' : (isParcelDriver ? 'Total Deliveries' : 'Total Rides')}
-            </Text>
+            <Icon name="car-outline" size={24} color={primaryColor} />
+            <Text style={styles.statNumber}>{combinedTotalCount}</Text>
+            <Text style={styles.statLabel}>Total Bookings</Text>
           </View>
           <View style={styles.statCard}>
             <Icon name="cash-outline" size={24} color="#4CAF50" />
@@ -1043,9 +997,7 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
             <Text style={styles.statLabel}>Total Earnings</Text>
           </View>
         </View>
-        <Text style={styles.sectionTitle}>
-          {isOnSpotCaptain ? 'Recent Bookings' : (isParcelDriver ? 'Recent Deliveries' : 'Recent Rides')}
-        </Text>
+        <Text style={styles.sectionTitle}>Recent Activity</Text>
       </View>
     </>
   );
@@ -1055,7 +1007,7 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
     if (!isLoadingMore) return null;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={getPrimaryColor()} />
+        <ActivityIndicator size="small" color={primaryColor} />
         <Text style={styles.footerText}>Loading more...</Text>
       </View>
     );
@@ -1066,19 +1018,13 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
     if (isLoading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Icon name={isOnSpotCaptain ? "flash-outline" : (isParcelDriver ? "cube-outline" : "car-outline")} size={80} color="#ccc" />
-        <Text style={styles.emptyText}>
-          {isOnSpotCaptain ? 'No bookings yet' : (isParcelDriver ? 'No deliveries yet' : 'No rides yet')}
-        </Text>
+        <Icon name="car-outline" size={80} color="#ccc" />
+        <Text style={styles.emptyText}>No history yet</Text>
         <Text style={styles.emptySubtext}>
-          {isOnSpotCaptain 
-            ? 'Complete your first OnSpot booking to see it here' 
-            : (isParcelDriver 
-              ? 'Complete your first delivery to see it here' 
-              : 'Complete your first ride to see it here')}
+          Complete your first ride, delivery or booking to see it here
         </Text>
-        <TouchableOpacity 
-          style={[styles.refreshButton, { backgroundColor: getPrimaryColor() }]}
+        <TouchableOpacity
+          style={[styles.refreshButton, { backgroundColor: primaryColor }]}
           onPress={onRefresh}
         >
           <Text style={styles.refreshButtonText}>Refresh</Text>
@@ -1087,29 +1033,33 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
     );
   };
 
-  // Get render item function based on service type
-  const getRenderItem = () => {
-    if (isOnSpotCaptain) return renderOnSpotCard;
-    if (isParcelDriver) return renderParcelCard;
-    return renderRideCard;
+  // Dispatch each row to its card renderer based on the item's own type,
+  // since the merged list can contain a mix of onspot / parcel / regular items.
+  const renderItem = ({ item }) => {
+    if (item.is_onspot) return renderOnSpotCard({ item });
+    if (item.is_parcel) return renderParcelCard({ item });
+    return renderRideCard({ item });
   };
 
-  if (isLoading && !refreshing && rideHistory.length === 0) {
+  const getItemKey = (item) => {
+    const type = item.is_onspot ? 'onspot' : item.is_parcel ? 'parcel' : 'ride';
+    return `${type}-${item.id}`;
+  };
+
+  if (isLoading && !refreshing && combinedHistory.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={getPrimaryColor()} />
-        <Text style={styles.loadingText}>
-          {isOnSpotCaptain ? 'Loading booking history...' : (isParcelDriver ? 'Loading delivery history...' : 'Loading ride history...')}
-        </Text>
+        <ActivityIndicator size="large" color={primaryColor} />
+        <Text style={styles.loadingText}>Loading history...</Text>
       </View>
     );
   }
 
   return (
     <FlatList
-      data={rideHistory}
-      renderItem={getRenderItem()}
-      keyExtractor={(item) => item.id.toString()}
+      data={combinedHistory}
+      renderItem={renderItem}
+      keyExtractor={getItemKey}
       contentContainerStyle={styles.listContainer}
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={renderHeader}
@@ -1121,8 +1071,8 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          colors={[getPrimaryColor()]}
-          tintColor={getPrimaryColor()}
+          colors={[primaryColor]}
+          tintColor={primaryColor}
         />
       }
     />

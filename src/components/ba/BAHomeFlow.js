@@ -332,7 +332,7 @@ fetchCurrentParcels();
   useEffect(() => {
     const firstPending = baPendingBookings?.[0];
     const firstPendingId = firstPending?.booking_id || firstPending?.id;
-
+console.log('firstPendingId',firstPendingId)
     if (firstPendingId && firstPendingId !== prevPendingBookingIdRef.current) {
       prevPendingBookingIdRef.current = firstPendingId;
       SoundHelper?.playNotificationSound();

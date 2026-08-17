@@ -290,6 +290,7 @@ const [actionBookingId, setActionBookingId] = useState(null);
 
       if (res?.data?.status && Array.isArray(res?.data?.data)) {
         const list = res.data.data;
+        console.log('OnSpot Available Bookings:', list);
         setOnSpotRequests(list);
         if (list.length > 0) animateRequest();
       } else {
@@ -1215,6 +1216,8 @@ console.log('booking====>',booking)
             <Text style={styles.infoText}>{bookingNo}</Text>
           </View>
         </View>
+                   <View style={styles.remarksContainer}><Icon name="message-circle" size={14} color="#999" /><Text style={styles.remarksText}>Note: {booking.remarks}</Text></View>
+
 
        
 
@@ -1813,6 +1816,8 @@ paddingHorizontal:20}}
             )}
           </TouchableOpacity>
         </View>
+        <View style={styles.remarksContainer}><Icon name="message-circle" size={14} color="#999" /><Text style={styles.remarksText}>Note: {booking.remarks}</Text></View>
+        
       </Animated.View>
     );
   };
@@ -1955,54 +1960,119 @@ paddingHorizontal:20}}
             </Animated.View>
           </View>
         )}
+        {console.log('driverBookingHistory', driverBookingHistory)}
            {driverBookingHistory.length > 0 ? (
           <>
             <Text style={[styles.sectionTitle, { marginHorizontal: 16, marginTop: 8 }]}>Recent Bookings</Text>
-            {driverBookingHistory.slice(0, 1).map((booking) => (
-              <TouchableOpacity
-                key={booking.booking_id || booking.id}
-                style={styles.recentBookingCard}
-                onPress={() => navigation.navigate('BookingHistoryDetail', { ride: {
-                  ...booking,
-                  id: booking.booking_id || booking.id,
-                  booking_id: booking.booking_id,
-                  pickup: booking.pickup_address || booking.pickup_city,
-                  destination: booking.drop_address || booking.drop_city,
-                  price: booking.total_fare || booking.plan_price || booking.driver_amount || 0,
-                  date: booking.schedule_date || booking.created_at,
-                  status: booking.status?.toLowerCase(),
-                  riderName: booking.user_name || 'Customer',
-                  userMobile: booking.user_mobile,
-                  earnings: booking.driver_amount || booking.total_fare || 0,
-                  distance: booking.plan_km || 0,
-                  duration: booking.plan_hour || 0,
-                  person: booking.person,
-                  created_at: booking.created_at,
-                  service_name: booking.service_name,
-                  to_city: booking.to_city,
-                }})}
-              >
-                <View style={styles.recentBookingHeader}>
-                  <View style={[styles.statusDot, { backgroundColor: getStatusColor(booking.status) }]} />
-                  <Text style={styles.recentBookingStatus}>{getStatusText(booking.status)}</Text>
-                  <Text style={styles.recentBookingFare}>₹{booking.total_fare || booking.plan_price || booking.driver_amount || 0}</Text>
-                </View>
-                <View style={styles.recentBookingLocRow}>
-                  <Icon name="map-pin" size={12} color="#4CAF50" />
-                  <Text style={styles.recentBookingLocText} numberOfLines={1}>{booking.pickup_address || booking.pickup_city}</Text>
-                </View>
-                <View style={styles.recentBookingLocRow}>
-                  <Icon name="flag" size={12} color="#FF5252" />
-                  <Text style={styles.recentBookingLocText} numberOfLines={1}>{booking.drop_address || booking.drop_city || booking.to_city}</Text>
-                </View>
-                <View style={styles.recentBookingFooter}>
-                  <Text style={styles.recentBookingService}>{booking.service_name || 'Ride'}</Text>
-                  <Text style={styles.recentBookingDate}>
-                    {booking.schedule_date ? new Date(booking.schedule_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : ''}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+          {driverBookingHistory.slice(0, 1).map((booking) => {
+  const paidTopupAmount = (booking.topups || [])
+    .filter(topup => topup.status === 'PAID')
+    .reduce((sum, topup) => sum + parseFloat(topup.topup_amount || 0), 0);
+
+  const finalPrice =
+    parseFloat(booking.total_fare || booking.plan_price || booking.driver_amount || 0) +
+    paidTopupAmount;
+
+  return (
+    <TouchableOpacity
+      key={booking.booking_id || booking.id}
+      style={styles.recentBookingCard}
+      onPress={() =>
+        navigation.navigate('BookingHistoryDetail', {
+          ride: {
+            ...booking,
+            id: booking.booking_id || booking.id,
+            booking_id: booking.booking_id,
+
+            pickup: booking.pickup_address || booking.pickup_city,
+            destination: booking.drop_address || booking.drop_city,
+
+            // FINAL PRICE = base fare + PAID topups
+            price: finalPrice,
+            final_fare: finalPrice,
+
+            date: booking.schedule_date || booking.created_at,
+            status: booking.status?.toLowerCase(),
+
+            riderName: booking.user_name || 'Customer',
+            userMobile: booking.user_mobile,
+
+            earnings: booking.driver_amount || 0,
+
+            distance: booking.plan_km || 0,
+            duration: booking.plan_hour || 0,
+
+            person: booking.person,
+            created_at: booking.created_at,
+            service_name: booking.service_name,
+            to_city: booking.to_city,
+
+            // optional - useful in detail screen
+            paidTopupAmount: paidTopupAmount,
+            finalPrice: finalPrice,
+          }
+        })
+      }
+    >
+      <View style={styles.recentBookingHeader}>
+        <View
+          style={[
+            styles.statusDot,
+            { backgroundColor: getStatusColor(booking.status) }
+          ]}
+        />
+
+        <Text style={styles.recentBookingStatus}>
+          {getStatusText(booking.status)}
+        </Text>
+
+        <Text style={styles.recentBookingFare}>
+          ₹{finalPrice.toFixed(2)}
+        </Text>
+      </View>
+
+      <View style={styles.recentBookingLocRow}>
+        <Icon name="map-pin" size={12} color="#4CAF50" />
+        <Text
+          style={styles.recentBookingLocText}
+          numberOfLines={1}
+        >
+          {booking.pickup_address || booking.pickup_city}
+        </Text>
+      </View>
+
+      <View style={styles.recentBookingLocRow}>
+        <Icon name="flag" size={12} color="#FF5252" />
+        <Text
+          style={styles.recentBookingLocText}
+          numberOfLines={1}
+        >
+          {booking.drop_address ||
+            booking.drop_city ||
+            booking.to_city}
+        </Text>
+      </View>
+
+      <View style={styles.recentBookingFooter}>
+        <Text style={styles.recentBookingService}>
+          {booking.service_name || 'Ride'}
+        </Text>
+
+        <Text style={styles.recentBookingDate}>
+          {booking.schedule_date
+            ? new Date(booking.schedule_date).toLocaleDateString(
+                'en-IN',
+                {
+                  day: '2-digit',
+                  month: 'short'
+                }
+              )
+            : ''}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+})}
             <TouchableOpacity
               style={styles.viewAllBtn}
               onPress={() => navigation.navigate('History')}
@@ -2610,6 +2680,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FF1493',
   },
+   remarksContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF8F0', padding: 10, borderRadius: 8, marginBottom: 15, gap: 8,marginTop:20 },
+  remarksText: { flex: 1, fontSize: 15, color: '#000' },
 
 });
 
