@@ -106,12 +106,13 @@ console.log('fetchTrips response:', res);
     });
 
     const status = item.status || 'unknown';
+    const blnc = item?.full_fare || 'unknown';
 
     return (
       <TouchableOpacity
         style={styles.card}
         onPress={() =>
-          navigation.navigate('SelfSharingTripDetails', { tripId, status })
+          navigation.navigate('SelfSharingTripDetails', { tripId, status ,blnc})
         }
         activeOpacity={0.7}
       >
@@ -134,6 +135,7 @@ console.log('fetchTrips response:', res);
           <Text style={styles.subtitle}>{departureDateTime}</Text>
           <Text style={styles.subtitle}>Total Seats {item?.total_seats}</Text>
           <Text style={styles.subtitle}>Available Seats {item?.available_seats}</Text>
+          <Text style={styles.subtitle}>Amount {item?.full_fare}</Text>
         </View>
         <Icon name="chevron-right" size={18} color="#ccc" />
       </TouchableOpacity>

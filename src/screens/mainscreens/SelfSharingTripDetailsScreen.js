@@ -18,7 +18,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import SelfSharingService from '../../services/SelfSharingService';
 
 const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
-  const { tripId ,status} = route.params || {};
+  const { tripId ,status,blnc} = route.params || {};
 
   const [loading, setLoading] = useState(false);
   const [trip, setTrip] = useState(null);
@@ -296,6 +296,11 @@ const fetchTrip = async () => {
           <Text style={s.bookingLabel}>Balance:</Text>
           <Text style={s.bookingValue}>₹{parseFloat(booking.balance_amount) || 0}</Text>
         </View>
+        {console.log('booking.full_fare',booking)}
+        <View style={s.bookingRow}>
+          <Text style={s.bookingLabel}>Your Amount:</Text>
+          <Text style={s.bookingValue}>₹{parseFloat(blnc) || 0}</Text>
+        </View>
         
         <View style={s.bookingRow}>
           <Text style={s.bookingLabel}>Status:</Text>
@@ -420,7 +425,10 @@ const fetchTrip = async () => {
               </TouchableOpacity>
             )}
 
-            {status == 'BOARDING' && bookings.every(booking => booking.balance_paid !== 0) && bookings.every(booking => booking.otp_verified !== 0) && (
+            {status == 'BOARDING' 
+            && 
+            bookings.every(booking => booking.balance_paid !== 0) && bookings.every(booking => booking.otp_verified !== 0) 
+            && (
               <TouchableOpacity
                 style={[s.actionBtn, { backgroundColor: '#ff1493', opacity: loading ? 0.7 : 1 }]}
                 onPress={handleStartRide}

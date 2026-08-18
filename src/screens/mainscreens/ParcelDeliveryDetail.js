@@ -304,7 +304,7 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
       {/* Parcel Details */}
       {renderInfoCard('Parcel Details', 'cube-outline', (
         <>
-          {renderInfoRow('Weight', `${delivery.parcel_weight} kg`, 'scale-outline')}
+          {renderInfoRow('Weight', `${delivery.parcel_weight}`+' '+`${delivery.weight_type}`, 'scale-outline')}
           {renderInfoRow('Packaging Type', delivery.packaging_material, 'archive-outline')}
           {renderInfoRow('Loading/Unloading', delivery.loading_unloading, 'swap-horizontal-outline')}
           {delivery.remarks && (

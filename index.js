@@ -17,7 +17,10 @@ let bgSound = null;
 messaging().setBackgroundMessageHandler(async remoteMessage => {
   console.log('FCM Notification (background/quit):', remoteMessage);
 
-  if (remoteMessage?.data?.type === 'NEW_BOOKING') {
+  const notifType = (remoteMessage?.data?.type || '').toUpperCase();
+  const isBookingNotification = notifType.includes('BOOKING') || notifType.includes('NEW_PARCEL_BOOKING');
+
+  if (isBookingNotification) {
     try {
       bgSound = new Sound('notification.mp3', Sound.MAIN_BUNDLE, error => {
         if (error) {

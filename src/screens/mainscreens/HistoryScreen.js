@@ -262,6 +262,7 @@ const DriverHistoryScreen = ({ navigation }) => {
       delivery_image: delivery.delivery_image,
       pickup_otp_verified: delivery.pickup_otp_verified,
       delivery_otp_verified: delivery.delivery_otp_verified,
+      weight_type:delivery.weight_type
     };
   };
 
@@ -308,11 +309,23 @@ const DriverHistoryScreen = ({ navigation }) => {
       setRegularHasMore(false);
     }
   };
+const getAccessFeeValue = (totalFare, accessFee, accessFeeType) => {
+  const fare = parseFloat(totalFare) || 0;
+  const fee = parseFloat(accessFee) || 0;
+  if (accessFeeType && typeof accessFeeType === 'string' && accessFeeType.toLowerCase() === 'percent') {
+    return fare * (fee / 100);
+  }
+  return fee;
+};
 
   const formatRideData = (booking) => {
     console.log('booking====>',booking)
     if (booking.is_incity) {
+      const calculatedAccessFee = getAccessFeeValue(parseFloat(booking.final_fare) || parseFloat(booking.actual_fare) || parseFloat(booking.total_fare), booking.access_fee, booking.access_fee_type);
       const price = parseFloat(booking.final_fare) || parseFloat(booking.actual_fare) || parseFloat(booking.total_fare) || 0;
+
+   const platformFee = booking.status === 'cancelled'?0: parseFloat(booking.platform_fee) || 0;
+    const captainAmount = price - platformFee - calculatedAccessFee;
       return {
         id: booking.id,
         booking_id: booking.booking_id,
@@ -325,7 +338,7 @@ const DriverHistoryScreen = ({ navigation }) => {
         riderName: booking.user_name || 'Customer',
         userMobile: booking.user_mobile,
         rating: booking.rating || 0,
-        earnings: price,
+        earnings: captainAmount,
         distance: parseFloat(booking.actual_distance) || 0,
         person: booking.person,
         created_at: booking.created_at,
@@ -776,7 +789,7 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
       <View style={styles.rideStats}>
         <View style={styles.statItem}>
           <Icon name="cube-outline" size={14} color="#999" />
-          <Text style={styles.statItemText}>Weight: {item.parcel_weight} kg</Text>
+          <Text style={styles.statItemText}>Weight: {item.parcel_weight} {item.weight_type}</Text>
         </View>
         <View style={styles.statItem}>
           <Icon name="archive-outline" size={14} color="#999" />
