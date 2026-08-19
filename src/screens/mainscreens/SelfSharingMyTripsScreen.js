@@ -136,6 +136,20 @@ console.log('fetchTrips response:', res);
           <Text style={styles.subtitle}>Total Seats {item?.total_seats}</Text>
           <Text style={styles.subtitle}>Available Seats {item?.available_seats}</Text>
           <Text style={styles.subtitle}>Amount {item?.full_fare}</Text>
+          {item?.started_at && (
+            <Text style={styles.subtitle}>
+              Started: {new Date(item.started_at).toLocaleString('en-IN', {
+                day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
+              })}
+            </Text>
+          )}
+          {item?.completed_at && (
+            <Text style={styles.subtitle}>
+              Finished: {new Date(item.completed_at).toLocaleString('en-IN', {
+                day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
+              })}
+            </Text>
+          )}
         </View>
         <Icon name="chevron-right" size={18} color="#ccc" />
       </TouchableOpacity>

@@ -501,7 +501,7 @@ console.log('res====>',res)
                         <Text style={styles.fareAmount}>
                           ₹{(() => {
                             
-                            const captainAmount = parseFloat(booking.total_fare || 0) - parseFloat(booking.platform_fee || 0) - parseFloat(booking.access_fee || 0);
+                            const captainAmount = parseFloat(booking.driver_amount || 0);
                             return parseFloat(captainAmount.toFixed(2));
                           })()}{' '}
                           {'\n'}
@@ -886,7 +886,7 @@ const renderCurrentParcelCard = parcel => (
                         <Text style={styles.fareAmount}>
                           ₹{(() => {
                             
-                            const captainAmount = parseFloat(booking.total_fare || 0) - parseFloat(booking.platform_fee || 0) - parseFloat(booking.access_fee || 0);
+                            const captainAmount = parseFloat(booking.driver_amount || 0);
                             return parseFloat(captainAmount.toFixed(2));
                           })()}{' '}
                           {'\n'}
@@ -1015,6 +1015,7 @@ const renderCurrentParcelCard = parcel => (
 
   const StatsCard = () => {
     const today = new Date();
+    // today.setDate(today.getDate() + 1);
     const todayString = today.toISOString().split('T')[0];
 
     const todaysBookings = (baBookingHistory || []).filter((booking) => {
@@ -1024,7 +1025,7 @@ const renderCurrentParcelCard = parcel => (
     });
 
     const todaysEarnings = todaysBookings.reduce((sum, booking) => {
-      const price = Number(booking?.total_fare || booking?.plan_price || 0);
+      const price = Number(booking?.driver_amount || booking?.plan_price || 0);
       return sum + (Number.isFinite(price) ? price : 0);
     }, 0);
 
@@ -1198,7 +1199,7 @@ onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
                 <View style={styles.recentBookingHeader}>
                   <View style={[styles.statusDot, { backgroundColor: getStatusColor(booking.status) }]} />
                   <Text style={styles.recentBookingStatus}>{getStatusText(booking.status)}</Text>
-                  <Text style={styles.recentBookingFare}>₹{booking.total_fare}</Text>
+                  <Text style={styles.recentBookingFare}>₹{booking.driver_amount}</Text>
                 </View>
                 <View style={styles.recentBookingLocRow}>
                   <Icon name="map-pin" size={12} color="#4CAF50" />

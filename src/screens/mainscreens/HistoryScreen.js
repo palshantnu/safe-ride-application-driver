@@ -161,6 +161,7 @@ const DriverHistoryScreen = ({ navigation }) => {
       status: status,
       cancelled_by: booking.cancelled_by,
       cancel_reason: booking.cancel_reason,
+      started_at: booking.started_at,
       completed_at: booking.completed_at,
       created_at: booking.created_at,
       updated_at: booking.updated_at,
@@ -261,7 +262,9 @@ const DriverHistoryScreen = ({ navigation }) => {
       pickup_image: delivery.pickup_image,
       delivery_image: delivery.delivery_image,
       pickup_otp_verified: delivery.pickup_otp_verified,
+      pickup_otp_verified_at: delivery.pickup_otp_verified_at,
       delivery_otp_verified: delivery.delivery_otp_verified,
+      delivered_at: delivery.delivered_at,
       weight_type:delivery.weight_type
     };
   };
@@ -342,6 +345,8 @@ const getAccessFeeValue = (totalFare, accessFee, accessFeeType) => {
         distance: parseFloat(booking.actual_distance) || 0,
         person: booking.person,
         created_at: booking.created_at,
+        rideStartedAt: booking.ride_started_at || null,
+        rideCompletedAt: booking.ride_completed_at || null,
         topupAmount: 0,
         topups: [],
         access_fee: booking.access_fee,
@@ -385,6 +390,8 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
       topups: booking.topups || [],
       person: booking.person,
       created_at: booking.created_at,
+      rideStartedAt: booking.ride_started_at || null,
+      rideCompletedAt: booking.ride_completed_at || null,
       platform_fee: parseFloat(booking.platform_fee || 0),
       access_fee: parseFloat(booking.access_fee || 0),
     };
@@ -672,6 +679,16 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
           </View>
         )}
 
+        {/* Started At */}
+        {item.started_at && (
+          <View style={styles.completedContainer}>
+            <Icon name="play-circle-outline" size={12} color="#FF5722" />
+            <Text style={styles.completedText}>
+              Started: {formatDateTime(item.started_at)}
+            </Text>
+          </View>
+        )}
+
         {/* Completed At */}
         {isCompleted && item.completed_at && (
           <View style={styles.completedContainer}>
@@ -827,6 +844,23 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
         </View>
       )}
 
+      {(item.pickup_otp_verified_at || item.delivered_at) && (
+        <View style={styles.rideStats}>
+          {item.pickup_otp_verified_at && (
+            <View style={styles.statItem}>
+              <Icon name="play-circle-outline" size={14} color="#4CAF50" />
+              <Text style={styles.statItemText}>Started: {formatDateTime(item.pickup_otp_verified_at)}</Text>
+            </View>
+          )}
+          {item.delivered_at && (
+            <View style={styles.statItem}>
+              <Icon name="flag-outline" size={14} color="#FF9800" />
+              <Text style={styles.statItemText}>Finished: {formatDateTime(item.delivered_at)}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
       <View style={styles.detailsIndicator}>
         <Text style={styles.detailsText}>View delivery details</Text>
         <Icon name="chevron-forward" size={14} color="#FF9800" />
@@ -909,6 +943,23 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
           </View>
         </View>
       ) : null}
+
+      {(item.rideStartedAt || item.rideCompletedAt) && (
+        <View style={styles.rideTimingRow}>
+          {item.rideStartedAt && (
+            <View style={styles.statItem}>
+              <Icon name="play-circle-outline" size={14} color="#4CAF50" />
+              <Text style={styles.statItemText}>Started: {formatDateTime(item.rideStartedAt)}</Text>
+            </View>
+          )}
+          {item.rideCompletedAt && (
+            <View style={styles.statItem}>
+              <Icon name="flag-outline" size={14} color="#FF1493" />
+              <Text style={styles.statItemText}>Finished: {formatDateTime(item.rideCompletedAt)}</Text>
+            </View>
+          )}
+        </View>
+      )}
 
       <View style={styles.divider} />
 
@@ -1384,6 +1435,13 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#f0f0f0',
     marginVertical: 12,
+  },
+  rideTimingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginBottom: 4,
   },
   rideFooter: {
     flexDirection: 'row',
