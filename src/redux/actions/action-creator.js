@@ -51,6 +51,12 @@ import {
   GET_NOTIFICATIONS_REQUEST,
   GET_NOTIFICATIONS_SUCCESS,
   GET_NOTIFICATIONS_FAILURE,
+  GET_BA_ONLINE_STATUS_REQUEST,
+  GET_BA_ONLINE_STATUS_SUCCESS,
+  GET_BA_ONLINE_STATUS_FAILURE,
+  UPDATE_BA_ONLINE_STATUS_REQUEST,
+  UPDATE_BA_ONLINE_STATUS_SUCCESS,
+  UPDATE_BA_ONLINE_STATUS_FAILURE,
 } from './action-types';
 
 import EndPoints from '../../services/EndPoints';
@@ -542,6 +548,43 @@ export const UPDATE_ONLINE_STATUS = (data) => (dispatch) => {
     });
 };
 
+
+
+export const GET_BA_ONLINE_STATUS = () => (dispatch) => {
+  dispatch({ type: GET_BA_ONLINE_STATUS_REQUEST });
+
+  return axiosinstance.get(EndPoints.baGetOnlineStatus)
+    .then((response) => {
+      if (response.data.status) {
+        dispatch({
+          type: GET_BA_ONLINE_STATUS_SUCCESS,
+          payload: response.data,
+        });
+      }
+      return response.data;
+    })
+    .catch((error) => {
+      dispatch({ type: GET_BA_ONLINE_STATUS_FAILURE });
+      throw error;
+    });
+};
+
+export const UPDATE_BA_ONLINE_STATUS = (data) => (dispatch) => {
+  dispatch({ type: UPDATE_BA_ONLINE_STATUS_REQUEST });
+
+  return axiosinstance.put(EndPoints.baUpdateOnlineStatus, data)
+    .then((response) => {
+      dispatch({
+        type: UPDATE_BA_ONLINE_STATUS_SUCCESS,
+        payload: { is_online: data.is_online },
+      });
+      return response.data;
+    })
+    .catch((error) => {
+      dispatch({ type: UPDATE_BA_ONLINE_STATUS_FAILURE });
+      throw error;
+    });
+};
 
 
 export const GET_BOOKING_REQUESTS = () => (dispatch) => {

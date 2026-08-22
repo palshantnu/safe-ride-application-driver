@@ -31,6 +31,8 @@ import {
   GET_ONLINE_STATUS_SUCCESS,
   GET_BA_PROFILE_SUCCESS,
   UPDATE_BA_PROFILE_SUCCESS,
+  GET_BA_ONLINE_STATUS_SUCCESS,
+  UPDATE_BA_ONLINE_STATUS_SUCCESS,
 } from "../actions/action-types"
 
 
@@ -73,6 +75,7 @@ const initialState = {
 
   // BA Profile
   baProfile: null,
+  baOnlineStatus: null,
 }
 
 
@@ -326,6 +329,20 @@ export const authReducer = (state = initialState, { type, payload }) => {
       return {
         ...state,
         driveronlineStatus: payload.data,
+        error: null,
+      }
+
+    case GET_BA_ONLINE_STATUS_SUCCESS:
+      return {
+        ...state,
+        baOnlineStatus: payload.data,
+        error: null,
+      }
+
+    case UPDATE_BA_ONLINE_STATUS_SUCCESS:
+      return {
+        ...state,
+        baOnlineStatus: { ...state.baOnlineStatus, is_online: payload.is_online },
         error: null,
       }
 

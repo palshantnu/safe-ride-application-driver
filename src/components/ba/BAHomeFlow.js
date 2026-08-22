@@ -11,7 +11,8 @@ import {
   ActivityIndicator,
   Modal,
   FlatList,
-  TextInput
+  TextInput,
+  Switch,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
@@ -28,6 +29,8 @@ import {
   CANCEL_BOOKING,
   COMPLETE_RIDE,
   START_RIDE,
+  GET_BA_ONLINE_STATUS,
+  UPDATE_BA_ONLINE_STATUS,
 } from '../../redux/actions/action-creator';
 import axios from 'axios';
 import BAForegroundService from '../../services/BAForegroundService';
@@ -65,6 +68,8 @@ const BAHomeFlow = ({ navigation }) => {
   const dispatch = useDispatch();
   const { userData } = useSelector((state) => state.auth);
   const loginToken = useSelector((state) => state?.auth?.loginToken);
+  const baOnlineStatus = useSelector((state) => state?.auth?.baOnlineStatus);
+  const [isBaOnline, setIsBaOnline] = useState(false);
 
   const [parcelRequests, setParcelRequests] = useState([]);
 const [parcelCurrent, setParcelCurrent] = useState([]);
@@ -304,8 +309,57 @@ const prevParcelBookingIdRef = useRef(null);
   };
 
   useEffect(() => {
+    if (baOnlineStatus?.is_online !== undefined) {
+      setIsBaOnline(baOnlineStatus.is_online === 1);
+    }
+  }, [baOnlineStatus]);
+
+  const toggleBaOnlineStatus = (value) => {
+    if (value) {
+      Alert.alert('Go On Duty', 'You will start receiving new bookings.', [
+        { text: 'Cancel', onPress: () => setIsBaOnline(false) },
+        {
+          text: 'Go On Duty',
+          onPress: async () => {
+            try {
+              setIsLoading(true);
+              await dispatch(UPDATE_BA_ONLINE_STATUS({ is_online: 1 }));
+              setIsBaOnline(true);
+              fetchBABookings();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to go on duty');
+            } finally {
+              setIsLoading(false);
+            }
+          },
+        },
+      ]);
+    } else {
+      Alert.alert('Go Off Duty', 'You will stop receiving new bookings.', [
+        { text: 'Cancel', onPress: () => setIsBaOnline(true) },
+        {
+          text: 'Go Off Duty',
+          onPress: async () => {
+            try {
+              setIsLoading(true);
+              await dispatch(UPDATE_BA_ONLINE_STATUS({ is_online: 0 }));
+              setIsBaOnline(false);
+              fetchBABookings();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to go off duty');
+            } finally {
+              setIsLoading(false);
+            }
+          },
+        },
+      ]);
+    }
+  };
+
+  useEffect(() => {
     if (!userData?.ba_name) return;
     BAForegroundService.start();
+    dispatch(GET_BA_ONLINE_STATUS());
     fetchBABookings();
     fetchBAHistory();
     fetchCurrentRide();
@@ -1064,6 +1118,19 @@ const renderCurrentParcelCard = parcel => (
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#FF1493']} tintColor="#FF1493" />}
       >
+        <View style={styles.statusCard}>
+          <View style={styles.statusInfo}>
+            <Icon name="circle" size={12} color={isBaOnline ? "#4CAF50" : "#FF5252"} />
+            <Text style={styles.statusText}>{isBaOnline ? 'On Duty' : 'Off Duty'}</Text>
+          </View>
+          <Switch
+            value={isBaOnline}
+            onValueChange={toggleBaOnlineStatus}
+            trackColor={{ false: "#ddd", true: "#FF1493" }}
+            thumbColor="#fff"
+          />
+        </View>
+
         <StatsCard />
 
  {filteredServices.length > 0 ? (
@@ -1454,6 +1521,25 @@ onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
 const styles = StyleSheet.create({
   outer: { flex: 1 },
   content: { flex: 1, padding: 15 },
+  statusCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+  },
+  statusInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 8,
+  },
   driverCard: {
     backgroundColor: '#F9F9F9',
     borderRadius: 12,
