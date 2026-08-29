@@ -93,6 +93,16 @@ const SelfSharingService = {
       throw error;
     }
   },
+
+  // Cancels ONE passenger's booking (e.g. no-show) — trip keeps running for the rest.
+  cancelBooking: async (payload) => {
+    try {
+      return await axiosinstance.post('/selfsharing/trip/cancel-booking', payload);
+    } catch (error) {
+      logAxiosError(error, { action: 'cancelBooking', payload });
+      throw error;
+    }
+  },
 };
 
 

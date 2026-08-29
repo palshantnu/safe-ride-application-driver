@@ -23,6 +23,7 @@ const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [trip, setTrip] = useState(null);
   const [bookings, setBookings] = useState([]);
+  const [cancelledBookings, setCancelledBookings] = useState([]);
 
   const [otpModalVisible, setOtpModalVisible] = useState(false);
   const [otpInput, setOtpInput] = useState('');
@@ -31,6 +32,11 @@ const SelfSharingTripDetailsScreen = ({ navigation, route }) => {
 
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+
+  const [bookingCancelModalVisible, setBookingCancelModalVisible] = useState(false);
+  const [bookingCancelReason, setBookingCancelReason] = useState('');
+  const [bookingToCancel, setBookingToCancel] = useState(null);
+  const [cancellingBooking, setCancellingBooking] = useState(false);
 
 
 const fetchTrip = async () => {
@@ -43,12 +49,17 @@ const fetchTrip = async () => {
 
     let tripData = null;
     let bookingsData = [];
+    let cancelledData = [];
 
     if (res?.data?.data) {
       if (Array.isArray(res.data.data)) {
-        // Filter out cancelled bookings
+        // Active roster excludes cancelled bookings; cancelled ones are shown
+        // separately below so the captain still has a history of who was removed.
         bookingsData = res.data.data.filter(
           (booking) => booking.status !== "CANCELLED"
+        );
+        cancelledData = res.data.data.filter(
+          (booking) => booking.status === "CANCELLED"
         );
 
         tripData = res.data.trip || res.data;
@@ -60,9 +71,11 @@ const fetchTrip = async () => {
     } else if (res?.trip) {
       tripData = res.trip;
 
-      // Filter here as well
       bookingsData = (res.bookings || []).filter(
         (booking) => booking.status !== "CANCELLED"
+      );
+      cancelledData = (res.bookings || []).filter(
+        (booking) => booking.status === "CANCELLED"
       );
     } else {
       tripData = res;
@@ -70,6 +83,7 @@ const fetchTrip = async () => {
 
     setTrip(tripData);
     setBookings(bookingsData);
+    setCancelledBookings(cancelledData);
   } catch (e) {
     Alert.alert('Error', 'Failed to load trip details');
     console.log('fetchTrip error:', e);
@@ -173,6 +187,46 @@ const fetchTrip = async () => {
       console.log('submitCancelRide error:', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openBookingCancelModal = (booking) => {
+    setBookingToCancel(booking);
+    setBookingCancelReason('');
+    setBookingCancelModalVisible(true);
+  };
+
+  const submitBookingCancel = async () => {
+    if (!bookingCancelReason.trim()) {
+      Alert.alert('Error', 'Please enter reason');
+      return;
+    }
+    if (!bookingToCancel?.booking_id || !tripId) return;
+
+    setCancellingBooking(true);
+    try {
+      const res = await SelfSharingService.cancelBooking({
+        trip_id: tripId,
+        booking_id: bookingToCancel.booking_id,
+        reason: bookingCancelReason.trim(),
+      });
+      const ok = res?.status ?? res?.data?.status ?? true;
+      if (ok) {
+        setBookingCancelModalVisible(false);
+        setBookingToCancel(null);
+        Alert.alert('Success', 'Passenger booking cancelled. Trip continues for the rest.');
+        fetchTrip();
+      } else {
+        Alert.alert('Error', res?.message || res?.data?.message || 'Failed to cancel booking');
+      }
+    } catch (e) {
+      Alert.alert(
+        'Error',
+        e?.response?.data?.message || 'Failed to cancel booking'
+      );
+      console.log('submitBookingCancel error:', e);
+    } finally {
+      setCancellingBooking(false);
     }
   };
 
@@ -347,6 +401,18 @@ const fetchTrip = async () => {
         </TouchableOpacity>
         )}
 
+        {booking.status !== 'BOARDED' && booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED'
+          && status !== 'COMPLETED' && status !== 'CANCELLED' && (
+          <TouchableOpacity
+            style={[s.actionBtn, s.cancelBookingBtn]}
+            onPress={() => openBookingCancelModal(booking)}
+            disabled={loading || cancellingBooking}
+          >
+            <Icon name="user-x" size={18} color="#ff1493" />
+            <Text style={[s.actionText, { color: '#ff1493' }]}>Cancel this passenger (No-show)</Text>
+          </TouchableOpacity>
+        )}
+
         <View style={s.bookingRow}>
           <Text style={s.bookingLabel}>Booked At:</Text>
           <Text style={s.bookingValue}>
@@ -360,6 +426,44 @@ const fetchTrip = async () => {
             <Text style={s.bookingValue}>{booking.payment_mode}</Text>
           </View>
         )}
+      </View>
+    );
+  };
+
+  const cancelledByLabel = (cancelledBy) => {
+    if (cancelledBy === 'DRIVER_NO_SHOW') return 'Cancelled by captain (No-show)';
+    if (cancelledBy === 'DRIVER') return 'Trip cancelled by captain';
+    if (cancelledBy === 'USER') return 'Cancelled by passenger';
+    return 'Cancelled';
+  };
+
+  const renderCancelledBookingCard = (booking, index) => {
+    return (
+      <View key={booking.id || index} style={[s.bookingCard, s.cancelledCard]}>
+        <Text style={s.bookingTitle}>Booking #{booking.booking_id || index + 1}</Text>
+        {(booking.user_name || booking.user_mobile) && (
+          <Text style={s.bookingValue}>{booking.user_name || 'Passenger'}{booking.user_mobile ? ` · ${booking.user_mobile}` : ''}</Text>
+        )}
+        <View style={s.bookingRow}>
+          <Text style={s.bookingLabel}>Seats:</Text>
+          <Text style={s.bookingValue}>{booking.seats || 0}</Text>
+        </View>
+        <View style={s.bookingRow}>
+          <Text style={s.bookingLabel}>Status:</Text>
+          <View style={[s.statusBadge, s.statusCancelled]}>
+            <Text style={s.statusText}>{cancelledByLabel(booking.cancelled_by)}</Text>
+          </View>
+        </View>
+        {booking.cancel_reason ? (
+          <View style={s.bookingRow}>
+            <Text style={s.bookingLabel}>Reason:</Text>
+            <Text style={s.bookingValue}>{booking.cancel_reason}</Text>
+          </View>
+        ) : null}
+        <View style={s.bookingRow}>
+          <Text style={s.bookingLabel}>Cancellation Charge:</Text>
+          <Text style={s.bookingValue}>₹{parseFloat(booking.cancellation_fee) || 0}</Text>
+        </View>
       </View>
     );
   };
@@ -424,7 +528,7 @@ const fetchTrip = async () => {
                 )}
               </TouchableOpacity>
             )}
-
+{console.log("status-=--=->",bookings)}
             {status == 'BOARDING' 
             && 
             bookings.every(booking => booking.balance_paid !== 0) && bookings.every(booking => booking.otp_verified !== 0) 
@@ -490,6 +594,16 @@ const fetchTrip = async () => {
               <Icon name="users" size={18} color="#FF1493" /> Bookings ({bookings.length})
             </Text>
             {bookings.map((booking, index) => renderBookingCard(booking, index))}
+          </View>
+        )}
+
+        {/* Cancelled bookings history */}
+        {cancelledBookings.length > 0 && (
+          <View style={s.bookingsSection}>
+            <Text style={s.sectionTitle}>
+              <Icon name="user-x" size={18} color="#ff1493" /> Cancelled ({cancelledBookings.length})
+            </Text>
+            {cancelledBookings.map((booking, index) => renderCancelledBookingCard(booking, index))}
           </View>
         )}
 
@@ -617,6 +731,69 @@ const fetchTrip = async () => {
         </View>
       </Modal>
 
+      {/* Cancel single passenger booking Modal */}
+      <Modal
+        visible={bookingCancelModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setBookingCancelModalVisible(false);
+        }}
+      >
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <Text style={s.modalTitle}>Cancel Passenger Booking</Text>
+            <Text style={s.modalSubText}>
+              Booking #{bookingToCancel?.booking_id || '—'} will be cancelled. The trip continues for the remaining passengers. Please enter the reason (e.g. did not arrive on time).
+            </Text>
+
+            <TextInput
+              value={bookingCancelReason}
+              onChangeText={setBookingCancelReason}
+              placeholder="Enter reason"
+              placeholderTextColor="#999"
+              multiline
+              style={{
+                borderWidth: 1,
+                borderColor: '#e0e0e0',
+                borderRadius: 12,
+                padding: 12,
+                fontSize: 14,
+                marginBottom: 20,
+                backgroundColor: '#FAF9F6',
+                textAlignVertical: 'top',
+                minHeight: 80,
+                color: '#333'
+              }}
+            />
+
+            <View style={s.modalActions}>
+              <TouchableOpacity
+                style={[s.modalBtn, s.modalCancelBtn]}
+                onPress={() => {
+                  setBookingCancelModalVisible(false);
+                }}
+                disabled={cancellingBooking}
+              >
+                <Text style={s.modalBtnText}>Back</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[s.modalBtn, s.modalSubmitBtn]}
+                onPress={submitBookingCancel}
+                disabled={cancellingBooking}
+              >
+                {cancellingBooking ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={s.modalBtnText}>Submit</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 };
@@ -703,6 +880,12 @@ const s = StyleSheet.create({
   verifyOtpBtn: {
     marginTop: 8,
     backgroundColor: '#ff1493',
+  },
+  cancelBookingBtn: {
+    marginTop: 8,
+    backgroundColor: '#FFF0F5',
+    borderWidth: 1,
+    borderColor: '#ff1493',
   },
   verifyOtpText: {
     color: '#fff',
@@ -795,6 +978,10 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     borderWidth: 1,
     borderColor: '#F0F0F0',
+  },
+  cancelledCard: {
+    backgroundColor: '#FFF8F8',
+    borderColor: '#FFD9D9',
   },
   bookingTitle: {
     fontSize: 16,
