@@ -34,9 +34,7 @@ import {
 } from '../../redux/actions/action-creator';
 import axios from 'axios';
 import BAForegroundService from '../../services/BAForegroundService';
-
-const { NativeModules } = require('react-native');
-const { SoundHelper } = NativeModules;
+import { playRing, stopRing } from '../../utils/ringState';
 
 
 const STATUS_COLORS = {
@@ -389,10 +387,10 @@ fetchCurrentParcels();
 console.log('firstPendingId',firstPendingId)
     if (firstPendingId && firstPendingId !== prevPendingBookingIdRef.current) {
       prevPendingBookingIdRef.current = firstPendingId;
-      SoundHelper?.playNotificationSound();
+      playRing();
     } else if (!firstPendingId) {
       prevPendingBookingIdRef.current = null;
-      SoundHelper?.stopNotificationSound();
+      stopRing();
     }
   }, [baPendingBookings]);
 useEffect(() => {
@@ -410,7 +408,7 @@ useEffect(() => {
     prevParcelBookingIdRef.current =
       firstParcelId;
 
-    SoundHelper?.playNotificationSound();
+    playRing();
   } else if (!firstParcelId) {
     prevParcelBookingIdRef.current = null;
   }
@@ -438,7 +436,7 @@ useEffect(() => {
 
   // Stop sound on unmount
   useEffect(() => {
-    return () => SoundHelper?.stopNotificationSound();
+    return () => stopRing();
   }, []);
 
   const filteredBAServiceIds = new Set([72, 73]);

@@ -32,10 +32,7 @@ import {
   UPDATE_ONLINE_STATUS,
 } from '../../redux/actions/action-creator';
 import LocationService from '../../services/LocationService';
-
-
-const { NativeModules } = require('react-native');
-const { SoundHelper } = NativeModules;
+import { playRing, stopRing } from '../../utils/ringState';
 
 // API endpoints for parcel
 const PARCEL_API = {
@@ -224,7 +221,7 @@ const prevParcelCountRef = useRef(0);
   animateRequest();
 
   if (formatted.length > prevParcelCountRef.current) {
-    SoundHelper?.playNotificationSound();
+    playRing();
   }
 }
 
@@ -382,7 +379,7 @@ prevParcelCountRef.current = formatted.length;
   // Accept parcel
   const handleAccept = async (parcel) => {
     setIsLoading(true);
-    SoundHelper?.stopNotificationSound();
+    stopRing();
     try {
       const response = await axios.post(
         PARCEL_API.ACCEPT,
@@ -405,22 +402,22 @@ prevParcelCountRef.current = formatted.length;
 
 useEffect(() => {
   return () => {
-    SoundHelper?.stopNotificationSound();
+    stopRing();
   };
 }, []);
 useEffect(() => {
   if (availableParcels.length > 0) {
-    SoundHelper?.playNotificationSound();
+    playRing();
   } else {
-    SoundHelper?.stopNotificationSound();
+    stopRing();
   }
 }, [availableParcels.length]);
 
 useEffect(() => {
-  return () => SoundHelper?.stopNotificationSound();
+  return () => stopRing();
 }, []);
   const handleReject = (parcel) => {
-    SoundHelper?.stopNotificationSound();
+    stopRing();
 
     Alert.alert('Reject Parcel', 'Reject this request?', [
       { text: 'Cancel', style: 'cancel' },

@@ -9,6 +9,7 @@ import { StatusBar, PermissionsAndroid, Platform } from 'react-native';
 import { request as requestPermission, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { promptForEnableLocationIfNeeded } from 'react-native-android-location-enabler';
 import messaging from '@react-native-firebase/messaging';
+import RingMuteButton from './src/components/RingMuteButton';
 
 const App = () => {
   useEffect(() => {
@@ -120,6 +121,7 @@ const requestNotificationPermission = async () => {
             <ForceUpdateGate>
               <AppNavigator />
             </ForceUpdateGate>
+            <RingMuteButton />
           </SafeAreaView>
         </SafeAreaProvider>
       </PersistGate>

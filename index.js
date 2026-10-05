@@ -5,14 +5,14 @@
 import './src/helpers/imagePatch';
 import { AppRegistry } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
-import Sound from 'react-native-sound';
 import App from './App';
 import { name as appName } from './app.json';
-
-Sound.setCategory('Playback');
+import { playRing, stopRing } from './src/utils/ringState';
 
 const RING_TIMEOUT_MS = 20000;
-let bgSound = null;
+// Bumped on every background ring so an older notification's timeout can't
+// cut off a ring that a newer notification (re)started in the meantime.
+let ringToken = 0;
 
 messaging().setBackgroundMessageHandler(async remoteMessage => {
   console.log('FCM Notification (background/quit):', remoteMessage);
@@ -21,21 +21,16 @@ messaging().setBackgroundMessageHandler(async remoteMessage => {
   const isBookingNotification = notifType.includes('BOOKING') || notifType.includes('NEW_PARCEL_BOOKING');
 
   if (isBookingNotification) {
-    try {
-      bgSound = new Sound('notification.mp3', Sound.MAIN_BUNDLE, error => {
-        if (error) {
-          console.log('BG ring load error:', error);
-          return;
-        }
-        bgSound.setNumberOfLoops(-1);
-        bgSound.play();
-      });
-      setTimeout(() => {
-        bgSound?.stop(() => bgSound?.release());
-      }, RING_TIMEOUT_MS);
-    } catch (e) {
-      console.log('BG ring error:', e);
-    }
+    // Routes through the same native SoundHelper used for in-app booking
+    // requests, so the Mute Ring button (and Accept/Reject) can always stop
+    // it, and a second notification never orphans the first one's sound.
+    const token = ++ringToken;
+    playRing();
+    setTimeout(() => {
+      if (token === ringToken) {
+        stopRing();
+      }
+    }, RING_TIMEOUT_MS);
   }
 });
 

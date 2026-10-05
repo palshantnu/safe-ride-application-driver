@@ -40,9 +40,7 @@ import {
 import LocationService from '../../services/LocationService';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useDispatch, useSelector } from 'react-redux';
-
-const { NativeModules } = require('react-native');
-const { SoundHelper } = NativeModules;
+import { playRing, stopRing } from '../../utils/ringState';
 
 const STATUS_COLORS = {
   ACCEPTED: '#4CAF50',
@@ -181,13 +179,13 @@ const [actionBookingId, setActionBookingId] = useState(null);
   useEffect(() => {
     if (rideRequest && rideRequest.id !== prevRideRequestIdRef.current) {
       prevRideRequestIdRef.current = rideRequest.id;
-      SoundHelper?.playNotificationSound();
+      playRing();
     } else if (!rideRequest) {
       prevRideRequestIdRef.current = null;
-      SoundHelper?.stopNotificationSound();
+      stopRing();
     }
   }, [rideRequest]);
-  
+
   useEffect(() => {
     if (!isOnSpotCaptain) return;
 
@@ -195,18 +193,18 @@ const [actionBookingId, setActionBookingId] = useState(null);
 
     if (latestBookingNo && latestBookingNo !== prevOnSpotBookingRef.current) {
       prevOnSpotBookingRef.current = latestBookingNo;
-      SoundHelper?.playNotificationSound();
+      playRing();
     }
 
     if (onSpotRequests?.length === 0) {
       prevOnSpotBookingRef.current = null;
-      SoundHelper?.stopNotificationSound();
+      stopRing();
     }
   }, [onSpotRequests, isOnSpotCaptain]);
-  
+
   // Stop sound on unmount
   useEffect(() => {
-    return () => SoundHelper?.stopNotificationSound();
+    return () => stopRing();
   }, []);
 
   const fetchDriverBookingHistory = async () => {
@@ -444,7 +442,7 @@ const [actionBookingId, setActionBookingId] = useState(null);
   };
 
   const handleAccept = async () => {
-    SoundHelper?.stopNotificationSound();
+    stopRing();
     try {
       setIsLoading(true);
       const res = await dispatch(
@@ -477,7 +475,7 @@ const [actionBookingId, setActionBookingId] = useState(null);
   };
 
   const handleReject = () => {
-    SoundHelper?.stopNotificationSound();
+    stopRing();
     submitRejectRide('cancel');
   };
 
@@ -507,7 +505,7 @@ const [actionBookingId, setActionBookingId] = useState(null);
   };
 
   const submitOnSpotAccept = async (bookingNo) => {
-    SoundHelper?.stopNotificationSound();
+    stopRing();
     if (!bookingNo) return;
 
     try {
@@ -532,7 +530,7 @@ const [actionBookingId, setActionBookingId] = useState(null);
   };
 
   const submitOnSpotReject = async (bookingNo, reason = 'cancel') => {
-    SoundHelper?.stopNotificationSound();
+    stopRing();
     if (!bookingNo) return;
 
     try {
