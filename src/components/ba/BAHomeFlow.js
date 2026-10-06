@@ -1076,7 +1076,10 @@ const renderCurrentParcelCard = parcel => (
       return bookingDate.split('T')[0] === todayString;
     });
 
-    const todaysEarnings = todaysBookings.reduce((sum, booking) => {
+    // Earnings count only completed rides — cancelled/in-progress ones earn nothing.
+    const todaysEarnings = todaysBookings
+      .filter((booking) => ['completed', 'delivered'].includes(String(booking?.status || '').toLowerCase()))
+      .reduce((sum, booking) => {
       const price = Number(booking?.driver_amount || booking?.plan_price || 0);
       return sum + (Number.isFinite(price) ? price : 0);
     }, 0);
@@ -1095,7 +1098,7 @@ const renderCurrentParcelCard = parcel => (
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Icon name="rupee" size={24} color="#4CAF50" />
+          <FontAwesome5 name="rupee-sign" size={22} color="#4CAF50" />
           <Text style={styles.statValue}>₹{todaysEarnings}</Text>
           <Text style={styles.statLabel}>Today's Earnings</Text>
         </View>

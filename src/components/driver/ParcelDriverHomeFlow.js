@@ -861,7 +861,7 @@ const submitParcelReject = async (parcelId, reason = 'cancel') => {
         </View>
          <View>
         <Text style={styles.fareAmount}>₹{parcel.driver_amount}{'\n'}<Text style={{fontSize:12}}>Captain amount</Text></Text>
-                 <Text style={{...styles.fareAmount, color: 'red',fontSize:12}}>  ₹{parcel.total_fare}{'\n'} <Text style={{fontSize:12}}>Service amount</Text></Text>
+                 <Text style={{...styles.fareAmount, color: 'red',fontSize:12}}>  ₹{Math.ceil(parcel.total_fare)}{'\n'} <Text style={{fontSize:12}}>Service amount</Text></Text>
      </View> </View>
       <View style={styles.currentDetailsGrid}>
         {/* <View style={styles.currentDetailItem}>
@@ -958,7 +958,10 @@ const submitParcelReject = async (parcelId, reason = 'cancel') => {
       return bookingDate.split('T')[0] === todayString;
     });
 
-    const todaysEarnings = todaysDeliveries.reduce((sum, delivery) => {
+    // Earnings count only delivered parcels — cancelled/in-progress ones earn nothing.
+    const todaysEarnings = todaysDeliveries
+      .filter((delivery) => ['delivered', 'completed'].includes(String(delivery?.status || '').toLowerCase()))
+      .reduce((sum, delivery) => {
       const price = Number(delivery?.driver_amount || delivery?.amount || delivery?.total_fare || 0);
       return sum + (Number.isFinite(price) ? price : 0);
     }, 0);
@@ -974,7 +977,7 @@ const submitParcelReject = async (parcelId, reason = 'cancel') => {
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Icon name="rupee" size={24} color="#4CAF50" />
+          <FontAwesome5 name="rupee-sign" size={22} color="#4CAF50" />
           <Text style={styles.statValue}>₹{todaysEarnings}</Text>
           <Text style={styles.statLabel}>Today's Earnings</Text>
         </View>
