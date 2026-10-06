@@ -265,7 +265,9 @@ const DriverHistoryScreen = ({ navigation }) => {
       pickup_otp_verified_at: delivery.pickup_otp_verified_at,
       delivery_otp_verified: delivery.delivery_otp_verified,
       delivered_at: delivery.delivered_at,
-      weight_type:delivery.weight_type
+      weight_type:delivery.weight_type,
+      rating: Number(delivery.rating) || 0,
+      review: delivery.review || '',
     };
   };
 
@@ -826,6 +828,25 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
           <Text style={styles.statItemText}>ID: {item.booking_id}</Text>
         </View>
       </View>
+
+      {item.rating > 0 && (
+        <View style={styles.parcelReviewContainer}>
+          <View style={styles.parcelReviewStars}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Icon
+                key={star}
+                name={star <= item.rating ? 'star' : 'star-outline'}
+                size={14}
+                color="#FFB300"
+              />
+            ))}
+            <Text style={styles.ratingText}>Customer Rating: {item.rating}</Text>
+          </View>
+          {item.review ? (
+            <Text style={styles.parcelReviewText} numberOfLines={3}>"{item.review}"</Text>
+          ) : null}
+        </View>
+      )}
 
       {(item.pickup_otp_verified === 1 || item.delivery_otp_verified === 1) && (
         <View style={styles.verificationContainer}>
@@ -1519,6 +1540,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#FF9800',
     fontWeight: '600',
+  },
+  parcelReviewContainer: {
+    marginTop: 8,
+    backgroundColor: '#FFF8E1',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  parcelReviewStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  parcelReviewText: {
+    marginTop: 4,
+    fontSize: 12,
+    color: '#555',
+    fontStyle: 'italic',
   },
   remarksContainer: {
     flexDirection: 'row',

@@ -331,6 +331,25 @@ const ParcelDeliveryDetail = ({ navigation, route }) => {
           )}
         </>
       ))}
+      {/* Customer Rating & Review */}
+      {Number(delivery.rating) > 0 && renderInfoCard('Customer Rating', 'star-outline', (
+        <>
+          <View style={styles.reviewStars}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Icon
+                key={star}
+                name={star <= Number(delivery.rating) ? 'star' : 'star-outline'}
+                size={20}
+                color="#FFB300"
+              />
+            ))}
+            <Text style={styles.reviewRatingText}>{Number(delivery.rating)}/5</Text>
+          </View>
+          {delivery.review ? (
+            <Text style={styles.reviewText}>"{delivery.review}"</Text>
+          ) : null}
+        </>
+      ))}
 {console.log('delivery.pickup_image',delivery.pickup_image)}
       {/* Images Section */}
       {(delivery.pickup_image || delivery.delivery_image) && (
@@ -581,6 +600,23 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: '#FF9800',
+    fontStyle: 'italic',
+  },
+  reviewStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  reviewRatingText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  reviewText: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#555',
     fontStyle: 'italic',
   },
   earningsContainer: {
