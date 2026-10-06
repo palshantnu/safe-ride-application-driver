@@ -167,6 +167,13 @@ const OnSpotBookingDetail = ({ navigation, route }) => {
           </Section>
         )}
 
+        {Number(booking?.rating) > 0 && (
+          <Section title="Customer Rating" icon="star">
+            <Row label="Rating" value={`${Number(booking.rating)} / 5`} />
+            {booking?.review ? <Row label="Review" value={booking.review} /> : null}
+          </Section>
+        )}
+
        
 
         <View style={{ height: 30 }} />

@@ -171,6 +171,8 @@ const DriverHistoryScreen = ({ navigation }) => {
       customerPhone: booking.user_mobile,
       earnings: earnings,
       driver_id: booking.driver_id,
+      rating: Number(booking.rating) || 0,
+      review: booking.review || '',
     };
   };
 
@@ -698,6 +700,26 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
             <Text style={styles.completedText}>
               Completed: {formatDateTime(item.completed_at)}
             </Text>
+          </View>
+        )}
+
+        {/* Customer rating & review */}
+        {item.rating > 0 && (
+          <View style={styles.parcelReviewContainer}>
+            <View style={styles.parcelReviewStars}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Icon
+                  key={star}
+                  name={star <= item.rating ? 'star' : 'star-outline'}
+                  size={14}
+                  color="#FFB300"
+                />
+              ))}
+              <Text style={styles.ratingText}>Customer Rating: {item.rating}</Text>
+            </View>
+            {item.review ? (
+              <Text style={styles.parcelReviewText} numberOfLines={3}>"{item.review}"</Text>
+            ) : null}
           </View>
         )}
 
