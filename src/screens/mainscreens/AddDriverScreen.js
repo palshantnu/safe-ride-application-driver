@@ -42,7 +42,7 @@ const AddDriverScreen = ({ navigation }) => {
   const loadServices = async () => {
     try {
       const res = await dispatch(All_Services());
-      // A BA can only add drivers for One Way, Rental and Driver.
+      // A BA can only add drivers for One Way, Rental, Driver and Self Sharing.
       if (Array.isArray(res)) {
         setServices(filterBAServices(res));
       } else if (res?.data) {

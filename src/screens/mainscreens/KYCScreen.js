@@ -374,10 +374,6 @@ const KYCScreen = ({ navigation }) => {
             Alert.alert('Error', 'Please enter PAN Number');
             return;
         }
-        if (!gstNumber.trim()) {
-            Alert.alert('Error', 'Please enter GST number');
-            return;
-        }
 
 
         setUploading(true);
@@ -411,7 +407,10 @@ const KYCScreen = ({ navigation }) => {
             
             formData.append('aadhar_number', aadharNumber);
             formData.append('pan_number', panNumber);
-            formData.append('gst_number', gstNumber);
+            // GST number is optional
+            if (gstNumber.trim()) {
+                formData.append('gst_number', gstNumber.trim());
+            }
 
             console.log('Submitting BA KYC...');
 
@@ -1015,10 +1014,10 @@ const KYCScreen = ({ navigation }) => {
 
                     {/* GST Number */}
                     <View style={styles.baDocumentCard}>
-                        <Text style={styles.baDocumentTitle}>GST Number *</Text>
+                        <Text style={styles.baDocumentTitle}>GST Number (Optional)</Text>
                         <TextInput
                             style={[styles.textInput, !canEdit && styles.disabledInput]}
-                            placeholder="Enter GST Number"
+                            placeholder="Enter GST Number (optional)"
                             placeholderTextColor="#999"
                             value={gstNumber}
                             onChangeText={setGstNumber}

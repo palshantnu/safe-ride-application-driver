@@ -151,6 +151,8 @@ const BAParcelHistoryScreen = ({ navigation }) => {
         user_status: parcel.user_status,
       driver_name: parcel.driver_name,
       driver_phone: parcel.driver_phone,
+      rating: Number(parcel.rating) || 0,
+      review: parcel.review || '',
       user_name: parcel.user_name,
       user_mobile: parcel.user_mobile,
       plan_name: parcel.plan_name,
@@ -371,6 +373,25 @@ const BAParcelHistoryScreen = ({ navigation }) => {
             <Text style={styles.remarksText} numberOfLines={2}>{item.remarks}</Text>
           </View>
         ) : null}
+
+        {item.rating > 0 && (
+          <View style={styles.reviewBox}>
+            <View style={styles.reviewStars}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Icon
+                  key={star}
+                  name={star <= item.rating ? 'star' : 'star-outline'}
+                  size={14}
+                  color="#FFB300"
+                />
+              ))}
+              <Text style={styles.reviewRatingText}>Customer Rating: {item.rating}</Text>
+            </View>
+            {item.review ? (
+              <Text style={styles.reviewText} numberOfLines={3}>"{item.review}"</Text>
+            ) : null}
+          </View>
+        )}
 
         {/* <View style={styles.detailsIndicator}>
           <Text style={styles.detailsText}>View details</Text>
@@ -728,6 +749,29 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 11,
     color: '#FF9800',
+    fontStyle: 'italic',
+  },
+  reviewBox: {
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#FFF8E1',
+  },
+  reviewStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  reviewRatingText: {
+    marginLeft: 6,
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FF9800',
+  },
+  reviewText: {
+    marginTop: 4,
+    fontSize: 12,
+    color: '#555',
     fontStyle: 'italic',
   },
   detailsIndicator: {

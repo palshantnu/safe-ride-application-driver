@@ -344,7 +344,8 @@ const getAccessFeeValue = (totalFare, accessFee, accessFeeType) => {
         status: booking.status?.toLowerCase() || 'completed',
         riderName: booking.user_name || 'Customer',
         userMobile: booking.user_mobile,
-        rating: booking.rating || 0,
+        rating: Number(booking.rating) || 0,
+        review: booking.review || '',
         earnings: captainAmount,
         distance: parseFloat(booking.actual_distance) || 0,
         person: booking.person,
@@ -365,7 +366,7 @@ const getAccessFeeValue = (totalFare, accessFee, accessFeeType) => {
 access_fee || 0) + parseFloat(booking.platform_fee || 0);
     const driver_amount = parseFloat(booking.driver_amount) || 0;
     const earnings = driver_amount;
-    const rating = booking.rating || 4.5;
+    const rating = Number(booking.rating) || 0;
 
     return {
       id: booking.id,
@@ -387,6 +388,7 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
       riderName: booking.user_name || 'Customer',
       userMobile: booking.user_mobile,
       rating,
+      review: booking.review || '',
       earnings,
       distance: booking.plan_km || 0,
       duration: booking.plan_hour || 0,
@@ -1061,9 +1063,21 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
       </View>
 
       {item.rating > 0 && (
-        <View style={styles.ratingContainer}>
-          <Icon name="star" size={12} color="#FFD700" />
-          <Text style={styles.ratingText}>Rating: {item.rating}</Text>
+        <View style={styles.parcelReviewContainer}>
+          <View style={styles.parcelReviewStars}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Icon
+                key={star}
+                name={star <= item.rating ? 'star' : 'star-outline'}
+                size={14}
+                color="#FFB300"
+              />
+            ))}
+            <Text style={styles.ratingText}>Customer Rating: {item.rating}</Text>
+          </View>
+          {item.review ? (
+            <Text style={styles.parcelReviewText} numberOfLines={3}>"{item.review}"</Text>
+          ) : null}
         </View>
       )}
 

@@ -263,6 +263,14 @@ const openImage = (image) => {
           )}
         </Section>
 
+        {/* Customer rating & review */}
+        {Number(ride.rating) > 0 && (
+          <Section title="Customer Rating" icon="star">
+            <Row label="Rating" value={`${Number(ride.rating)} / 5`} />
+            {ride.review ? <Row label="Review" value={ride.review} /> : null}
+          </Section>
+        )}
+
         {/* Status Details */}
         <Section title="Status Details" icon="activity">
           <Row label="Overall Status" value={ride.status || '—'} />

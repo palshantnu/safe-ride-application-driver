@@ -73,7 +73,7 @@ const SignupScreen = ({ navigation }) => {
     };
 
     const serviceTypes = allServices;
-    // Business Associates can only register for One Way, Rental and Driver.
+    // Business Associates can only register for One Way, Rental, Driver and Self Sharing.
     const baServiceTypes = filterBAServices(allServices);
 
     useEffect(() => {
