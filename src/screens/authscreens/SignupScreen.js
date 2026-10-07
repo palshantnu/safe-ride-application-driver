@@ -18,6 +18,7 @@ import {
     FlatList,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { filterBAServices } from '../../utils/baServices';
 import { driverSignUp, All_Services, GET_SUB_SERVICES, SEND_BA_OTP, VERIFY_BA_OTP, SEND_OTP, VERIFY_DRIVER_OTP } from '../../redux/actions/action-creator';
 import Icon from 'react-native-vector-icons/Feather';
 import LinearGradient from 'react-native-linear-gradient';
@@ -72,6 +73,8 @@ const SignupScreen = ({ navigation }) => {
     };
 
     const serviceTypes = allServices;
+    // Business Associates can only register for One Way, Rental and Driver.
+    const baServiceTypes = filterBAServices(allServices);
 
     useEffect(() => {
         Animated.parallel([
@@ -511,7 +514,7 @@ const renderBusinessFields = () => (
             <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Select Services</Text>
             <Text style={styles.hintText}>You can select multiple services</Text>
             <View style={styles.servicesContainer}>
-                {serviceTypes?.map((service) => (
+                {baServiceTypes.map((service) => (
                     <TouchableOpacity
                         key={service.id}
                         style={[

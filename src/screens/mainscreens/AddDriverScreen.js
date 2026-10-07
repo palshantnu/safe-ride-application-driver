@@ -16,6 +16,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Feather';
 import { useDispatch } from 'react-redux';
 import { BA_CREATE_DRIVER, All_Services, GET_SUB_SERVICES } from '../../redux/actions/action-creator';
+import { filterBAServices } from '../../utils/baServices';
 
 const AddDriverScreen = ({ navigation }) => {
   const [fullName, setFullName] = useState('');
@@ -41,10 +42,11 @@ const AddDriverScreen = ({ navigation }) => {
   const loadServices = async () => {
     try {
       const res = await dispatch(All_Services());
+      // A BA can only add drivers for One Way, Rental and Driver.
       if (Array.isArray(res)) {
-        setServices(res);
+        setServices(filterBAServices(res));
       } else if (res?.data) {
-        setServices(res.data);
+        setServices(filterBAServices(res.data));
       }
     } catch (e) {
       console.log('Error loading services:', e);
