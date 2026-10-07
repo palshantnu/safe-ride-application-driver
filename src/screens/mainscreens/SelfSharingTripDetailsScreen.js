@@ -347,7 +347,7 @@ const fetchTrip = async () => {
         </View>
         
         <View style={s.bookingRow}>
-          <Text style={s.bookingLabel}>Balance:</Text>
+          <Text style={s.bookingLabel}>{booking.balance_paid !== 0 ? 'Balance Paid' : 'Balance'}:</Text>
           <Text style={s.bookingValue}>₹{parseFloat(booking.balance_amount) || 0}</Text>
         </View>
         {console.log('booking.full_fare',booking)}
@@ -424,6 +424,26 @@ const fetchTrip = async () => {
           <View style={s.bookingRow}>
             <Text style={s.bookingLabel}>Payment Mode:</Text>
             <Text style={s.bookingValue}>{booking.payment_mode}</Text>
+          </View>
+        )}
+
+        {Number(booking.rating) > 0 && (
+          <View style={s.reviewBox}>
+            <View style={s.reviewStars}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <FontAwesome5
+                  key={star}
+                  name="star"
+                  size={14}
+                  color={star <= Number(booking.rating) ? '#FFB300' : '#E0E0E0'}
+                  solid
+                />
+              ))}
+              <Text style={s.reviewRatingText}>Customer Rating: {Number(booking.rating)}</Text>
+            </View>
+            {booking.review ? (
+              <Text style={s.reviewText}>"{booking.review}"</Text>
+            ) : null}
           </View>
         )}
       </View>
@@ -503,12 +523,19 @@ const fetchTrip = async () => {
             {renderRow('From', trip.from_city || trip.fromCity || trip.from)}
             {renderRow('To', trip.to_city || trip.toCity || trip.to)}
             {renderRow('Pickup Address', trip.pickup_address || trip.pickupAddress)}
-            {renderRow('Departure Time', trip.departure_time || trip.departureTime)}
+            {renderRow('Departure', (trip.departure_time || trip.departureTime)
+              ? new Date(trip.departure_time || trip.departureTime).toLocaleString('en-IN', {
+                  day: '2-digit', month: 'short', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit', hour12: true,
+                })
+              : null)}
 
             {renderRow('Total Seats', trip.total_seats || trip.totalSeats)}
             {renderRow('Token Fare', trip.token_fare || trip.tokenFare)}
             {renderRow('Full Fare', trip.full_fare || trip.fullFare)}
-            {renderRow('Trip Status', trip.status || trip.trip_status || trip.state)}
+            {renderRow('Trip Status', typeof trip.status === 'string' ? trip.status : (trip.trip_status || trip.state))}
+            {renderRow('Total Bookings', trip.total_bookings)}
+            {renderRow('Total Earning', trip.total_earning != null ? `₹${Number(trip.total_earning).toFixed(2)}` : null)}
 
             <View style={s.divider} />
 
@@ -1004,6 +1031,29 @@ const s = StyleSheet.create({
     fontSize: 13,
     color: '#111827',
     fontWeight: '500',
+  },
+  reviewBox: {
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#FFF8E1',
+  },
+  reviewStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  reviewRatingText: {
+    marginLeft: 6,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF9800',
+  },
+  reviewText: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#555',
+    fontStyle: 'italic',
   },
   phoneText: {
     color: '#FF1493',

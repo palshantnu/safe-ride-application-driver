@@ -18,6 +18,7 @@ const SelfSharingMyTripsScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [trips, setTrips] = useState([]);
   const [page, setPage] = useState(1);
+  const [summary, setSummary] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [fetchingMore, setFetchingMore] = useState(false);
 
@@ -49,6 +50,7 @@ const SelfSharingMyTripsScreen = ({ navigation }) => {
 console.log('fetchTrips response:', res);
         const normalized = Array.isArray(list) ? list : [];
         setTrips((prev) => (append ? [...prev, ...normalized] : normalized));
+        if (res?.data?.summary) setSummary(res.data.summary);
 
         // Basic pagination heuristic: if less than limit returned, no more.
         setHasMore(normalized.length === PAGE_LIMIT);
@@ -132,10 +134,18 @@ console.log('fetchTrips response:', res);
             {item.from_city || item.fromCity || item.from || '—'} →{' '}
             {item.to_city || item.toCity || item.to || '—'}
           </Text>
-          <Text style={styles.subtitle}>{departureDateTime}</Text>
+          {item?.pickup_address ? (
+            <Text style={{...styles.subtitle,fontSize:17}}>Pickup: {item.pickup_address}</Text>
+          ) : null}
+          <Text style={{...styles.subtitle,fontSize:17}}>Departure: {departureDateTime}</Text>
           <Text style={styles.subtitle}>Total Seats {item?.total_seats}</Text>
           <Text style={styles.subtitle}>Available Seats {item?.available_seats}</Text>
           <Text style={styles.subtitle}>Amount {item?.full_fare}</Text>
+          {Number(item?.rating_count) > 0 && (
+            <Text style={[styles.subtitle, { color: '#FF9800', fontWeight: '600' }]}>
+              ★ {Number(item.avg_rating).toFixed(1)} ({item.rating_count} {Number(item.rating_count) === 1 ? 'rating' : 'ratings'})
+            </Text>
+          )}
           {item?.started_at && (
             <Text style={styles.subtitle}>
               Started: {new Date(item.started_at).toLocaleString('en-IN', {
@@ -187,6 +197,28 @@ console.log('fetchTrips response:', res);
           }
           contentContainerStyle={styles.list}
           renderItem={renderTrip}
+          ListHeaderComponent={
+            summary ? (
+              <View style={styles.summaryCard}>
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryValue}>{Number(summary.total_rides) || 0}</Text>
+                  <Text style={styles.summaryLabel}>Total Rides</Text>
+                </View>
+                <View style={styles.summaryDivider} />
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryValue}>{Number(summary.total_bookings) || 0}</Text>
+                  <Text style={styles.summaryLabel}>Total Bookings</Text>
+                </View>
+                <View style={styles.summaryDivider} />
+                <View style={styles.summaryItem}>
+                  <Text style={[styles.summaryValue, { color: '#2E7D32' }]}>
+                    ₹{Number(summary.total_earning || 0).toFixed(2)}
+                  </Text>
+                  <Text style={styles.summaryLabel}>Total Earning</Text>
+                </View>
+              </View>
+            ) : null
+          }
           showsVerticalScrollIndicator={false}
           refreshing={loading}
           onRefresh={() => fetchTrips(1, { append: false })}
@@ -213,6 +245,19 @@ console.log('fetchTrips response:', res);
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F8FA' },
+  summaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginBottom: 12,
+    elevation: 2,
+  },
+  summaryItem: { flex: 1, alignItems: 'center' },
+  summaryValue: { fontSize: 17, fontWeight: '700', color: '#222' },
+  summaryLabel: { fontSize: 11, color: '#777', marginTop: 4 },
+  summaryDivider: { width: 1, height: 32, backgroundColor: '#EEE' },
   header: {
     height: 60,
     flexDirection: 'row',
