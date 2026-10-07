@@ -151,6 +151,7 @@ const BAParcelHistoryScreen = ({ navigation }) => {
         user_status: parcel.user_status,
       driver_name: parcel.driver_name,
       driver_phone: parcel.driver_phone,
+      service_name: parcel.service_name || 'Parcel',
       rating: Number(parcel.rating) || 0,
       review: parcel.review || '',
       user_name: parcel.user_name,
@@ -273,6 +274,11 @@ const BAParcelHistoryScreen = ({ navigation }) => {
             <Text style={styles.statusText}>{getStatusText(status)}</Text>
           </View>
         </View>
+        {item.service_name ? (
+          <Text style={{ fontSize: 13, fontWeight: '700', color: '#810a45', marginBottom: 6 }}>
+            Service: {item.service_name}
+          </Text>
+        ) : null}
 <View style={[styles.statusBadge ]}>
              <Text style={{...styles.statusText,color:'black',fontSize:16}}>USER STATUS : {getStatusText(delivery.user_status)}</Text>
           </View>

@@ -130,6 +130,9 @@ console.log('fetchTrips response:', res);
               <Text style={styles.statusText}>{status}</Text>
             </View>
           </View>
+          {item?.service_name ? (
+            <Text style={[styles.subtitle, { color: '#810a45', fontWeight: '700' }]}>Service: {item.service_name}</Text>
+          ) : null}
           <Text style={styles.subtitle}>
             {item.from_city || item.fromCity || item.from || '—'} →{' '}
             {item.to_city || item.toCity || item.to || '—'}

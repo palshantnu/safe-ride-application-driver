@@ -268,6 +268,7 @@ const DriverHistoryScreen = ({ navigation }) => {
       delivery_otp_verified: delivery.delivery_otp_verified,
       delivered_at: delivery.delivered_at,
       weight_type:delivery.weight_type,
+      service_name: delivery.service_name || 'Parcel',
       rating: Number(delivery.rating) || 0,
       review: delivery.review || '',
     };
@@ -337,6 +338,7 @@ const getAccessFeeValue = (totalFare, accessFee, accessFeeType) => {
         id: booking.id,
         booking_id: booking.booking_id,
         is_incity: true,
+        service_name: booking.service_name || 'In City',
         pickup: booking.pickup_address || booking.pickup_city,
         destination: booking.drop_address || booking.drop_city || booking.to_city,
         price,
@@ -596,6 +598,12 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
           </View>
         </View>
 
+        {item.service_name ? (
+          <Text style={{ fontSize: 13, fontWeight: '700', color: '#810a45', marginBottom: 6 }}>
+            Service: {item.service_name}
+          </Text>
+        ) : null}
+
         {/* Customer Info */}
         <View style={styles.customerInfo}>
           <Icon name="person-outline" size={16} color="#810a45" />
@@ -774,6 +782,12 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
         </View>
       </View>
 
+      {item.service_name ? (
+        <Text style={{ fontSize: 13, fontWeight: '700', color: '#810a45', marginBottom: 6 }}>
+          Service: {item.service_name}
+        </Text>
+      ) : null}
+
       <View style={styles.rideLocation}>
         <View style={styles.locationPoint}>
           <Icon name="location" size={16} color="#FF9800" />
@@ -942,6 +956,12 @@ access_fee || 0) + parseFloat(booking.platform_fee || 0);
           </View>
         </View>
       </View>
+
+      {item.service_name ? (
+        <Text style={{ fontSize: 13, fontWeight: '700', color: '#810a45', marginBottom: 6 }}>
+          Service: {item.service_name}
+        </Text>
+      ) : null}
 
       <View style={styles.rideLocation}>
         <View style={styles.locationPoint}>
