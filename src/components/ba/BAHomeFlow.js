@@ -195,13 +195,14 @@ setParcelDrivers(filteredDrivers);
   }
 };
 
-const handleAssignParcel = async driverId => {
+const handleAssignParcel = async (driverId, vehicle = {}) => {
   try {
     const res = await axios.post(
       PARCEL_API.ACCEPT_ASSIGN,
       {
         parcel_booking_id: assigningBookingId,
         driver_id: driverId,
+        ...vehicle,
       },
       {
         headers: {
@@ -217,6 +218,7 @@ const handleAssignParcel = async driverId => {
       );
 setShowParcelAssignModal(false);
       setShowAssignModal(false);
+      setVehicleDriver(null);
 
       fetchParcelRequests();
       fetchCurrentParcels();
@@ -243,6 +245,36 @@ const prevParcelBookingIdRef = useRef(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assigningBookingId, setAssigningBookingId] = useState(null);
   const [isAssigning, setIsAssigning] = useState(false);
+  // Driver picked in an assign modal, waiting for the BA to confirm vehicle details.
+  const [vehicleDriver, setVehicleDriver] = useState(null);
+  const [vehicleForm, setVehicleForm] = useState({
+    vehicle_type: '', vehicle_model: '', vehicle_color: '', vehicle_number: '',
+  });
+
+  // Step 2 of assigning: prefill with whatever vehicle this driver last used.
+  const openVehicleForm = (driver) => {
+    setVehicleForm({
+      vehicle_type: driver?.vehicle_type || '',
+      vehicle_model: driver?.vehicle_model || '',
+      vehicle_color: driver?.vehicle_color || '',
+      vehicle_number: driver?.vehicle_number || '',
+    });
+    setVehicleDriver(driver);
+  };
+
+  const submitVehicleAndAssign = (assign) => {
+    const vehicle = {
+      vehicle_type: vehicleForm.vehicle_type.trim(),
+      vehicle_model: vehicleForm.vehicle_model.trim(),
+      vehicle_color: vehicleForm.vehicle_color.trim(),
+      vehicle_number: vehicleForm.vehicle_number.trim().toUpperCase(),
+    };
+    if (!vehicle.vehicle_type || !vehicle.vehicle_number) {
+      Alert.alert('Error', 'Vehicle type and vehicle number are required');
+      return;
+    }
+    assign(vehicleDriver.id, vehicle);
+  };
 
   const fetchBABookings = async () => {
     try {
@@ -472,17 +504,19 @@ const parcelServices = baServices.filter((s) =>
     }
   };
 
-  const handleBAAssignDriver = async (driverId) => {
+  const handleBAAssignDriver = async (driverId, vehicle = {}) => {
     setIsAssigning(true);
     try {
       const res = await dispatch(
         BA_ASSIGN_DRIVER({
           booking_id: assigningBookingId,
           driver_id: driverId,
+          ...vehicle,
         })
       );
       if (res?.status) {
         Alert.alert('Success', 'Driver assigned successfully');
+        setVehicleDriver(null);
         setShowAssignModal(false);
         setAssigningBookingId(null);
         fetchBABookings();
@@ -1299,8 +1333,65 @@ onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
         <View style={{ height: 30 }} />
       </ScrollView>
 
-      <Modal visible={showAssignModal} transparent animationType="slide" onRequestClose={() => setShowAssignModal(false)}>
+      <Modal visible={showAssignModal} transparent animationType="slide" onRequestClose={() => { setVehicleDriver(null); setShowAssignModal(false); }}>
         <View style={styles.modalContainer}>
+          {vehicleDriver ? (
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Vehicle Details</Text>
+            <Text style={styles.modalSubtitle}>
+              {vehicleDriver?.full_name || vehicleDriver?.name} — these details are shown to the customer
+            </Text>
+            <TextInput
+              style={styles.vehicleInput}
+              placeholder="Vehicle type (e.g. Sedan) *"
+              placeholderTextColor="#999"
+              value={vehicleForm.vehicle_type}
+              onChangeText={(t) => setVehicleForm((f) => ({ ...f, vehicle_type: t }))}
+            />
+            <TextInput
+              style={styles.vehicleInput}
+              placeholder="Vehicle model (e.g. Swift Dzire)"
+              placeholderTextColor="#999"
+              value={vehicleForm.vehicle_model}
+              onChangeText={(t) => setVehicleForm((f) => ({ ...f, vehicle_model: t }))}
+            />
+            <TextInput
+              style={styles.vehicleInput}
+              placeholder="Vehicle color"
+              placeholderTextColor="#999"
+              value={vehicleForm.vehicle_color}
+              onChangeText={(t) => setVehicleForm((f) => ({ ...f, vehicle_color: t }))}
+            />
+            <TextInput
+              style={styles.vehicleInput}
+              placeholder="Vehicle number (e.g. UP32AB1234) *"
+              placeholderTextColor="#999"
+              autoCapitalize="characters"
+              value={vehicleForm.vehicle_number}
+              onChangeText={(t) => setVehicleForm((f) => ({ ...f, vehicle_number: t }))}
+            />
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.cancelBtn]}
+                onPress={() => setVehicleDriver(null)}
+                disabled={isAssigning}
+              >
+                <Text style={styles.cancelBtnText}>Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: '#FF1493' }]}
+                onPress={() => submitVehicleAndAssign(handleBAAssignDriver)}
+                disabled={isAssigning}
+              >
+                {isAssigning ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={{ color: '#fff', fontWeight: '600' }}>Assign</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+          ) : (
           <View style={[styles.modalContent, { maxHeight: '70%' }]}>
             <Text style={styles.modalTitle}>Assign Driver</Text>
             <Text style={styles.modalSubtitle}>Select a driver for this booking</Text>
@@ -1309,7 +1400,7 @@ onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
               data={baDrivers}
               keyExtractor={(item, i) => item.id?.toString() || i.toString()}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.driverSelectItem} onPress={() => handleBAAssignDriver(item.id)} disabled={isAssigning}>
+                <TouchableOpacity style={styles.driverSelectItem} onPress={() => openVehicleForm(item)} disabled={isAssigning}>
                   <View style={styles.driverSelectLeft}>
                     <View style={styles.driverSelectAvatar}>
                       <Icon name="user" size={20} color="#FF1493" />
@@ -1330,15 +1421,73 @@ onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
               <Text style={styles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
           </View>
+          )}
         </View>
       </Modal>
       <Modal
   visible={showParcelAssignModal}
   transparent
   animationType="slide"
-  onRequestClose={() => setShowParcelAssignModal(false)}>
+  onRequestClose={() => { setVehicleDriver(null); setShowParcelAssignModal(false); }}>
 
   <View style={styles.modalContainer}>
+    {vehicleDriver ? (
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Vehicle Details</Text>
+            <Text style={styles.modalSubtitle}>
+              {vehicleDriver?.full_name || vehicleDriver?.name} — these details are shown to the customer
+            </Text>
+            <TextInput
+              style={styles.vehicleInput}
+              placeholder="Vehicle type (e.g. Sedan) *"
+              placeholderTextColor="#999"
+              value={vehicleForm.vehicle_type}
+              onChangeText={(t) => setVehicleForm((f) => ({ ...f, vehicle_type: t }))}
+            />
+            <TextInput
+              style={styles.vehicleInput}
+              placeholder="Vehicle model (e.g. Swift Dzire)"
+              placeholderTextColor="#999"
+              value={vehicleForm.vehicle_model}
+              onChangeText={(t) => setVehicleForm((f) => ({ ...f, vehicle_model: t }))}
+            />
+            <TextInput
+              style={styles.vehicleInput}
+              placeholder="Vehicle color"
+              placeholderTextColor="#999"
+              value={vehicleForm.vehicle_color}
+              onChangeText={(t) => setVehicleForm((f) => ({ ...f, vehicle_color: t }))}
+            />
+            <TextInput
+              style={styles.vehicleInput}
+              placeholder="Vehicle number (e.g. UP32AB1234) *"
+              placeholderTextColor="#999"
+              autoCapitalize="characters"
+              value={vehicleForm.vehicle_number}
+              onChangeText={(t) => setVehicleForm((f) => ({ ...f, vehicle_number: t }))}
+            />
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.cancelBtn]}
+                onPress={() => setVehicleDriver(null)}
+                disabled={isAssigning}
+              >
+                <Text style={styles.cancelBtnText}>Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: '#FF1493' }]}
+                onPress={() => submitVehicleAndAssign(handleAssignParcel)}
+                disabled={isAssigning}
+              >
+                {isAssigning ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={{ color: '#fff', fontWeight: '600' }}>Assign</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+    ) : (
     <View style={[styles.modalContent, { maxHeight: '70%' }]}>
 
       <Text style={styles.modalTitle}>
@@ -1353,7 +1502,7 @@ onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.driverSelectItem}
-            onPress={() => handleAssignParcel(item.id)}
+            onPress={() => openVehicleForm(item)}
           >
             <View style={styles.driverSelectLeft}>
               <View style={styles.driverSelectAvatar}>
@@ -1388,6 +1537,7 @@ onPress={() => navigation.navigate('SelfSharingMyTripsBAAssign')}
         </Text>
       </TouchableOpacity>
     </View>
+    )}
   </View>
 </Modal>
 <Modal
@@ -1646,6 +1796,7 @@ const styles = StyleSheet.create({
   },
 
   modalBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  vehicleInput: { borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginBottom: 10, backgroundColor: '#f9f9f9', color: '#000' },
   cancelBtn: { backgroundColor: '#f0f0f0' },
   cancelBtnText: { color: '#666', fontSize: 16, fontWeight: '500' },
     specialTripBtnRow: {
