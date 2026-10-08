@@ -455,7 +455,7 @@ const KYCScreen = ({ navigation }) => {
             return 'rc_book';
         }
 
-        if (['adhar_front', 'adhar_back', 'pan_card', 'vehicle_number', 'license', 'rc_book', 'insurance'].includes(normalized)) {
+        if (['adhar_front', 'adhar_back', 'pan_card', 'vehicle_number', 'license', 'rc_book', 'insurance', 'pollution_card', 'permit'].includes(normalized)) {
             return normalized;
         }
 
@@ -640,6 +640,8 @@ const KYCScreen = ({ navigation }) => {
             'rc_book': 'RC Book',
             'insurance': 'Insurance Document',
             'vehicle_number': 'Vehicle Number Pic',
+            'pollution_card': 'Pollution Card (PUC)',
+            'permit': 'Permit',
         };
         return titles[type] || type.replace('_', ' ').toUpperCase();
     };
@@ -654,6 +656,8 @@ const KYCScreen = ({ navigation }) => {
             'rc_book': 'book',
             'insurance': 'shield',
             'vehicle_number': 'truck',
+            'pollution_card': 'wind',
+            'permit': 'clipboard',
         };
         return icons[type] || 'file';
     };
